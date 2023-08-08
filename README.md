@@ -9,7 +9,7 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### Capabilities
 
-* Preserve web UI parameters (inputs, sliders, checkboxes etc.) after page reload.
+* Preserve web UI parameters (inputs, sliders, checkboxes etc.) .
 * It can be extended to preserve basically everything in the UI.
 * Import / Export and Reset state options
 * Supported extensions:
@@ -17,7 +17,6 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### Usage
 
-Demo video: [https://www.youtube.com/watch?v=hXsxBKYMGaA](https://www.youtube.com/watch?v=hXsxBKYMGaA)
 
 ### Install
 
@@ -26,10 +25,6 @@ Use **Install from URL** option with this repo url.
 ### Requirements
 
 None at all.
-
-### Usage
-
-Go to **Settings->State** and check all parameters that you want to be preserved after page reload.
 
 ### Contributing
 
