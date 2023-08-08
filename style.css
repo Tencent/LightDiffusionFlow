@@ -1,0 +1,20 @@
+#settings_state_buttons button,
+#settings_state_buttons input[type="file"] {
+    color: white;
+    background: rgb(249, 115, 22);
+    border-radius: 8px;
+    padding: 5px 15px;
+    font-weight: bold;
+    font-size: 16px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#settings_state_buttons input[type="file"] {
+    padding: 3px 5px;
+}
+
+#settings_state hr {
+    margin-top: 32px;
+    margin-bottom: 32px;
+}
