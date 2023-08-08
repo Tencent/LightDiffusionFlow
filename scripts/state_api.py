@@ -98,8 +98,12 @@ def func_for_invisiblebutton():
             next_index += 1
     except:
         pass
-
-    print(f"aaaaaaaaa {temp_index} {next_index} {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    
+    try:
+        print(f"aaaaaaaaa {temp_index} {next_index} ")
+        print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    except:
+        pass
     #print(Webui_Comps_Cur_Val)
     return Webui_Comps_Cur_Val[temp_index], next_index
 
