@@ -3,37 +3,69 @@ state = window.state;
 
 state.utils = {
     testFunction: function testFunction() {
-        console.log("test function")
-        //tabs = gradioApp().querySelector('#tabs').querySelectorAll('button')
-        //console.log(tabs)
-        // let elem = undefined //gradioApp().getElementById('txt2img_controlnet').children[0].children[1]
-        // for (child of gradioApp().getElementById('txt2img_controlnet').children){
-        //     if(child.id == "controlnet"){
-        //         elem = child.children[1]
-        //     }
-        // }
-        // if(elem.className.split(' ').pop() != "open"){
-        //     state.utils.triggerMouseEvent(elem, 'click')
-        // }
-        // gradioApp().getElementById('txt2img_controlnet_tabs').querySelectorAll('button')[0].click()
-        let select = gradioApp().getElementById('setting_sd_model_checkpoint')
+        //console.log("test function")
+        //res = "state-txt2img_ext-control-net-0-model".indexOf("txt2img")
+        //res1 = "state-txt2img_ext-control-net-0-model".indexOf("txt2img1")
+        // res2 = "state-txt2img_ext-control-net-0-model".replace("txt2img123", "文生图/txt2img")
+        //console.log(res)
+        //console.log(res1)
+
+        // let select = gradioApp().getElementById('setting_sd_model_checkpoint')
         
-        let input = select.querySelector('input');
-        state.utils.triggerMouseEvent(input, 'focus');
+        // let input = select.querySelector('input');
+        // state.utils.triggerMouseEvent(input, 'focus');
 
-        setTimeout(() => {
-            let items = Array.from(select.querySelectorAll('ul li'));
-            console.log(`-----handleSelect--------${items}--------------`)
-            items.forEach(li => {
-                console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
-                // if (li.lastChild.wholeText.trim() === value) {
-                //     state.utils.triggerMouseEvent(li, 'mousedown');
-                //     return false;
-                // }
-            });
-            //state.utils.triggerMouseEvent(input, 'blur');
-        }, 100);
+        // setTimeout(() => {
+        //     let items = Array.from(select.querySelectorAll('ul li'));
+        //     console.log(`-----handleSelect--------${items}--------------`)
+        //     items.forEach(li => {
+        //         console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
+        //         // if (li.lastChild.wholeText.trim() === value) {
+        //         //     state.utils.triggerMouseEvent(li, 'mousedown');
+        //         //     return false;
+        //         // }
+        //     });
+        //     //state.utils.triggerMouseEvent(input, 'blur');
+        // }, 100);
 
+        console.log(state.core.get_localization_dict())
+        // Object.keys(state.core.get_localization_dict()).forEach(function(key) {
+        //     console.log("=================================")
+        //     console.log(key +': '+ localization_dict[key]);
+        // });
+    },
+
+    localize: function localize(localization_dict, key){
+        new_key = key.replace(/^\s+|\s+$/g,"");
+        try{
+            if(localization_dict[new_key] != undefined){
+                new_key = localization_dict[new_key]
+                //console.log("===========" + key +': '+ new_key);
+            }
+        } catch (error) {
+            console.warn('localize error:', error);
+        }
+        return new_key
+    },
+
+    internationalize: function internationalize(localization_dict, key){ // :(
+        new_key = []
+        try{
+            key=key.replace(/^\s+|\s+$/g,"");
+            for (localize_key of Object.keys(localization_dict)) {
+                //console.log("----------------" + key +': '+ localize_key + '-----' + localization_dict[localize_key]);
+                if(key === localization_dict[localize_key]){ 
+                    tmp_key = localize_key
+                    //console.log("===========" + key +': '+ localize_key);
+                    new_key.push(tmp_key)
+                    break
+                }
+            }
+        } catch (error) {
+            console.warn('internationalize error:', error);
+        }
+        if(new_key.length == 0){new_key.push(key)}
+        return new_key
     },
 
     sleep: function sleep(time) {
@@ -65,7 +97,7 @@ state.utils = {
             console.warn('[switch_to_txt2img_ControlNet]: Error:', error);
         }
     },
-    switch_to_img2img_ControlNet: function switch_to_txt2img_ControlNet(unit) {
+    switch_to_img2img_ControlNet: function switch_to_img2img_ControlNet(unit) {
         
         switch_to_img2img()
         
@@ -82,7 +114,7 @@ state.utils = {
         try{
             gradioApp().getElementById('img2img_controlnet_tabs').querySelectorAll('button')[Number(unit)].click()
         } catch (error) {
-            console.warn('[switch_to_txt2img_ControlNet]: Error:', error);
+            console.warn('[switch_to_img2img_ControlNet]: Error:', error);
         }
     },
 
@@ -251,32 +283,70 @@ state.utils = {
             console.error('[state]: Error:', error);
         }
     },
+    // handleSelect: function handleSelect(select, id, store) {
+    //     try {
+    //         let value = store.get(id);
+    //         if (value) {
+                
+    //             let input = select.querySelector('input');
+    //             state.utils.triggerMouseEvent(input, 'focus');
+                
+    //             setTimeout(() => {
+    //                 let items = Array.from(select.querySelectorAll('ul li'));
+    //                 for (li of items){
+    //                     if (li.lastChild.wholeText.trim() === value) {
+    //                         state.utils.triggerMouseEvent(li, 'mousedown');
+    //                         //return false;
+    //                         break
+    //                     }
+    //                 }
+    //                 state.utils.triggerMouseEvent(input, 'blur');
+    //             }, 100);
+    //         }
+
+    //         setTimeout(() => {
+    //             state.utils.onContentChange(select, function (el) {
+    //                 let selected = el.querySelector('span.single-select');
+    //                 if (selected) {
+    //                     store.set(id, selected.textContent);
+    //                 } else {
+    //                     // new gradio version...
+    //                     let input = select.querySelector('input');
+    //                     if (input) {
+    //                         store.set(id, input.value);
+    //                     }
+    //                 }
+    //             });
+    //         }, 150);
+    //     } catch (error) {
+    //         console.error('[state]: Error:', error);
+    //     }
+    // },
     handleSelect: function handleSelect(select, id, store) {
         try {
             let value = store.get(id);
             if (value) {
                 
+                let localization_dict = state.core.get_localization_dict()
                 let input = select.querySelector('input');
                 state.utils.triggerMouseEvent(input, 'focus');
                 
-                console.log(`-----handleSelect------${id}-----${select}-----------------`)
-                console.log(`-----handleSelect-----------${input}---${value}--------------`)
                 setTimeout(() => {
                     let items = Array.from(select.querySelectorAll('ul li'));
-                    console.log(`-----handleSelect--------${items}--------------`)
-                    items.forEach(li => {
-                        console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
-                        if (li.lastChild.wholeText.trim() === value) {
+                    for (li of items){
+                        // li.lastChild.wholeText.trim() === value
+                        let localized_value = this.localize(localization_dict, value)
+                        if (localized_value === li.lastChild.wholeText.trim()) {
                             state.utils.triggerMouseEvent(li, 'mousedown');
-                            return false;
+                            //return false;
+                            break
                         }
-                    });
+                    }
                     state.utils.triggerMouseEvent(input, 'blur');
                 }, 100);
             }
 
             setTimeout(() => {
-                console.log(`------ onContentChange select = ${select}  196 -----`)
                 state.utils.onContentChange(select, function (el) {
                     let selected = el.querySelector('span.single-select');
                     if (selected) {

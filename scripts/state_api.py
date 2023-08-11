@@ -10,7 +10,7 @@ import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings
 
-import io
+import os, io
 import json
 from PIL import Image
 import re,base64
@@ -44,14 +44,35 @@ class StateApi():
         print("-----------------state_api start------------------")
         self.app = app 
         self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
+        self.add_api_route('/localization', self.get_localization, methods=['GET']) # 读取localization.json
         self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
+        self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) # 刷新页面之后触发
         # self.add_api_route('/import_workflow', self.fn_import_workflow, methods=['GET']) # 
 
     def get_config(self):
         #print("-----------------state_api get_config------------------")
         return FileResponse(shared.cmd_opts.ui_settings_file)
+
+    def get_localization(self):
+        #print(f"-----------------get_localization------------------")
+
+        localization_file = ""
+        try:
+            with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
+                json_str = f.read()
+                config_json = json.loads(json_str)
+                #print(config_json['localization'])
+                localization_file = localization.localizations[config_json['localization']]
+        except:
+            pass
+
+        print(f"-----------------get_localization {localization_file}------------------")
+        if(os.path.exists(localization_file)):
+            return FileResponse(localization_file)
+        
+        return ""
 
     def get_lightflow_config(self, onlyimg:bool = False):
         global workflow_json
@@ -77,8 +98,14 @@ class StateApi():
         return keys_str
 
     def imgs_callback(self, img_data:imgs_callback_params):
+        global workflow_json
         #print(f"imgs_callback = {id}  {img}")
         workflow_json[img_data.id] = img_data.img
+
+    def refresh_ui(self):
+        global workflow_json
+        workflow_json = {}
+        print("refresh_ui")
 
 # test_component = None
 # def change_img2img_sketch(component):
@@ -199,7 +226,7 @@ class Script(scripts.Script):
             State_Comps["import"] = []
             State_Comps["export"] = []
 
-        with gr.Accordion('state plugin', open=False, visible=True):
+        with gr.Accordion('Lightflow plugin', open=False, visible=True):
             with gr.Row():
                 lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
                 State_Comps["import"].append(lightflow_file)
@@ -211,8 +238,8 @@ class Script(scripts.Script):
             json2js = gr.Textbox(label="json2js",visible=False)
             State_Comps["json2js"] = json2js
 
-            #test_button = gr.Button(value='测试')
-            #test_button.click(test_func,_js="state.utils.testFunction")
+            test_button = gr.Button(value='测试',visible=False)
+            test_button.click(test_func,_js="state.utils.testFunction")
 
             if(not is_img2img):
                 with gr.Row():

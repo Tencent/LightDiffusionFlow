@@ -8,6 +8,12 @@ function constrol_net(tab_name) {
     let store = null;
     let cnTabs = [];
     let cur_tab_name = tab_name;
+    let localization_dict = {}
+    let LS_PREFIX = 'ext-control-net-'
+
+    function set_localization(localization){
+        localization_dict = localization
+    }
 
     function handleToggle() {
         let value = store.get('toggled');
@@ -38,7 +44,8 @@ function constrol_net(tab_name) {
         let value = store.get('tab');
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
-                if (tabs[i].textContent === value) {
+                if (value in state.utils.internationalize(localization_dict, tabs[i].textContent)) {
+                //if (tabs[i].textContent === value) {
                     state.utils.triggerEvent(tabs[i], 'click');
                     break;
                 }
@@ -47,7 +54,7 @@ function constrol_net(tab_name) {
     }
 
     function onTabClick() {
-        store.set('tab', this.textContent);
+        store.set('tab', state.utils.internationalize(localization_dict, this.textContent)[0]);
         bindTabEvents();
     }
 
@@ -56,7 +63,7 @@ function constrol_net(tab_name) {
             let checkboxes = container.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(function (checkbox) {
                 let label = checkbox.nextElementSibling;
-                let id = state.utils.txtToId(label.textContent);
+                let id = state.utils.txtToId(state.utils.internationalize(localization_dict, label.textContent)[0]);
                 let value = store.get(id);
                 if (value) {
                     state.utils.setValue(checkbox, value, 'change');
@@ -71,7 +78,7 @@ function constrol_net(tab_name) {
     function handleSelects() {
         cnTabs.forEach(({ container, store }) => {
             container.querySelectorAll('.gradio-dropdown').forEach(select => {
-                let id = state.utils.txtToId(select.querySelector('label').firstChild.textContent);
+                let id = state.utils.txtToId(state.utils.internationalize(localization_dict, select.querySelector('label').firstChild.textContent)[0]);
                 let value = store.get(id);
                 state.utils.handleSelect(select, id, store);
                 if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
@@ -86,13 +93,13 @@ function constrol_net(tab_name) {
             let sliders = container.querySelectorAll('input[type="range"]');
             sliders.forEach(function (slider) {
                 let label = slider.previousElementSibling.querySelector('label span');
-                let id = state.utils.txtToId(label.textContent);
+                let id = state.utils.txtToId(state.utils.internationalize(localization_dict, label.textContent)[0]);
                 let value = store.get(id);
                 if (value) {
                     state.utils.setValue(slider, value, 'change');
                 }
                 slider.addEventListener('change', function () {
-                    store.set(id, this.value);
+                    store.set(id, state.utils.internationalize(localization_dict, this.value)[0]);
                 });
             });
         });
@@ -104,7 +111,7 @@ function constrol_net(tab_name) {
             fieldsets.forEach(function (fieldset) {
                 let label = fieldset.firstChild.nextElementSibling;
                 let radios = fieldset.querySelectorAll('input[type="radio"]');
-                let id = state.utils.txtToId(label.textContent);
+                let id = state.utils.txtToId(state.utils.internationalize(localization_dict, label.textContent)[0]);
                 let value = store.get(id);
                 if (value) {
                     radios.forEach(function (radio) {
@@ -113,7 +120,7 @@ function constrol_net(tab_name) {
                 }
                 radios.forEach(function (radio) {
                     radio.addEventListener('change', function () {
-                        store.set(id, this.value);
+                        store.set(id, state.utils.internationalize(localization_dict, this.value)[0]);
                     });
                 });
             });
@@ -133,34 +140,36 @@ function constrol_net(tab_name) {
     function init() {
 
         container = gradioApp().getElementById(cur_tab_name+'_controlnet');
-        store = new state.Store(cur_tab_name+'_ext-control-net');
+
+        store = new state.Store(LS_PREFIX + cur_tab_name);
 
         if (! container) {
             return;
         }
 
         let tabs = container.querySelectorAll('.tabitem');
-
+        console.log(tabs)
+        
         if (tabs.length) {
             cnTabs = [];
             tabs.forEach((tabContainer, i) => {
                 cnTabs.push({
                     container: tabContainer,
-                    store: new state.Store(cur_tab_name+'_ext-control-net-' + i)
+                    store: new state.Store(LS_PREFIX + cur_tab_name + "_" + i)
                 });
             });
         } else {
             cnTabs = [{
                 container: container,
-                store: new state.Store(cur_tab_name+'_ext-control-net-0')
+                store: new state.Store(LS_PREFIX + cur_tab_name + "_0")
             }];
         }
 
         handleToggle();
         load();
     }
-    return { init };
+    return { init,set_localization,LS_PREFIX };
 }
 
-state.extensions['img2img-control-net'] = constrol_net("img2img");
-state.extensions['txt2img-control-net'] = constrol_net("txt2img");
+state.extensions['img2img-ext-control-net'] = constrol_net("img2img");
+state.extensions['txt2img-ext-control-net'] = constrol_net("txt2img");

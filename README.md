@@ -3,7 +3,7 @@
     <img alt="" src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue" />
 </p>
 
-# stable-diffusion-webui-state
+# stable-diffusion-lightflow
 
 This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 

@@ -62,14 +62,21 @@ state.core = (function () {
 
     
     let img_elem_keys=[];
+    let localization_dict={};
+
+    function get_localization_dict(){
+        return localization_dict
+    }
+
     function init() {
         
+        fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
+
         fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
         .then(response => response.json())
         .then(data => {
-            img_elem_keys =  data.split(",")
+            img_elem_keys = data.split(",")
             console.log("get_imgs_elem_key")
-            console.log(img_elem_keys)
             img_elem_keys.forEach(key => {
                 IMAGES_WITHOUT_PREFIX[key] = key
             });
@@ -79,8 +86,7 @@ state.core = (function () {
                 .then(response => response.json())
                 .then(config => {
                     // console.log("-------------state.core.init----------------")
-                    // console.log(config) // 本地根目录下的 config.json
-                    // console.log("-----------------------------")
+                    
                     try {
                         store = new state.Store();
                         store.clear();
@@ -92,6 +98,18 @@ state.core = (function () {
                 })
                 .catch(error => console.error('[state]: Error getting JSON file:', error));
         });
+
+        fetch('/state/localization') // 读取本地化内容
+        .then(response => response.json())
+        .then(json_obj => {
+            localization_dict = json_obj
+            //console.log(`localization    ${localization_dict['Preprocessor']}`)            
+            // Object.keys(localization_dict).forEach(function(key) {
+            //     console.log("=================================")
+            //     console.log(key +': '+ localization_dict[key]);
+            // });
+        });
+
     }
     
     function forEachImageElement(list, action) {
@@ -120,12 +138,10 @@ state.core = (function () {
         config.hasSetting = hasSetting
 
         //loadUI(); // 往页面上添加按钮
-        //restoreTabs(config); // 恢复到最后点击的tab页面
 
         forEachElement(SELECTS_WITHOUT_PREFIX, config, (element, tab) => {
             handleSavedSelects(`${element}`);
         });
-
 
         forEachElement(ELEMENTS, config, (element, tab) => {
             handleSavedInput(`${tab}_${element}`);
@@ -153,6 +169,8 @@ state.core = (function () {
 
         handleExtensions(config);
         //handleSettingsPage();
+
+        restoreTabs(config); // 恢复到最后点击的tab页面
     }
 
     function createHeaderButton(title, text, className, style, action) {
@@ -226,7 +244,7 @@ state.core = (function () {
         //console.log(value)
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
-                if (tabs[i].textContent === value) {
+                if (tabs[i].textContent === state.utils.localize(localization_dict, value)) {
                     state.utils.triggerEvent(tabs[i], 'click');
                     break;
                 }
@@ -249,7 +267,7 @@ state.core = (function () {
 
     function storeTab() {
         //console.log("-------------state.core.storeTab----------------")
-        store.set('tab', gradioApp().querySelector('#tabs .tab-nav button.selected').textContent);
+        store.set('tab', state.utils.internationalize(localization_dict, gradioApp().querySelector('#tabs .tab-nav button.selected').textContent));
         bindTabClickEvents(); // dirty hack here...
     }
 
@@ -361,6 +379,7 @@ state.core = (function () {
         // }
 
         for (const [name, obj] of Object.entries(state.extensions)) {
+            if(Object.keys(localization_dict).length > 0){obj.set_localization(localization_dict)}
             obj.init();
         }
 
@@ -498,7 +517,6 @@ state.core = (function () {
             reader.readAsText(file);
         },
         importLightflow: function (fileInput){
-            
             //console.log(`==================importLightflow click `)
             forEachImageElement(IMAGES_WITHOUT_PREFIX, (image_id) => {
                 //console.log(image_id)
@@ -513,12 +531,13 @@ state.core = (function () {
             const file = fileInput[0].blob;
             const reader = new FileReader();
             reader.onload = function (event) {
-                let json_obj = JSON.parse(event.target.result)
 
+                let json_obj = JSON.parse(event.target.result)
                 forEachImageElement(IMAGES_WITHOUT_PREFIX, (image_id) => {
                     //console.log(image_id)
                     json_obj[image_id] = ""
                 });
+                // webui主界面 没有localization相关的兼容问题 所以不用管
                 store.clear();
                 console.log(json_obj)
                 store.load(json_obj);
@@ -557,7 +576,7 @@ state.core = (function () {
             //     console.log(img_elem_keys)
             // });
 
-            state.utils.sleep(1000).then(() => {
+            state.utils.sleep(300).then(() => {
 
                 console.log(index)
                 try{
@@ -602,5 +621,5 @@ state.core = (function () {
         }
     };
 
-    return { init,actions };
+    return { init,actions,get_localization_dict };
 }());
