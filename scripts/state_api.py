@@ -44,7 +44,7 @@ class StateApi():
         print("-----------------state_api start------------------")
         self.app = app 
         self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
-        self.add_api_route('/localization', self.get_localization, methods=['GET']) # 读取localization.json
+        self.add_api_route('/get_localization', self.get_localization, methods=['GET']) # 读取localization.json
         self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
@@ -238,7 +238,7 @@ class Script(scripts.Script):
             json2js = gr.Textbox(label="json2js",visible=False)
             State_Comps["json2js"] = json2js
 
-            test_button = gr.Button(value='测试',visible=False)
+            test_button = gr.Button(value='测试',visible=True)
             test_button.click(test_func,_js="state.utils.testFunction")
 
             if(not is_img2img):

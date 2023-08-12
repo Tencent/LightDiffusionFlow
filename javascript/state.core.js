@@ -99,9 +99,10 @@ state.core = (function () {
                 .catch(error => console.error('[state]: Error getting JSON file:', error));
         });
 
-        fetch('/state/localization') // 读取本地化内容
+        fetch('/state/get_localization') // 读取本地化内容
         .then(response => response.json())
         .then(json_obj => {
+            console.log(`localization  ${localization_dict}`)     
             localization_dict = json_obj
             //console.log(`localization    ${localization_dict['Preprocessor']}`)            
             // Object.keys(localization_dict).forEach(function(key) {
@@ -112,16 +113,21 @@ state.core = (function () {
 
     }
     
-    function forEachImageElement(list, action) {
+    // function forEachImageElement(list, action) {
+    //     for (const [settingId, element] of Object.entries(list)) {
+    //         TABS.forEach(tab => {
+    //             //if (config.hasSetting(settingId, tab)) {
+    //                 action(element, tab);
+    //             //}
+    //         });
+    //     }
+    // }
+
+    function forEachElement_WithoutTabs(list, action) {
         for (const [settingId, element] of Object.entries(list)) {
-            TABS.forEach(tab => {
-                //if (config.hasSetting(settingId, tab)) {
-                    action(element, tab);
-                //}
-            });
+            action(element);
         }
     }
-
 
     function forEachElement(list, config, action) {
         for (const [settingId, element] of Object.entries(list)) {
@@ -138,16 +144,16 @@ state.core = (function () {
         config.hasSetting = hasSetting
 
         //loadUI(); // 往页面上添加按钮
-
-        forEachElement(SELECTS_WITHOUT_PREFIX, config, (element, tab) => {
-            handleSavedSelects(`${element}`);
+        
+        forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
+            handleSavedSelects(element);
         });
 
         forEachElement(ELEMENTS, config, (element, tab) => {
             handleSavedInput(`${tab}_${element}`);
         });
 
-        forEachElement(ELEMENTS_WITHOUT_PREFIX, config, (element, tab) => {
+        forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
             handleSavedInput(`${element}`);
         });
 
@@ -163,7 +169,7 @@ state.core = (function () {
             handleToggleButton(`${tab}_${element}`);
         });
 
-        forEachImageElement(IMAGES_WITHOUT_PREFIX, (element) => {
+        forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
             handleSavedImage(`${element}`);
         });
 
@@ -188,48 +194,48 @@ state.core = (function () {
         return button;
     }
 
-    function createHeaderFileInput(title, text, className) {
+    // function createHeaderFileInput(title, text, className) {
 
-        let inputId = 'state-import-file-inline';
+    //     let inputId = 'state-import-file-inline';
 
-        let importBtn = createHeaderButton(title,text, className, {
-            display: 'none'
-        }, () => {
-            actions.importState(inputId);
-        });
+    //     let importBtn = createHeaderButton(title,text, className, {
+    //         display: 'none'
+    //     }, () => {
+    //         actions.importState(inputId);
+    //     });
 
-        let label = state.utils.html.create('label', {}, { cursor: 'pointer' });
-        label.appendChild(state.utils.html.create('input', {
-            type: 'file',
-            id: inputId,
-            accept: 'application/json',
-        }, {
-            display: 'none'
-        }));
-        label.appendChild(document.createTextNode(text));
-        label.addEventListener('change', () => {
-            importBtn.dispatchEvent(new Event('click'));
-        });
+    //     let label = state.utils.html.create('label', {}, { cursor: 'pointer' });
+    //     label.appendChild(state.utils.html.create('input', {
+    //         type: 'file',
+    //         id: inputId,
+    //         accept: 'application/json',
+    //     }, {
+    //         display: 'none'
+    //     }));
+    //     label.appendChild(document.createTextNode(text));
+    //     label.addEventListener('change', () => {
+    //         importBtn.dispatchEvent(new Event('click'));
+    //     });
 
-        let button = createHeaderButton(title, '', className, {});
-        button.appendChild(label);
+    //     let button = createHeaderButton(title, '', className, {});
+    //     button.appendChild(label);
 
-        return {
-            hiddenButton: importBtn,
-            button: button
-        };
-    }
+    //     return {
+    //         hiddenButton: importBtn,
+    //         button: button
+    //     };
+    // }
 
-    function loadUI() {
-        let quickSettings = gradioApp().getElementById("quicksettings");
-        let className = quickSettings.querySelector('button').className;
-        quickSettings.appendChild(createHeaderButton('State: Reset', "*️⃣", className, {}, actions.resetAll));
-        quickSettings.appendChild(createHeaderButton('State: Export',"📤", className, {}, actions.exportState));
-        quickSettings.appendChild(createHeaderButton('State: test',"📤", className, {}, actions.test));
-        let fileInput = createHeaderFileInput('State: Import',"📥", className);
-        quickSettings.appendChild(fileInput.hiddenButton);
-        quickSettings.appendChild(fileInput.button);
-    }
+    // function loadUI() {
+    //     let quickSettings = gradioApp().getElementById("quicksettings");
+    //     let className = quickSettings.querySelector('button').className;
+    //     quickSettings.appendChild(createHeaderButton('State: Reset', "*️⃣", className, {}, actions.resetAll));
+    //     quickSettings.appendChild(createHeaderButton('State: Export',"📤", className, {}, actions.exportState));
+    //     quickSettings.appendChild(createHeaderButton('State: test',"📤", className, {}, actions.test));
+    //     let fileInput = createHeaderFileInput('State: Import',"📥", className);
+    //     quickSettings.appendChild(fileInput.hiddenButton);
+    //     quickSettings.appendChild(fileInput.button);
+    // }
 
 
     function restoreTabs(config) {
@@ -283,8 +289,6 @@ state.core = (function () {
 
     function handleSavedInput(id) {
 
-        //console.log("-------------state.core.handleSavedInput----------------")
-        //console.log(`#${id} textarea, #${id} input, #${id} img`)
         const elements = gradioApp().querySelectorAll(`#${id} textarea, #${id} input, #${id} img`);
         const events = ['change', 'input'];
 
@@ -293,9 +297,7 @@ state.core = (function () {
         }
         
         let forEach = function (action) {
-            //console.log(`action = ${action}`)
             events.forEach(function(event) {
-                //console.log(`event = ${event}`)
                 elements.forEach(function (element) {
                     action.call(element, event);
                 });
@@ -303,7 +305,6 @@ state.core = (function () {
         };
 
         forEach(function (event) {
-            //console.log(`forEach event = ${event}`)
             this.addEventListener(event, function () {
                 let value = this.value;
                 if (this.type && this.type === 'checkbox') {
@@ -312,7 +313,6 @@ state.core = (function () {
                 else if (this.className === 'img') {
                     value = this.checked;
                 }
-                //console.log(`+++++++++++++++++++ store event ${this.className} ${id}`)
                 store.set(id, value);
             });
         });
@@ -342,12 +342,10 @@ state.core = (function () {
     }
 
     function handleSavedSelects(id) {
-        //console.log("-------------state.core.handleSavedSelects----------------")
         state.utils.handleSelect(getElement(id), id, store);
     }
 
     function handleSavedMultiSelects(id) {
-        //console.log("-------------state.core.handleSavedMultiSelects----------------")
         const select = gradioApp().getElementById(`${id}`);
         state.utils.handleMultipleSelect(select, id, store);
     }
@@ -357,7 +355,6 @@ state.core = (function () {
     }
 
     function handleToggleButton(id) {
-        //console.log("-------------state.core.handleToggleButton----------------")
         const btn = gradioApp().querySelector(`button#${id}`);
         if (! btn) { return; }
         // legionfu
@@ -385,60 +382,60 @@ state.core = (function () {
 
     }
 
-    function handleSettingsPage() {  // settings   state 界面 绑定按钮事件等操作
+    // function handleSettingsPage() {  // settings   state 界面 绑定按钮事件等操作
 
-        const page = gradioApp().querySelector('#settings_state');
-        state.utils.html.setStyle(page.querySelectorAll('fieldset'), {
-            'marginTop': '20px',
-            'marginBottom': '10px'
-        });
+    //     const page = gradioApp().querySelector('#settings_state');
+    //     state.utils.html.setStyle(page.querySelectorAll('fieldset'), {
+    //         'marginTop': '20px',
+    //         'marginBottom': '10px'
+    //     });
 
-        let buttonsContainer = gradioApp().querySelector('#settings_state_buttons');
-        if (buttonsContainer) {
-            buttonsContainer.parentNode.removeChild(buttonsContainer);
-        }
-        buttonsContainer = document.createElement('div');
-        buttonsContainer.id = 'settings_state_buttons';
+    //     let buttonsContainer = gradioApp().querySelector('#settings_state_buttons');
+    //     if (buttonsContainer) {
+    //         buttonsContainer.parentNode.removeChild(buttonsContainer);
+    //     }
+    //     buttonsContainer = document.createElement('div');
+    //     buttonsContainer.id = 'settings_state_buttons';
 
-        let setCheckboxes = function (value, checkFunc) {
-            checkFunc = checkFunc || function () { return true; };
-            Array.from(page.querySelectorAll('input[type="checkbox"]')).forEach(function (el) {
-                if (checkFunc(el)) {
-                    if (el.checked !== value) {
-                        el.checked = value;
-                        state.utils.triggerEvent(el, 'change');
-                    }
-                } else if (el.checked === value) {
-                    el.checked = !value;
-                    state.utils.triggerEvent(el, 'change');
-                }
-            });
-        };
-        buttonsContainer.appendChild(state.utils.html.createButton('Select All', function () {
-            setCheckboxes(true);
-        }));
-        buttonsContainer.appendChild(state.utils.html.createButton('Select All Except Seeds', function () {
-            setCheckboxes(true, function (el) {
-                return el.nextElementSibling.textContent.indexOf('seed') === -1;
-            });
-        }));
-        buttonsContainer.appendChild(state.utils.html.createButton('Unselect All', function () {
-            setCheckboxes(false);
-        }));
-        state.utils.html.setStyle(buttonsContainer, {
-            'marginTop': '20px',
-            'marginBottom': '10px'
-        });
-        buttonsContainer.appendChild(state.utils.html.create('hr'));
-        buttonsContainer.appendChild(state.utils.html.create('div', { innerHTML: 'Actions' }, { marginBottom: '10px' }));
-        buttonsContainer.appendChild(state.utils.html.createButton('Reset All', actions.resetAll));
-        buttonsContainer.appendChild(state.utils.html.createButton('Export State', actions.exportState));
-        buttonsContainer.appendChild(state.utils.html.createButton('Import State', actions.importState));
-        buttonsContainer.appendChild(state.utils.html.create('input', {
-            id: 'state-import-file', type: 'file', accept: 'application/json'
-        }));
-        page.appendChild(buttonsContainer);
-    }
+    //     let setCheckboxes = function (value, checkFunc) {
+    //         checkFunc = checkFunc || function () { return true; };
+    //         Array.from(page.querySelectorAll('input[type="checkbox"]')).forEach(function (el) {
+    //             if (checkFunc(el)) {
+    //                 if (el.checked !== value) {
+    //                     el.checked = value;
+    //                     state.utils.triggerEvent(el, 'change');
+    //                 }
+    //             } else if (el.checked === value) {
+    //                 el.checked = !value;
+    //                 state.utils.triggerEvent(el, 'change');
+    //             }
+    //         });
+    //     };
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Select All', function () {
+    //         setCheckboxes(true);
+    //     }));
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Select All Except Seeds', function () {
+    //         setCheckboxes(true, function (el) {
+    //             return el.nextElementSibling.textContent.indexOf('seed') === -1;
+    //         });
+    //     }));
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Unselect All', function () {
+    //         setCheckboxes(false);
+    //     }));
+    //     state.utils.html.setStyle(buttonsContainer, {
+    //         'marginTop': '20px',
+    //         'marginBottom': '10px'
+    //     });
+    //     buttonsContainer.appendChild(state.utils.html.create('hr'));
+    //     buttonsContainer.appendChild(state.utils.html.create('div', { innerHTML: 'Actions' }, { marginBottom: '10px' }));
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Reset All', actions.resetAll));
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Export State', actions.exportState));
+    //     buttonsContainer.appendChild(state.utils.html.createButton('Import State', actions.importState));
+    //     buttonsContainer.appendChild(state.utils.html.create('input', {
+    //         id: 'state-import-file', type: 'file', accept: 'application/json'
+    //     }));
+    //     page.appendChild(buttonsContainer);
+    // }
 
     let actions = {
         resetAll: function () {
@@ -460,16 +457,15 @@ state.core = (function () {
                     //console.log(config)
                     //restoreTabs(config); // 恢复到最后点击的tab页面
 
-                    forEachElement(SELECTS_WITHOUT_PREFIX, config, (element, tab) => {
+                    forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
                         handleSavedSelects(element);
                     });
-
 
                     forEachElement(ELEMENTS, config, (element, tab) => {
                         handleSavedInput(`${tab}_${element}`);
                     });
 
-                    forEachElement(ELEMENTS_WITHOUT_PREFIX, config, (element, tab) => {
+                    forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
                         handleSavedInput(element);
                     });
 
@@ -485,7 +481,7 @@ state.core = (function () {
                         handleToggleButton(`${tab}_${element}`);
                     });
 
-                    forEachImageElement(IMAGES_WITHOUT_PREFIX, (element) => {
+                    forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
                         handleSavedImage(element);
                     });
             
@@ -499,31 +495,29 @@ state.core = (function () {
             })
             .catch(error => console.error('[state]: Error getting JSON file:', error));
         },
-        importState: function (id) {
-            //console.log(`==================importState click = ${id}`)
-            const fileInput = gradioApp().getElementById(id || 'state-import-file');
-            //console.log(`==================importState click = ${fileInput.files[0]}`)
-            if (! fileInput.files || ! fileInput.files[0]) {
-                alert('Please select a JSON file!');
-                return;
-            }
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                store.load(JSON.parse(event.target.result));
-                actions.applyState()
-                //window.location.reload();
-            };
-            reader.readAsText(file);
-        },
+        // importState: function (id) {
+        //     //console.log(`==================importState click = ${id}`)
+        //     const fileInput = gradioApp().getElementById(id || 'state-import-file');
+        //     //console.log(`==================importState click = ${fileInput.files[0]}`)
+        //     if (! fileInput.files || ! fileInput.files[0]) {
+        //         alert('Please select a JSON file!');
+        //         return;
+        //     }
+        //     const file = fileInput.files[0];
+        //     const reader = new FileReader();
+        //     reader.onload = function (event) {
+        //         store.load(JSON.parse(event.target.result));
+        //         actions.applyState()
+        //         //window.location.reload();
+        //     };
+        //     reader.readAsText(file);
+        // },
         importLightflow: function (fileInput){
-            //console.log(`==================importLightflow click `)
-            forEachImageElement(IMAGES_WITHOUT_PREFIX, (image_id) => {
-                //console.log(image_id)
+            
+            forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
                 state.utils.clearImage(getElement(image_id));
             });
             
-            //console.log(fileInput)
             if ( ! fileInput[0]) {
                 alert('Please select a JSON file!');
                 return;
@@ -533,8 +527,7 @@ state.core = (function () {
             reader.onload = function (event) {
 
                 let json_obj = JSON.parse(event.target.result)
-                forEachImageElement(IMAGES_WITHOUT_PREFIX, (image_id) => {
-                    //console.log(image_id)
+                forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
                     json_obj[image_id] = ""
                 });
                 // webui主界面 没有localization相关的兼容问题 所以不用管
@@ -566,15 +559,6 @@ state.core = (function () {
                 switch_tab_dict[`txt2img_invisible_txt2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_txt2img_ControlNet(${i})`
                 switch_tab_dict[`txt2img_invisible_img2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_img2img_ControlNet(${i})`
             }
-
-            //使用请求获取当前组件keys顺序
-            // fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
-            // .then(response => response.json())
-            // .then(data => {
-            //     img_elem_keys = data.split(",")
-            //     console.log("get_imgs_elem_key")
-            //     console.log(img_elem_keys)
-            // });
 
             state.utils.sleep(300).then(() => {
 
