@@ -39,8 +39,6 @@ state.core = (function () {
         'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint'
     };
 
-
-
     const MULTI_SELECTS = {
         'styles': 'styles'
     };
@@ -51,6 +49,11 @@ state.core = (function () {
     
     var IMAGES_WITHOUT_PREFIX = {
     };
+
+    const ELEMENTS_ALWAYS_SAVE = {
+        'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint',
+    };
+
 
     let store = null;
 
@@ -89,9 +92,8 @@ state.core = (function () {
                     
                     try {
                         store = new state.Store();
-                        store.clear();
+                        store.clearAll();
                         load(config);
-
                     } catch (error) {
                         console.error('[state]: Error:', error);
                     }
@@ -177,6 +179,10 @@ state.core = (function () {
         //handleSettingsPage();
 
         restoreTabs(config); // 恢复到最后点击的tab页面
+
+        forEachElement_WithoutTabs(ELEMENTS_ALWAYS_SAVE, (element) => {
+            state.utils.forceSaveSelect(getElement(element), element, store); //每次无论有没有修改都需要导出的选项
+        });
     }
 
     function createHeaderButton(title, text, className, style, action) {
@@ -438,13 +444,13 @@ state.core = (function () {
     // }
 
     let actions = {
-        resetAll: function () {
-            let confirmed = confirm('Reset all state values?');
-            if (confirmed) {
-                store.clearAll();
-                alert('All state values deleted!');
-            }
-        },
+        // resetAll: function () {
+        //     let confirmed = confirm('Reset all state values?');
+        //     if (confirmed) {
+        //         store.clearAll();
+        //         alert('All state values deleted!');
+        //     }
+        // },
         exportState: function () {
             state.utils.saveFile('sd-webui-state', store.getAll());
         },

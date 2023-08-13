@@ -9,24 +9,36 @@ state.utils = {
         // res2 = "state-txt2img_ext-control-net-0-model".replace("txt2img123", "文生图/txt2img")
         //console.log(res)
         //console.log(res1)
+        model_str = "deliberate_v2.safetensors [9aba26abdf]"
+        let res = model_str.search(/\[/)
+        console.log(res)
 
-        let select = gradioApp().getElementById('setting_sd_model_checkpoint')
+        res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
+        console.log(res)
+        console.log(model_str.substring(res,res+12))
+
+        model_str = "deliberate_v2.safetensors [9aba261abdf]"
+        res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
+        console.log(res)
+        console.log(model_str.substring(res,res+12))
+
+        // let select = gradioApp().getElementById('setting_sd_model_checkpoint')
         
-        let input = select.querySelector('input');
-        state.utils.triggerMouseEvent(input, 'focus');
+        // let input = select.querySelector('input');
+        // state.utils.triggerMouseEvent(input, 'focus');
 
-        setTimeout(() => {
-            let items = Array.from(select.querySelectorAll('ul li'));
-            console.log(`-----handleSelect--------${items}--------------`)
-            items.forEach(li => {
-                console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
-                if (li.lastChild.wholeText.trim() === "deliberate_v2.safetensors [9aba26abdf]") {
-                    state.utils.triggerMouseEvent(li, 'mousedown');
-                    return false;
-                }
-            });
-            state.utils.triggerMouseEvent(input, 'blur');
-        }, 100);
+        // setTimeout(() => {
+        //     let items = Array.from(select.querySelectorAll('ul li'));
+        //     console.log(`-----handleSelect--------${items}--------------`)
+        //     items.forEach(li => {
+        //         console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
+        //         if (li.lastChild.wholeText.trim() === "deliberate_v2.safetensors [9aba26abdf]") {
+        //             state.utils.triggerMouseEvent(li, 'mousedown');
+        //             return false;
+        //         }
+        //     });
+        //     state.utils.triggerMouseEvent(input, 'blur');
+        // }, 100);
 
         // console.log(state.core.get_localization_dict())
         // Object.keys(state.core.get_localization_dict()).forEach(function(key) {
@@ -40,7 +52,7 @@ state.utils = {
         try{
             if(localization_dict[new_key.replace(/^\s+|\s+$/g,"")] != undefined){
                 new_key = localization_dict[new_key]
-                console.log("localize===========" + key +': '+ new_key);
+                //console.log("localize===========" + key +': '+ new_key);
             }
         } catch (error) {
             console.warn('localize error:', error);
@@ -56,7 +68,7 @@ state.utils = {
                 //console.log("----------------" + key +': '+ localize_key + '-----' + localization_dict[localize_key]);
                 if(key.replace(/^\s+|\s+$/g,"") === localization_dict[localize_key]){ 
                     tmp_key = localize_key
-                    console.log("internationalize===========" + key +': '+ localize_key);
+                    //console.log("internationalize===========" + key +': '+ localize_key);
                     new_key.push(tmp_key)
                     break
                 }
@@ -322,10 +334,23 @@ state.utils = {
     //         console.error('[state]: Error:', error);
     //     }
     // },
+
+    forceSaveSelect: function forceSaveSelect(select, id, store) {
+        let selected = select.querySelector('span.single-select');
+        if (selected) {
+            store.set(id, selected.textContent);
+        } else {
+            // new gradio version...
+            let input = select.querySelector('input');
+            if (input) {
+                store.set(id, input.value);
+            }
+        }
+    },
+
     handleSelect: function handleSelect(select, id, store) {
         try {
             let value = store.get(id);
-            console.log(`------ start handleSelect = ${value} ----- ${id}`)
             if (value) {
                 
                 let localization_dict = state.core.get_localization_dict()
@@ -334,15 +359,30 @@ state.utils = {
                 
                 setTimeout(() => {
                     let items = Array.from(select.querySelectorAll('ul li'));
-                    console.log(`------ handleSelect = ${items} -----`)
+                    let localized_value = this.localize(localization_dict, value)
+                    let successed = false
                     for (li of items){
                         // li.lastChild.wholeText.trim() === value
-                        let localized_value = this.localize(localization_dict, value)
-                        console.log(`------ handleSelect = ${value} ----- ${localized_value}`)
+                        //console.log(`------ handleSelect = ${value} ----- ${localized_value}`)
                         if (localized_value === li.lastChild.wholeText.trim()) {
                             state.utils.triggerMouseEvent(li, 'mousedown');
-                            //return false;
+                            successed = true
                             break
+                        }
+                    }
+
+                    if(!successed && localized_value.search(/\[[0-9A-Fa-f]{10}\]/) != -1){ //找不到对应选项 并且选项里有10位哈希值
+                        for (li of items){ // 考虑模型同名但是不同hash的情况
+                            localized_value = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"")                            
+                            // res = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
+                            // console.log(res)
+                            // hash_val = model_str.substring(res,res+12)
+                            child_text = li.lastChild.wholeText.trim().replace(/\[[0-9A-Fa-f]{10}\]/, "")
+                            if (localized_value === child_text) {
+                                state.utils.triggerMouseEvent(li, 'mousedown');
+                                successed = true
+                                break
+                            }
                         }
                     }
                     state.utils.triggerMouseEvent(input, 'blur');
