@@ -26,7 +26,7 @@ Return_Key = [
     "useless_Textbox", # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转
     "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask"
     ] # 只操作图片相关参数，其他参数js里搞定
-Output_Log = "Welcome to Lightflow! \(^o^)/~"
+Output_Log = ""
 
 class imgs_callback_params(BaseModel):
     id:str
