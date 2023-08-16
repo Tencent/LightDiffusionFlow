@@ -3,24 +3,32 @@ state = window.state;
 
 state.utils = {
     testFunction: function testFunction() {
+
+        
+        const elements = gradioApp().getElementById('html_info_txt2img').querySelectorAll(`#html_info_txt2img`);
+        console.log(elements[0].innerText)
+
         //console.log("test function")
         //res = "state-txt2img_ext-control-net-0-model".indexOf("txt2img")
         //res1 = "state-txt2img_ext-control-net-0-model".indexOf("txt2img1")
         // res2 = "state-txt2img_ext-control-net-0-model".replace("txt2img123", "文生图/txt2img")
         //console.log(res)
         //console.log(res1)
-        model_str = "deliberate_v2.safetensors [9aba26abdf]"
-        let res = model_str.search(/\[/)
-        console.log(res)
 
-        res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
-        console.log(res)
-        console.log(model_str.substring(res,res+12))
 
-        model_str = "deliberate_v2.safetensors [9aba261abdf]"
-        res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
-        console.log(res)
-        console.log(model_str.substring(res,res+12))
+        // model_str = "deliberate_v2.safetensors [9aba26abdf]"
+        // let res = model_str.search(/\[/)
+        // console.log(res)
+
+        // res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
+        // console.log(res)
+        // console.log(model_str.substring(res,res+12))
+
+        // model_str = "deliberate_v2.safetensors [9aba261abdf]"
+        // res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
+        // console.log(res)
+        // console.log(model_str.substring(res,res+12))
+
 
         // let select = gradioApp().getElementById('setting_sd_model_checkpoint')
         
@@ -165,26 +173,41 @@ state.utils = {
     //         }).catch(error => console.error('[state]: Error getting JSON file:', error));
     // },
     exportState: function () {
-        let store = new state.Store();
-        //state.utils.saveFile('sd-webui-state', store.getAll());
+        // let store = new state.Store();
+        // //state.utils.saveFile('sd-webui-state', store.getAll());
         
-        fetch('/state/lightflowconfig?onlyimg=true')
-        .then(response => response.json())
-        .then(config => {
-            config = JSON.parse(config)
-            stored_config = store.getAll()
-            //console.log(config)
-            //console.log(stored_config)
-            for (let key in config){
-                //console.log(config[key])
-                if(config[key] != ""){
-                    stored_config[key] = config[key]
-                }
-            }
-            //console.log(stored_config)
-            state.utils.saveFile('sd-webui-state', stored_config);
 
-        }).catch(error => console.error('[state]: Error getting JSON file:', error));
+        // fetch('/state/lightflowconfig?onlyimg=true')
+        // .then(response => response.json())
+        // .then(config => {
+        //     config = JSON.parse(config)
+        //     stored_config = store.getAll()
+        //     this.getCurSeed('txt2img')
+        //     //console.log(config)
+        //     //console.log(stored_config)
+        //     for (let key in config){
+        //         //console.log(config[key])
+        //         if(config[key] != ""){
+        //             stored_config[key] = config[key]
+        //         }
+        //     }
+
+        //     var checkTime = function (i) {
+        //         if (i < 10) { i = "0" + i; }
+        //         return i;
+        //     }
+        //     let nowdate = new Date();
+        //     let year = String(nowdate.getFullYear())
+        //     let month = String(checkTime(nowdate.getMonth() + 1))
+        //     let day = String(checkTime(nowdate.getDate()))
+        //     let h = String(checkTime(nowdate.getHours()))
+        //     let m = String(checkTime(nowdate.getMinutes()))
+        //     let s = String(checkTime(nowdate.getSeconds()))
+        //     let time_str = year+month+day+h+m+s
+        //     //console.log(stored_config)
+        //     state.utils.saveFile('lightflow-'+time_str, stored_config);
+
+        // }).catch(error => console.error('[state]: Error getting JSON file:', error));
 
         //config = JSON.stringify(store.getAll(), null, 4);
         //fetch(`/state/ExportLightflow?config=${config}`)
@@ -243,8 +266,23 @@ state.utils = {
         });
     },
 
-    handleImage: function handleImage(select, id, store) {
+    getCurSeed: function getCurSeed(tab) {
+        const elements = gradioApp().getElementById(`html_info_${tab}`).querySelectorAll(`#html_info_${tab}`);
+        if (! elements || ! elements.length || !elements[0].innerText) {
+            return undefined;
+        }
+        seed = undefined
+        values = elements[0].innerText.split(',')
+        for (value of values){
+            pair = value.split(':')
+            if(pair[0].replace(/^\s+|\s+$/g,"") == 'Seed'){
+                seed = pair[1].replace(/^\s+|\s+$/g,"")
+            }
+        }
+        return seed
+    },
 
+    handleImage: function handleImage(select, id, store) {
         setTimeout(() => {
             //console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
             state.utils.onContentChange(select, function (el) {
@@ -260,14 +298,12 @@ state.utils = {
 
                 try {
                     // new gradio version...
-                    //console.log(`------ onContentChange select = ${el} --${id}---`)
                     let img = el.querySelector('img');
                     if (img) {
                         data.body = JSON.stringify({
                             "id":id,
                             "img":img.src
                         })
-                        //console.log(`------ handleImage id = ${id} -----`)
                     }
                 } catch (error) {
                     console.warn('[state]: Error:', error);
@@ -276,8 +312,8 @@ state.utils = {
                 fetch(`/state/imgs_callback`, data)
             });
         }, 150);
-
     },
+
     clearImage: function clearImage(select) {
         try {
             // new gradio version...
@@ -373,18 +409,23 @@ state.utils = {
 
                     if(!successed && localized_value.search(/\[[0-9A-Fa-f]{10}\]/) != -1){ //找不到对应选项 并且选项里有10位哈希值
                         for (li of items){ // 考虑模型同名但是不同hash的情况
-                            localized_value = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"")                            
-                            // res = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
-                            // console.log(res)
-                            // hash_val = model_str.substring(res,res+12)
+                            localized_value = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"")
                             child_text = li.lastChild.wholeText.trim().replace(/\[[0-9A-Fa-f]{10}\]/, "")
                             if (localized_value === child_text) {
                                 state.utils.triggerMouseEvent(li, 'mousedown');
                                 successed = true
+                                state.core.actions.output_warning(`未找到选项: ${value} ，已使用 ${li.lastChild.wholeText.trim()} 代替！`)
                                 break
                             }
                         }
                     }
+
+                    if(!successed)
+                    {
+                        state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
+                        state.core.actions.output_error(`-    未找到选项: ${value} ！`)
+                    }
+
                     state.utils.triggerMouseEvent(input, 'blur');
                 }, 100);
             }
@@ -430,13 +471,19 @@ state.utils = {
                         state.utils.triggerMouseEvent(input, 'focus');
 
                         setTimeout(() => {
+                            let successed = false
                             let items = Array.from(select.querySelectorAll('ul li'));
                             items.forEach(li => {
                                 if (li.lastChild.wholeText.trim() === option) {
                                     state.utils.triggerMouseEvent(li, 'mousedown');
+                                    successed = true
                                     return false;
                                 }
                             });
+                            if(!successed){
+                                state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
+                                state.core.actions.output_error(`未找到选项: ${value} ！`)
+                            }
                             setTimeout(selectOption, 100);
                         }, 100);
                     }

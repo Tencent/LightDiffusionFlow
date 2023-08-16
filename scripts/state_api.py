@@ -23,8 +23,10 @@ invisible_buttons = {}
 Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
 Return_Key = [
+    "useless_Textbox", # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转
     "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask"
-    ] # 只操作图片相关参数，其他参数js里搞定 # "txt2img_prompt","txt2img_sampling",
+    ] # 只操作图片相关参数，其他参数js里搞定
+Output_Log = "Welcome to Lightflow! \(^o^)/~"
 
 class imgs_callback_params(BaseModel):
     id:str
@@ -49,14 +51,13 @@ class StateApi():
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
         self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) # 刷新页面之后触发
+        self.add_api_route('/output_log', add_output_log, methods=['GET']) 
         # self.add_api_route('/import_workflow', self.fn_import_workflow, methods=['GET']) # 
 
     def get_config(self):
-        #print("-----------------state_api get_config------------------")
         return FileResponse(shared.cmd_opts.ui_settings_file)
 
     def get_localization(self):
-        #print(f"-----------------get_localization------------------")
 
         localization_file = ""
         try:
@@ -76,7 +77,6 @@ class StateApi():
 
     def get_lightflow_config(self, onlyimg:bool = False):
         global workflow_json
-        #print(f"get_lightflow_config = {onlyimg}")
         temp_json = {}
         if(onlyimg):
             for key in Return_Key:
@@ -103,20 +103,23 @@ class StateApi():
         workflow_json[img_data.id] = img_data.img
 
     def refresh_ui(self):
-        global workflow_json
+        global workflow_json, Output_Log
         workflow_json = {}
+        Output_Log = ""
         print("refresh_ui")
 
-# test_component = None
-# def change_img2img_sketch(component):
-#     print(component)
-#     return test_component
+
+def add_output_log(msg:str, style:str=""):
+    global Output_Log
+    Output_Log += f'<p style="{style}">{msg}</p>'
 
 temp_index = -1
 next_index = -1
 def func_for_invisiblebutton():
     global temp_index,next_index
     global Webui_Comps_Cur_Val
+
+
     temp_index = next_index+1
     next_index = temp_index
 
@@ -126,13 +129,16 @@ def func_for_invisiblebutton():
     except:
         pass
     
-    try:
-        print(f"aaaaaaaaa {temp_index} {next_index} ")
-        print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
-    except:
-        pass
-    #print(Webui_Comps_Cur_Val)
-    return Webui_Comps_Cur_Val[temp_index], next_index
+    # try:
+    #     print(f"aaaaaaaaa {temp_index} {next_index} ")
+    #     print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    # except:
+    #     pass
+    
+    if(temp_index > 0):
+        add_output_log(f"导入图片：{Return_Key[temp_index]} ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
+    
+    return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
 
 '''
 python触发导入事件，按正常逻辑先执行js代码，把除图片以外的参数全部设置好，然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
@@ -143,10 +149,6 @@ def on_after_component(component, **kwargs):
     try:
         if(Webui_Comps.get(kwargs["elem_id"], None) == None):
             Webui_Comps[kwargs["elem_id"]] = component
-
-        # if(kwargs["elem_id"].find("controlnet_ControlNet") != -1 and isinstance(component, gr.Image)):
-        #     print(f"-------------{kwargs['elem_id']}----{component}------")
-        #     component.change(change_img2img_sketch,inputs=[component],outputs=[component],every=10)
     except BaseException as e:
         pass
         #print(e)
@@ -163,22 +165,26 @@ def on_after_component(component, **kwargs):
         #         print(f"elem_id {key} is doesn't exist")
 
         target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
+        target_comps.append(State_Comps["outlog"][0])
+        target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
         print(target_comps)
 
         for btn in State_Comps["export"]:
-            btn.click(None,_js="state.utils.exportState") #, inputs=[],outputs=[] 
+            btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
 
         for btn in State_Comps["import"]:
             btn.upload(fn_import_workflow, _js=f"state.core.actions.importLightflow",inputs=[btn],outputs=target_comps) # js里加载除图片以外的参数 python加载图片
 
         State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",inputs=[State_Comps["json2js"]])
+        
+        State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
 
-        print(f"invisible_buttons = {invisible_buttons}")
+        print(f"invisible_buttons: ")
         for key in invisible_buttons.keys():
             segs = key.split("_")
             comp_name = "_".join(segs[2:])
             print(comp_name)
-            invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"] ])
+            invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
 
 try:
     api = StateApi()
@@ -222,31 +228,36 @@ class Script(scripts.Script):
         try:
             State_Comps["import"]
             State_Comps["export"]
+            State_Comps["outlog"]
         except:
             State_Comps["import"] = []
             State_Comps["export"] = []
+            State_Comps["outlog"] = []
 
         with gr.Accordion('Lightflow plugin', open=False, visible=True):
             with gr.Row():
                 lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
                 State_Comps["import"].append(lightflow_file)
+                State_Comps["outlog"].append(gr.HTML(label="Output Log",value="<p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:DodgerBlue;>Welcome to Lightflow!  \(^o^)/~</p>"))
+                #print(State_Comps["import"])
 
             with gr.Row():
-                export_config = gr.Button(value='导出')
+                export_config = gr.Button(value='Export')
                 State_Comps["export"].append(export_config)
 
             json2js = gr.Textbox(label="json2js",visible=False)
             State_Comps["json2js"] = json2js
 
-            test_button = gr.Button(value='测试',visible=True)
-            test_button.click(test_func,_js="state.utils.testFunction")
-
             if(not is_img2img):
+                
+                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
+                
                 with gr.Row():
+
+                    State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
+
                     for key in Return_Key:
-
                         elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
-
                         invisible_button = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
                         invisible_buttons[elem_id] = invisible_button
                         #invisible_buttons.append(invisible_button)
@@ -258,7 +269,6 @@ def test_func():
         config_json = json.loads(json_str)
         print(config_json['localization'])
         print(localization.localizations[config_json['localization']])
-
 
 def fn_import_workflow(workflow_file):
     global workflow_json
@@ -315,4 +325,4 @@ def fn_import_workflow(workflow_file):
     next_index = -1
     # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
     # return tuple(return_vals)
-    return str(temp_index)
+    return str(temp_index), Output_Log, Output_Log

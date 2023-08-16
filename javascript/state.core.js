@@ -26,7 +26,8 @@ state.core = (function () {
     };
 
     const ELEMENTS_WITHOUT_PREFIX = {
-        'resize_mode': 'resize_mode'
+        'resize_mode': 'resize_mode',
+        //'generation_info_txt2img': 'generation_info_txt2img' // 可能因为是visible=false 所以触发不了onchange事件？
     };
 
     const SELECTS = {
@@ -146,7 +147,7 @@ state.core = (function () {
         config.hasSetting = hasSetting
 
         //loadUI(); // 往页面上添加按钮
-        
+
         forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
             handleSavedSelects(element);
         });
@@ -156,7 +157,7 @@ state.core = (function () {
         });
 
         forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
-            handleSavedInput(`${element}`);
+            handleSavedInput(element);
         });
 
         forEachElement(SELECTS, config, (element, tab) => {
@@ -171,9 +172,9 @@ state.core = (function () {
             handleToggleButton(`${tab}_${element}`);
         });
 
-        forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
-            handleSavedImage(`${element}`);
-        });
+        // forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
+        //     handleSavedImage(`${element}`);
+        // });
 
         handleExtensions(config);
         //handleSettingsPage();
@@ -293,6 +294,44 @@ state.core = (function () {
         return gradioApp().getElementById(id);
     }
 
+    function handleHTML(id) {
+        console.log("-------------state.core.handleHTML----------------")
+        const elements = gradioApp().getElementById(id).querySelectorAll(`#${id}`);
+        console.log(element.innerText)
+        const events = ['onchange'];
+        console.log(elements)
+        if (! elements || ! elements.length) {
+            return;
+        }
+
+        elements.forEach(function (element) {
+            console.log(element.innerText)
+            element.change(function(e){
+                console.log("+++++")
+                console.log(e.innerText)
+            });
+        });
+                
+        // let forEach = function (action) {
+        //     events.forEach(function(event) {
+        //         elements.forEach(function (element) {
+        //             console.log(element.innerText)
+        //             action.call(element, event);
+        //         });
+        //     });
+        // };
+
+        // forEach(function (event) {
+        //     this.addEventListener(event, function () {
+        //         let value = this.innerText;
+        //         console.log(value)
+        //         store.set(id, value);
+        //     });
+        // });
+
+        console.log("-------------state.core.handleHTML-------end---------")
+    }
+
     function handleSavedInput(id) {
 
         const elements = gradioApp().querySelectorAll(`#${id} textarea, #${id} input, #${id} img`);
@@ -312,6 +351,7 @@ state.core = (function () {
 
         forEach(function (event) {
             this.addEventListener(event, function () {
+                console.log(this.value)
                 let value = this.value;
                 if (this.type && this.type === 'checkbox') {
                     value = this.checked;
@@ -341,7 +381,6 @@ state.core = (function () {
             return;
         }
 
-        // 不能直接屏蔽设置选项相关的操作，会没法使用加载配置的功能
         forEach(function (event) {
             state.utils.setValue(this, value, event);
         });
@@ -357,7 +396,7 @@ state.core = (function () {
     }
 
     function handleSavedImage(id) {
-        state.utils.handleImage(getElement(id), id, store);
+        state.utils.handleImage(getElement(id), id, store); // 图片有修改就发回到python保存
     }
 
     function handleToggleButton(id) {
@@ -451,9 +490,9 @@ state.core = (function () {
         //         alert('All state values deleted!');
         //     }
         // },
-        exportState: function () {
-            state.utils.saveFile('sd-webui-state', store.getAll());
-        },
+        // exportState: function () {
+        //     state.utils.saveFile('sd-webui-state', store.getAll());
+        // },
         applyState: function () {
             fetch('/state/config.json?_=' + (+new Date()))
             .then(response => response.json())
@@ -501,6 +540,53 @@ state.core = (function () {
             })
             .catch(error => console.error('[state]: Error getting JSON file:', error));
         },
+        
+        exportState: function () {
+            
+            if(state.utils.getCurSeed('txt2img') != undefined){
+                store.set(`txt2img_seed`,state.utils.getCurSeed('txt2img'))
+            }
+            if(state.utils.getCurSeed('img2img') != undefined){
+                store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
+            }
+
+            fetch('/state/lightflowconfig?onlyimg=true')
+            .then(response => response.json())
+            .then(config => {
+                config = JSON.parse(config)
+                stored_config = store.getAll()
+                
+                //console.log(config)
+                console.log(store)
+                console.log(stored_config)
+                for (let key in config){
+                    //console.log(config[key])
+                    if(config[key] != ""){
+                        stored_config[key] = config[key]
+                    }
+                }
+
+                var checkTime = function (i) {
+                    if (i < 10) { i = "0" + i; }
+                    return i;
+                }
+                let nowdate = new Date();
+                let year = String(nowdate.getFullYear())
+                let month = String(checkTime(nowdate.getMonth() + 1))
+                let day = String(checkTime(nowdate.getDate()))
+                let h = String(checkTime(nowdate.getHours()))
+                let m = String(checkTime(nowdate.getMinutes()))
+                let s = String(checkTime(nowdate.getSeconds()))
+                let time_str = year+month+day+h+m+s
+                //console.log(stored_config)
+                state.utils.saveFile('lightflow-'+time_str, stored_config);
+
+            }).catch(error => console.error('[state]: Error getting JSON file:', error));
+
+            //config = JSON.stringify(store.getAll(), null, 4);
+            //fetch(`/state/ExportLightflow?config=${config}`)
+        },
+
         // importState: function (id) {
         //     //console.log(`==================importState click = ${id}`)
         //     const fileInput = gradioApp().getElementById(id || 'state-import-file');
@@ -520,30 +606,38 @@ state.core = (function () {
         // },
         importLightflow: function (fileInput){
             
+            actions.output_log("开始导入工作流...")
+            
             forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
                 state.utils.clearImage(getElement(image_id));
             });
             
             if ( ! fileInput[0]) {
-                alert('Please select a JSON file!');
+                //alert('Please select a JSON file!');
+                actions.output_log("请选择一个有效的lightflow文件！")
                 return;
             }
             const file = fileInput[0].blob;
             const reader = new FileReader();
             reader.onload = function (event) {
+                
+                let json_obj = {}
+                try { json_obj = JSON.parse(event.target.result) } catch (error) {
+                    actions.output_log("请选择一个有效的lightflow文件！")
+                    return;
+                }
 
-                let json_obj = JSON.parse(event.target.result)
                 forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
                     json_obj[image_id] = ""
                 });
                 // webui主界面 没有localization相关的兼容问题 所以不用管
                 store.clear();
-                console.log(json_obj)
                 store.load(json_obj);
                 actions.applyState()
                 //window.location.reload();
             };
             reader.readAsText(file);
+            
             return fileInput
         },
         startImportImage: function (index){
@@ -557,8 +651,6 @@ state.core = (function () {
                 "txt2img_invisible_img_inpaint_mask": "state.utils.switch_to_img_inpaint()",
                 "txt2img_invisible_txt2img_controlnet_ControlNet_input_image": "state.utils.switch_to_txt2img_ControlNet(0)",
                 "txt2img_invisible_img2img_controlnet_ControlNet_input_image": "state.utils.switch_to_img2img_ControlNet(0)"
-                //"txt2img_controlnet_ControlNet-0_input_image": "switch_to_txt2img_ControlNet(0)",
-                //"img2img_controlnet_ControlNet-0_input_image": "switch_to_img2img_ControlNet(0)"
             }
             
             for (let i = 0; i < 10; i++) {
@@ -568,10 +660,10 @@ state.core = (function () {
 
             state.utils.sleep(300).then(() => {
 
-                console.log(index)
+                //console.log(index)
                 try{
                     key = "txt2img_invisible_"+img_elem_keys[Number(index)+1]
-                    console.log(key)
+                    //console.log(key)
                     eval( switch_tab_dict[key] ) // 跳转界面
                     const button = gradioApp().getElementById(key);
                     button.click();
@@ -579,35 +671,17 @@ state.core = (function () {
                     console.warn('[startImportImage]: Error:', error);
                 }
 
-                //switch_to_img2img_tab()
-                // switch(index) {
-                //     case '-1':
-                //         switch_to_img2img();
-                //         const button = gradioApp().getElementById("txt2img_invisible_img2img_image");
-                //         button.click();
-                //         break;
-                //     case '0':
-                //         switch_to_sketch()
-                //         const button2 = gradioApp().getElementById("txt2img_invisible_img2img_sketch")
-                //         button2.click()
-                //         break;
-                //     case '1':
-                //         switch_to_inpaint()
-                //         const button3 = gradioApp().getElementById("txt2img_invisible_img2maskimg") // inpaint
-                //         button3.click()
-                //         break;
-                //     case '2':
-                //         switch_to_inpaint_sketch()
-                //         const button4 = gradioApp().getElementById("txt2img_invisible_inpaint_sketch") // inpaint_sketch
-                //         button4.click()
-                //         break;
-                //     default:
-                //         console.log('doing nothing~~')
-                //         break;
-                // }
-
             });
 
+        },
+        output_log: function (msg, style=""){
+            fetch(`/state/output_log?msg=${msg}&style=${style}`)
+        },
+        output_warning: function (msg, style="color:Orange;"){
+            fetch(`/state/output_log?msg=${msg}&style=${style}`)
+        },
+        output_error: function (msg, style="color:Tomato;"){
+            fetch(`/state/output_log?msg=${msg}&style=${style}`)
         }
     };
 
