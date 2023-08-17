@@ -254,12 +254,19 @@ state.utils = {
     onContentChange: function onContentChange(targetNode, func) {
         const observer = new MutationObserver((mutationsList, observer) => {
             for (const mutation of mutationsList) {
-                if (mutation.type === 'childList') {
+                if (mutation.type === 'childList' || 
+                    (mutation.type === 'attributes' && mutation.attributeName == 'src') // 图片被更改
+                ) {
+                    // console.log(`type = ${mutation.type}`)
+                    // console.log(`target = ${mutation.target.id}`)
+                    // console.log(`attributeName = ${mutation.attributeName}`)
+                    // console.log(`targetNode = ${targetNode.id}`)
                     func(targetNode);
                 }
             }
         });
         observer.observe(targetNode, {
+            attributes: true,
             childList: true,
             characterData: true,
             subtree: true
@@ -284,7 +291,7 @@ state.utils = {
 
     handleImage: function handleImage(select, id, store) {
         setTimeout(() => {
-            //console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
+            console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
             state.utils.onContentChange(select, function (el) {
                 
                 let data = {

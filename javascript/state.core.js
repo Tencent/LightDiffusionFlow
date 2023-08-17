@@ -172,9 +172,9 @@ state.core = (function () {
             handleToggleButton(`${tab}_${element}`);
         });
 
-        // forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
-        //     handleSavedImage(`${element}`);
-        // });
+        forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
+            handleSavedImage(`${element}`);
+        });
 
         handleExtensions(config);
         //handleSettingsPage();
