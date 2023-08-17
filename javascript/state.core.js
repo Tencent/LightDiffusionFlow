@@ -579,7 +579,7 @@ state.core = (function () {
                 let s = String(checkTime(nowdate.getSeconds()))
                 let time_str = year+month+day+h+m+s
                 //console.log(stored_config)
-                state.utils.saveFile('lightflow-'+time_str, stored_config);
+                state.utils.saveFile('flow-'+time_str, stored_config);
 
             }).catch(error => console.error('[state]: Error getting JSON file:', error));
 
