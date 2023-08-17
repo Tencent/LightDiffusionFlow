@@ -196,7 +196,7 @@ class StateApi():
         print("-----------------state_api start------------------")
         self.app = app 
         self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
-        self.add_api_route('/get_localization', self.get_localization, methods=['GET']) # 读取localization.json
+        #self.add_api_route('/lightflow_get_localization', self.get_localization, methods=['GET']) # 读取localization.json
         self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
@@ -207,23 +207,24 @@ class StateApi():
     def get_config(self):
         return FileResponse(shared.cmd_opts.ui_settings_file)
 
-    def get_localization(self):
+    # def get_localization(self):
 
-        localization_file = ""
-        try:
-            with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
-                json_str = f.read()
-                config_json = json.loads(json_str)
-                #print(config_json['localization'])
-                localization_file = localization.localizations[config_json['localization']]
-        except:
-            pass
+    #     print(f"---------start--------get_localization------------------")
+    #     localization_file = ""
+    #     try:
+    #         with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
+    #             json_str = f.read()
+    #             config_json = json.loads(json_str)
+    #             #print(config_json['localization'])
+    #             localization_file = localization.localizations[config_json['localization']]
+    #     except:
+    #         pass
 
-        print(f"-----------------get_localization {localization_file}------------------")
-        if(os.path.exists(localization_file)):
-            return FileResponse(localization_file)
+    #     print(f"-----------------get_localization {localization_file}------------------")
+    #     if(os.path.exists(localization_file)):
+    #         return FileResponse(localization_file)
         
-        return ""
+    #     return ""
 
     def get_lightflow_config(self, onlyimg:bool = False):
         global workflow_json

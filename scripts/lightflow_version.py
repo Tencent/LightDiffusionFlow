@@ -1,1 +1,1 @@
-lightflow_version = "v1.1.2"
+lightflow_version = "v1.1.3"

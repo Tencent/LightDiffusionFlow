@@ -66,14 +66,11 @@ state.core = (function () {
 
     
     let img_elem_keys=[];
-    let localization_dict={};
-
-    function get_localization_dict(){
-        return localization_dict
-    }
 
     function init() {
         
+        console.log(window.localization)
+
         fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
 
         fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
@@ -100,18 +97,6 @@ state.core = (function () {
                     }
                 })
                 .catch(error => console.error('[state]: Error getting JSON file:', error));
-        });
-
-        fetch('/state/get_localization') // 读取本地化内容
-        .then(response => response.json())
-        .then(json_obj => {
-            console.log(`localization  ${localization_dict}`)     
-            localization_dict = json_obj
-            //console.log(`localization    ${localization_dict['Preprocessor']}`)            
-            // Object.keys(localization_dict).forEach(function(key) {
-            //     console.log("=================================")
-            //     console.log(key +': '+ localization_dict[key]);
-            // });
         });
 
     }
@@ -257,7 +242,7 @@ state.core = (function () {
         //console.log(value)
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
-                if (tabs[i].textContent === state.utils.localize(localization_dict, value)) {
+                if (tabs[i].textContent === state.utils.getTranslation(value)) {
                     state.utils.triggerEvent(tabs[i], 'click');
                     break;
                 }
@@ -280,7 +265,7 @@ state.core = (function () {
 
     function storeTab() {
         //console.log("-------------state.core.storeTab----------------")
-        store.set('tab', state.utils.internationalize(localization_dict, gradioApp().querySelector('#tabs .tab-nav button.selected').textContent));
+        store.set('tab', state.utils.revokeTranslation(gradioApp().querySelector('#tabs .tab-nav button.selected').textContent)[0]);
         bindTabClickEvents(); // dirty hack here...
     }
 
@@ -351,7 +336,6 @@ state.core = (function () {
 
         forEach(function (event) {
             this.addEventListener(event, function () {
-                console.log(this.value)
                 let value = this.value;
                 if (this.type && this.type === 'checkbox') {
                     value = this.checked;
@@ -421,7 +405,6 @@ state.core = (function () {
         // }
 
         for (const [name, obj] of Object.entries(state.extensions)) {
-            if(Object.keys(localization_dict).length > 0){obj.set_localization(localization_dict)}
             obj.init();
         }
 
@@ -685,5 +668,5 @@ state.core = (function () {
         }
     };
 
-    return { init,actions,get_localization_dict };
+    return { init,actions };
 }());

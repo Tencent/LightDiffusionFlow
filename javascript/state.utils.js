@@ -48,41 +48,35 @@ state.utils = {
         //     state.utils.triggerMouseEvent(input, 'blur');
         // }, 100);
 
-        // console.log(state.core.get_localization_dict())
-        // Object.keys(state.core.get_localization_dict()).forEach(function(key) {
-        //     console.log("=================================")
-        //     console.log(key +': '+ localization_dict[key]);
-        // });
     },
 
-    localize: function localize(localization_dict, key){
+    getTranslation: function getTranslation(key){
         new_key = key
         try{
-            if(localization_dict[new_key.replace(/^\s+|\s+$/g,"")] != undefined){
-                new_key = localization_dict[new_key]
-                //console.log("localize===========" + key +': '+ new_key);
+            if(window.localization[new_key.replace(/^\s+|\s+$/g,"")] != undefined){
+                new_key = window.localization[new_key]
+                //console.log("getTranslation===========" + key +': '+ new_key);
             }
         } catch (error) {
-            console.warn('localize error:', error);
+            console.warn('getTranslation error:', error);
         }
         return new_key
     },
 
-    internationalize: function internationalize(localization_dict, key){ // :(
+    revokeTranslation: function revokeTranslation(key){
         new_key = []
         try{
             //key=key.replace(/^\s+|\s+$/g,"");
-            for (localize_key of Object.keys(localization_dict)) {
-                //console.log("----------------" + key +': '+ localize_key + '-----' + localization_dict[localize_key]);
-                if(key.replace(/^\s+|\s+$/g,"") === localization_dict[localize_key]){ 
+            for (localize_key of Object.keys(window.localization)) {
+                //console.log("----------------" + key +': '+ localize_key + '-----' + window.localization[localize_key]);
+                if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key]){ 
                     tmp_key = localize_key
-                    //console.log("internationalize===========" + key +': '+ localize_key);
                     new_key.push(tmp_key)
                     break
                 }
             }
         } catch (error) {
-            console.warn('internationalize error:', error);
+            console.warn('revokeTranslation error:', error);
         }
         if(new_key.length == 0){new_key.push(key)}
         return new_key
@@ -172,7 +166,7 @@ state.utils = {
 
     //         }).catch(error => console.error('[state]: Error getting JSON file:', error));
     // },
-    exportState: function () {
+    //exportState: function () {
         // let store = new state.Store();
         // //state.utils.saveFile('sd-webui-state', store.getAll());
         
@@ -211,7 +205,7 @@ state.utils = {
 
         //config = JSON.stringify(store.getAll(), null, 4);
         //fetch(`/state/ExportLightflow?config=${config}`)
-    },
+    //},
 
     triggerEvent: function triggerEvent(element, event) {
         if (! element) {
@@ -291,7 +285,7 @@ state.utils = {
 
     handleImage: function handleImage(select, id, store) {
         setTimeout(() => {
-            console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
+            //console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
             state.utils.onContentChange(select, function (el) {
                 
                 let data = {
@@ -395,18 +389,18 @@ state.utils = {
         try {
             let value = store.get(id);
             if (value) {
+                //console.log(`-----start---handleSelect = ${id} ---${value}----`)
                 
-                let localization_dict = state.core.get_localization_dict()
                 let input = select.querySelector('input');
                 state.utils.triggerMouseEvent(input, 'focus');
                 
                 setTimeout(() => {
                     let items = Array.from(select.querySelectorAll('ul li'));
-                    let localized_value = this.localize(localization_dict, value)
+                    let localized_value = this.getTranslation(value)
                     let successed = false
                     for (li of items){
                         // li.lastChild.wholeText.trim() === value
-                        //console.log(`------ handleSelect = ${value} ----- ${localized_value}`)
+                        // console.log(`------ handleSelect = ${value} ----- ${localized_value}----${li.lastChild.wholeText.trim()}`)
                         if (localized_value === li.lastChild.wholeText.trim()) {
                             state.utils.triggerMouseEvent(li, 'mousedown');
                             successed = true
@@ -431,6 +425,8 @@ state.utils = {
                     {
                         state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
                         state.core.actions.output_error(`未找到选项: ${value} ！`)
+                        console.log(`${store.prefix + id} 导入失败！`)
+                        console.log(`未找到选项: ${value} ！`)
                     }
 
                     state.utils.triggerMouseEvent(input, 'blur');
