@@ -423,7 +423,7 @@ state.utils = {
                     if(!successed)
                     {
                         state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
-                        state.core.actions.output_error(`-    未找到选项: ${value} ！`)
+                        state.core.actions.output_error(`未找到选项: ${value} ！`)
                     }
 
                     state.utils.triggerMouseEvent(input, 'blur');

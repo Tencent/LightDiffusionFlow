@@ -16,6 +16,7 @@ import modules.scripts as scripts
 import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings
+from scripts import lightflow_version 
 
 
 workflow_json = {}
@@ -100,19 +101,22 @@ def func_for_invisiblebutton():
     next_index = temp_index
 
     try:
-        while(Webui_Comps_Cur_Val[next_index+1] == None and next_index < len(Webui_Comps_Cur_Val)):
+        while( next_index < len(Webui_Comps_Cur_Val) and Webui_Comps_Cur_Val[next_index+1] == None ):
             next_index += 1
     except:
         pass
     
-    # try:
-    #     print(f"aaaaaaaaa {temp_index} {next_index} ")
-    #     print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
-    # except:
-    #     pass
+    try:
+        print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
+        print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    except:
+        pass
     
     if(temp_index > 0):
         add_output_log(f"导入图片：{Return_Key[temp_index]} ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
+        
+    if(next_index+1 == len(Webui_Comps_Cur_Val)):
+        add_output_log(f"导入完成！")
     
     return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
 
@@ -278,7 +282,7 @@ class Script(scripts.Script):
             State_Comps["export"] = []
             State_Comps["outlog"] = []
 
-        with gr.Accordion('Lightflow v1.1', open=False, visible=True):
+        with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=False, visible=True):
             with gr.Row():
                 lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
                 State_Comps["import"].append(lightflow_file)
