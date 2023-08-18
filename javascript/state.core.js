@@ -22,7 +22,8 @@ state.core = (function () {
         'batch_size': 'batch_size',
         'cfg_scale': 'cfg_scale',
         'denoising_strength': 'denoising_strength',
-        'seed': 'seed'
+        'seed': 'seed',
+        'sampling': 'sampling'
     };
 
     const ELEMENTS_WITHOUT_PREFIX = {

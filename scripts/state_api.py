@@ -106,11 +106,11 @@ def func_for_invisiblebutton():
     except:
         pass
     
-    try:
-        print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
-        print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
-    except:
-        pass
+    # try:
+    #     print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
+    #     print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    # except:
+    #     pass
     
     if(temp_index > 0):
         add_output_log(f"导入图片：{Return_Key[temp_index]} ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
