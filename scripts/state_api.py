@@ -71,13 +71,27 @@ def test_func():
     # data = "preprocessor: depth_midas, model: control_v11f1p_sd15_depth [cfd03158], weight: 0.95, starting/ending: (0.07, 0.93), resize mode: Just Resize, pixel perfect: True, control mode: My prompt is more important, preprocessor params: (512, 100, 200)"
     # res = re.findall(r"([^:]+:[^:]{1,})(,|$)",data)
     # print(res)
-    find_checkpoint_from_hash("210d0d5d5d")
+    find_checkpoint_from_name("hanfuDreambooth_v12")
     #print(checkpoints_list)
 
 def add_output_log(msg:str, style:str=""):
     global Output_Log
     print(f"Output_Log: {msg}")
     Output_Log += f'<p style="{style}">{msg}</p>'
+
+def find_checkpoint_from_name(name:str):
+
+    for checkpoint in checkpoints_list.keys():
+        res = re.search(r"(.+)\.(.+)", checkpoint)
+        print(checkpoint)
+        print(res.group(1))
+        try:
+            #print(res.group(1))
+            if(res.group(1) == name):
+                return checkpoint
+        except:
+            pass
+    return name
 
 def find_checkpoint_from_hash(hash:str):
 
@@ -346,7 +360,13 @@ class StateApi():
             elif(key == "Face restoration"):
                 temp_json[PNGINFO_2_LIGHTFLOW[key]] = True
             elif(key == "Model hash"):
-                temp_json[PNGINFO_2_LIGHTFLOW[key]] = find_checkpoint_from_hash(geninfo[key])
+                target_model = find_checkpoint_from_hash(geninfo[key])
+                if(target_model == geninfo[key]):#说明没有找到相同hash值的模型，改用名称查找
+                    try:
+                        target_model = find_checkpoint_from_name(geninfo["Model"])
+                    except:
+                        pass
+                temp_json[PNGINFO_2_LIGHTFLOW[key]] = target_model
             else:
                 try:
                     temp_json[PNGINFO_2_LIGHTFLOW[key]] = geninfo[key]
@@ -414,7 +434,7 @@ class Script(scripts.Script):
                 json2js = gr.Textbox(label="json2js",visible=False)
                 State_Comps["json2js"] = json2js
                 
-                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
+                State_Comps["test_button"] = gr.Button(value='测试',visible=True)
                 
                 with gr.Row():
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
