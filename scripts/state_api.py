@@ -10,7 +10,7 @@ import re,base64
 import copy
 import time
 
-from modules import localization
+from modules import localization, images
 import modules.shared as shared
 import modules.scripts as scripts
 import modules.script_callbacks as script_callbacks
@@ -41,6 +41,7 @@ def test_func():
 
 def add_output_log(msg:str, style:str=""):
     global Output_Log
+    print(f"Output_Log: {msg}")
     Output_Log += f'<p style="{style}">{msg}</p>'
 
 
@@ -77,7 +78,7 @@ def on_after_component(component, **kwargs):
             btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
 
         for btn in State_Comps["import"]:
-            btn.upload(fn_import_workflow, _js=f"state.core.actions.importLightflow",inputs=[btn],outputs=target_comps) # js里加载除图片以外的参数 python加载图片
+            btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightflow",inputs=[btn],outputs=target_comps) # js里加载除图片以外的参数 python加载图片
 
         State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",inputs=[State_Comps["json2js"]])
         
@@ -95,7 +96,7 @@ temp_index = -1
 next_index = -1
 def func_for_invisiblebutton():
     global temp_index,next_index
-    global Webui_Comps_Cur_Val
+    global Webui_Comps_Cur_Val, Output_Log
 
     temp_index = next_index+1
     next_index = temp_index
@@ -122,8 +123,10 @@ def func_for_invisiblebutton():
 
 
 def fn_import_workflow(workflow_file):
-    global workflow_json
+    global workflow_json, Output_Log
     global Webui_Comps_Cur_Val, temp_index, next_index
+    temp_index = -1 # 重置索引
+    next_index = -1
     
     try:
         config_file = workflow_file[0].name
@@ -131,11 +134,13 @@ def fn_import_workflow(workflow_file):
         config_file = workflow_file.name
 
     print("fn_import_workflow "+str(config_file))
-    #print("fn_import_workflow "+str(workflow_file[0].name))
-
-    with open(config_file, mode='r', encoding='UTF-8') as f:
-        json_str = f.read()
-        workflow_json = json.loads(json_str)
+    
+    if (os.path.splitext(config_file)[-1] not in  [".lightflow", ".json"]):
+        workflow_json = {}
+    else:
+        with open(config_file, mode='r', encoding='UTF-8') as f:
+            json_str = f.read()
+            workflow_json = json.loads(json_str)
 
     Webui_Comps_Cur_Val = []
     for key in Return_Key:
@@ -172,8 +177,6 @@ def fn_import_workflow(workflow_file):
 
         Webui_Comps_Cur_Val.append(image)
 
-    temp_index = -1 # 重置索引
-    next_index = -1
     # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
     # return tuple(return_vals)
     return str(temp_index), Output_Log, Output_Log
@@ -181,6 +184,9 @@ def fn_import_workflow(workflow_file):
 class imgs_callback_params(BaseModel):
     id:str
     img:str
+
+class png_info_params(BaseModel):
+    img_path:str
 
 class StateApi():
 
@@ -202,7 +208,7 @@ class StateApi():
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
         self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) # 刷新页面之后触发
         self.add_api_route('/output_log', add_output_log, methods=['GET']) 
-        # self.add_api_route('/import_workflow', self.fn_import_workflow, methods=['GET']) # 
+        self.add_api_route('/png_info', self.png_info, methods=['POST']) # 
 
     def get_config(self):
         return FileResponse(shared.cmd_opts.ui_settings_file)
@@ -243,6 +249,19 @@ class StateApi():
         # print(f"temp_json = {temp_json}")
         return json.dumps(temp_json)
 
+    def png_info(self, img_data:png_info_params):
+        print(img_data.img_path)
+        
+        geninfo, items = images.read_info_from_image(Image.open(img_data.img_path))
+        #geninfo = geninfo.split("\n")
+        #items = {**{'parameters': geninfo}, **items}
+        print(items)
+
+        temp_json = {
+            "hello": "world"
+        }
+
+        return json.dumps(temp_json)
 
     def get_img_elem_key(self):
         keys_str = ",".join(Return_Key)
@@ -285,7 +304,7 @@ class Script(scripts.Script):
 
         with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=False, visible=True):
             with gr.Row():
-                lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
+                lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow",".json"])
                 State_Comps["import"].append(lightflow_file)
                 State_Comps["outlog"].append(gr.HTML(label="Output Log",value="<p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:DodgerBlue;>Welcome to Lightflow!  \(^o^)/~</p>"))
                 #print(State_Comps["import"])
@@ -294,17 +313,16 @@ class Script(scripts.Script):
                 export_config = gr.Button(value='Export')
                 State_Comps["export"].append(export_config)
 
-            json2js = gr.Textbox(label="json2js",visible=False)
-            State_Comps["json2js"] = json2js
-
             if(not is_img2img):
+
+                json2js = gr.Textbox(label="json2js",visible=False)
+                State_Comps["json2js"] = json2js
                 
                 State_Comps["test_button"] = gr.Button(value='测试',visible=False)
                 
                 with gr.Row():
-
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
-
+                    
                     for key in Return_Key:
                         elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
                         invisible_button = gr.Button(value=elem_id, elem_id=elem_id, visible=False)

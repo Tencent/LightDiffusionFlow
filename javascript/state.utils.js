@@ -72,12 +72,14 @@ state.utils = {
                 if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key]){ 
                     tmp_key = localize_key
                     new_key.push(tmp_key)
-                    break
+                    //break
                 }
             }
         } catch (error) {
             console.warn('revokeTranslation error:', error);
         }
+
+        console.log("----------------" + key +': '+ new_key + '-----' + window.localization[new_key]);
         if(new_key.length == 0){new_key.push(key)}
         return new_key
     },
@@ -425,8 +427,6 @@ state.utils = {
                     {
                         state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
                         state.core.actions.output_error(`未找到选项: ${value} ！`)
-                        console.log(`${store.prefix + id} 导入失败！`)
-                        console.log(`未找到选项: ${value} ！`)
                     }
 
                     state.utils.triggerMouseEvent(input, 'blur');

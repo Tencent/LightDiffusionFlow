@@ -56,6 +56,7 @@ state.core = (function () {
         'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint',
     };
 
+    const Image_extensions = [".png", ".jpg"]
 
     let store = null;
 
@@ -588,41 +589,66 @@ state.core = (function () {
         //     };
         //     reader.readAsText(file);
         // },
-        importLightflow: function (fileInput){
-            
+        handleLightflow: function (fileInput){
             actions.output_log("开始导入工作流...")
-            
-            forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
-                state.utils.clearImage(getElement(image_id));
-            });
-            
+
             if ( ! fileInput[0]) {
                 //alert('Please select a JSON file!');
                 actions.output_log("请选择一个有效的lightflow文件！")
                 return;
             }
-            const file = fileInput[0].blob;
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                
-                let json_obj = {}
-                try { json_obj = JSON.parse(event.target.result) } catch (error) {
-                    actions.output_log("请选择一个有效的lightflow文件！")
-                    return;
-                }
 
-                forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
-                    json_obj[image_id] = ""
+            let file_name = fileInput[0].name;
+            let extension = file_name.substring(file_name.lastIndexOf("."));
+            console.log(extension)
+            if( Image_extensions.indexOf(extension) != -1 ){
+                console.log("/state/png_info")
+                let data = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        "img_path":file_name
+                    })
+                }                
+                fetch(`/state/png_info`, data)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
                 });
-                // webui主界面 没有localization相关的兼容问题 所以不用管
-                store.clear();
-                store.load(json_obj);
-                actions.applyState()
-                //window.location.reload();
-            };
-            reader.readAsText(file);
-            
+
+            }
+            else{
+
+                const file = fileInput[0].blob;
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    actions.importLightflow(event.target.result)
+                };
+                reader.readAsText(file);
+            }
             return fileInput
+        },
+        importLightflow: function (inputData){
+            
+            forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
+                state.utils.clearImage(getElement(image_id));
+            });
+            
+            let json_obj = {}
+            try { json_obj = JSON.parse(inputData) } catch (error) {
+                actions.output_log("请选择一个有效的lightflow文件！")
+                return;
+            }
+
+            forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
+                json_obj[image_id] = ""
+            });
+            // webui主界面 没有localization相关的兼容问题 所以不用管
+            store.clear();
+            store.load(json_obj);
+            actions.applyState()
+            
+            return;
         },
         startImportImage: function (index){
 
