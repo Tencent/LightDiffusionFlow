@@ -15,9 +15,9 @@ import modules.shared as shared
 import modules.scripts as scripts
 import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
-from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings
+from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from scripts import lightflow_version 
-
+from modules.sd_models import checkpoints_list
 
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
@@ -30,20 +30,67 @@ Return_Key = [
     ] # 只操作图片相关参数，其他参数js里搞定
 Output_Log = ""
 
+PNGINFO_2_LIGHTFLOW = {
+    "Prompt": "state-txt2img_prompt",
+    "Negative prompt": "state-txt2img_neg_prompt",
+    "Steps": "state-txt2img_steps",
+    "Sampler": "state-txt2img_sampling",
+    "CFG scale": "state-txt2img_cfg_scale",
+    "Seed": "state-txt2img_seed",
+    "Face restoration": "state-txt2img_restore_faces",
+    "Size-1": "state-txt2img_width",
+    "Size-2": "state-txt2img_height",
+    "Model hash": "state-setting_sd_model_checkpoint",
+    "Denoising strength": "state-txt2img_denoising_strength",
+    "Hires upscale": "state-txt2img_hr_scale",
+    "Hires steps": "state-txt2img_hires_steps",
+    "Hires upscaler": "state-txt2img_hr_upscaler",
+    "Hires resize-1": "state-txt2img_hr_resize_x",
+    "Hires resize-2": "state-txt2img_hr_resize_y"
+}
+
+PNGINFO_CN_2_LIGHTFLOW = {
+    "preprocessor": "state-ext-control-net-txt2img_0-preprocessor",
+    "model": "state-ext-control-net-txt2img_0-models",
+    "weight": "state-ext-control-net-txt2img_0-control-weight",
+    "starting": "state-ext-control-net-txt2img_0-starting-control-step",
+    "ending": "state-ext-control-net-txt2img_0-guidance-end-(t)",
+    "resize mode": "state-ext-control-net-txt2img_0-resize-mode",
+    "pixel perfect": "state-ext-control-net-txt2img_0-pixel-perfect",
+    "control mode": "state-ext-control-net-txt2img_0-control-mode",
+    "preprocessor params": ""
+}
 
 def test_func():
-    with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
-        json_str = f.read()
-        config_json = json.loads(json_str)
-        print(config_json['localization'])
-        print(localization.localizations[config_json['localization']])
+    # with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
+    #     json_str = f.read()
+    #     config_json = json.loads(json_str)
+    #     print(config_json['localization'])
+    #     print(localization.localizations[config_json['localization']])
 
+    # data = "preprocessor: depth_midas, model: control_v11f1p_sd15_depth [cfd03158], weight: 0.95, starting/ending: (0.07, 0.93), resize mode: Just Resize, pixel perfect: True, control mode: My prompt is more important, preprocessor params: (512, 100, 200)"
+    # res = re.findall(r"([^:]+:[^:]{1,})(,|$)",data)
+    # print(res)
+    find_checkpoint_from_hash("210d0d5d5d")
+    #print(checkpoints_list)
 
 def add_output_log(msg:str, style:str=""):
     global Output_Log
     print(f"Output_Log: {msg}")
     Output_Log += f'<p style="{style}">{msg}</p>'
 
+def find_checkpoint_from_hash(hash:str):
+
+    for checkpoint in checkpoints_list.keys():
+        res = re.search(r"\[([0-9a-fA-F]{10})\]", checkpoint)
+        #print(checkpoint)
+        try:
+            #print(res.group(1))
+            if(res.group(1) == hash):
+                return checkpoint
+        except:
+            pass
+    return hash
 
 '''
 python触发导入事件，按正常逻辑先执行js代码，把除图片以外的参数全部设置好，然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
@@ -249,17 +296,66 @@ class StateApi():
         # print(f"temp_json = {temp_json}")
         return json.dumps(temp_json)
 
+    def str_2_json(self, str_data:str):
+        out_json = {}
+        res = re.findall(r"([^:]+:[^:]{1,})(,|$)",str_data)
+        for field in res:
+            data = field[0].split(":")
+            try:
+                out_json[data[0].strip()] = data[1].strip()
+            except IndexError as e:
+                print(f"str_2_json [key error]: {e}")
+
+        # fields = str_data.split(",")
+        # for field in fields:
+        #     data = field.split(":")
+        #     try:
+        #         out_json[data[0].strip()] = data[1].strip()
+        #     except IndexError as e:
+        #         print(f"str_2_json [key error]: {e}")
+        return out_json
+
     def png_info(self, img_data:png_info_params):
         print(img_data.img_path)
         
         geninfo, items = images.read_info_from_image(Image.open(img_data.img_path))
-        #geninfo = geninfo.split("\n")
-        #items = {**{'parameters': geninfo}, **items}
-        print(items)
+        geninfo = parse_generation_parameters(geninfo)
 
-        temp_json = {
-            "hello": "world"
-        }
+        temp_json = {}
+        for key in geninfo.keys():
+            
+            matchObj = re.match("ControlNet ([0-9])", key)
+            if(matchObj != None): # controlnet
+                # print(matchObj.group(1))
+                cn_info = self.str_2_json(geninfo[key])
+                print(cn_info)
+                if(len(cn_info.keys()) > 0):
+                    temp_json["state-ext-control-net-txt2img_0-enabled".replace("0",matchObj.group(1))] = True
+
+                for cn_key in cn_info.keys():
+                    if(cn_key == "starting/ending"):
+                        cn_key_split = cn_key.split("/")
+                        data = cn_info[cn_key].replace("(","").replace(")","").split(",")
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[0]].replace("0",matchObj.group(1))] = data[0].strip()
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[1]].replace("0",matchObj.group(1))] = data[1].strip()
+                    elif(cn_key == "pixel perfect"):
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = (cn_info[cn_key].lower() == "true")
+                    else:
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
+
+            elif(key == "Face restoration"):
+                temp_json[PNGINFO_2_LIGHTFLOW[key]] = True
+            elif(key == "Model hash"):
+                temp_json[PNGINFO_2_LIGHTFLOW[key]] = find_checkpoint_from_hash(geninfo[key])
+            else:
+                try:
+                    temp_json[PNGINFO_2_LIGHTFLOW[key]] = geninfo[key]
+                except KeyError as e:
+                    pass
+                    #print(e)
+
+        print("----------------")
+        print(temp_json)
 
         return json.dumps(temp_json)
 
@@ -318,7 +414,7 @@ class Script(scripts.Script):
                 json2js = gr.Textbox(label="json2js",visible=False)
                 State_Comps["json2js"] = json2js
                 
-                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
+                State_Comps["test_button"] = gr.Button(value='测试',visible=True)
                 
                 with gr.Row():
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)

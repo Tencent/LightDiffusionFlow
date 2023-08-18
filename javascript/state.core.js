@@ -614,8 +614,8 @@ state.core = (function () {
                 .then(response => response.json())
                 .then(data => {
                     console.log(data)
+                    actions.importLightflow(data)
                 });
-
             }
             else{
 
