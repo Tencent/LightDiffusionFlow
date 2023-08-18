@@ -79,7 +79,7 @@ state.utils = {
             console.warn('revokeTranslation error:', error);
         }
 
-        console.log("----------------" + key +': '+ new_key + '-----' + window.localization[new_key]);
+        //console.log("----------------" + key +': '+ new_key + '-----' + window.localization[new_key]);
         if(new_key.length == 0){new_key.push(key)}
         return new_key
     },

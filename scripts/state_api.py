@@ -316,7 +316,7 @@ class StateApi():
         return out_json
 
     def png_info(self, img_data:png_info_params):
-        print(img_data.img_path)
+        #print(img_data.img_path)
         
         geninfo, items = images.read_info_from_image(Image.open(img_data.img_path))
         geninfo = parse_generation_parameters(geninfo)
@@ -328,7 +328,7 @@ class StateApi():
             if(matchObj != None): # controlnet
                 # print(matchObj.group(1))
                 cn_info = self.str_2_json(geninfo[key])
-                print(cn_info)
+                #print(cn_info)
                 if(len(cn_info.keys()) > 0):
                     temp_json["state-ext-control-net-txt2img_0-enabled".replace("0",matchObj.group(1))] = True
 
@@ -354,7 +354,7 @@ class StateApi():
                     pass
                     #print(e)
 
-        print("----------------")
+        #print("----------------")
         print(temp_json)
 
         return json.dumps(temp_json)
@@ -414,7 +414,7 @@ class Script(scripts.Script):
                 json2js = gr.Textbox(label="json2js",visible=False)
                 State_Comps["json2js"] = json2js
                 
-                State_Comps["test_button"] = gr.Button(value='测试',visible=True)
+                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
                 
                 with gr.Row():
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
