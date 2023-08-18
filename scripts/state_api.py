@@ -83,8 +83,8 @@ def find_checkpoint_from_name(name:str):
 
     for checkpoint in checkpoints_list.keys():
         res = re.search(r"(.+)\.(.+)", checkpoint)
-        print(checkpoint)
-        print(res.group(1))
+        #print(checkpoint)
+        #print(res.group(1))
         try:
             #print(res.group(1))
             if(res.group(1) == name):
@@ -357,8 +357,6 @@ class StateApi():
                     else:
                         temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
 
-            elif(key == "Face restoration"):
-                temp_json[PNGINFO_2_LIGHTFLOW[key]] = True
             elif(key == "Model hash"):
                 target_model = find_checkpoint_from_hash(geninfo[key])
                 if(target_model == geninfo[key]):#说明没有找到相同hash值的模型，改用名称查找
@@ -367,12 +365,18 @@ class StateApi():
                     except:
                         pass
                 temp_json[PNGINFO_2_LIGHTFLOW[key]] = target_model
+
+            elif(key == "Face restoration"):
+                temp_json[PNGINFO_2_LIGHTFLOW[key]] = True
             else:
                 try:
                     temp_json[PNGINFO_2_LIGHTFLOW[key]] = geninfo[key]
                 except KeyError as e:
                     pass
                     #print(e)
+            
+            if(key in ["Hires upscale","Hires steps","Hires upscaler","Hires resize-1","Hires resize-2"]):
+                temp_json["state-txt2img_enable_hr"] = True
 
         #print("----------------")
         print(temp_json)
