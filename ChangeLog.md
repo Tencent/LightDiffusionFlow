@@ -1,4 +1,9 @@
 
+## 1.2.1
+
+### Bug Fixes:
+ * png_info解析转换时，部分key值设置错误问题修复。
+
 ## 1.2.0
 
 ### Features:
