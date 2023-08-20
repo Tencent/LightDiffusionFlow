@@ -9,9 +9,9 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 
 ### Capabilities
 
-* Preserve web UI parameters (inputs, sliders, checkboxes etc.) .
+* Export/Import web UI parameters with a single file (images, inputs, sliders, checkboxes etc.) .
+* Support parsing png info from image and restoring parameters back to the web UI.
 * It can be extended to preserve basically everything in the UI.
-* Import / Export and Reset state options
 * Supported extensions:
     - Control Net
 
@@ -29,3 +29,13 @@ None at all.
 ### Contributing
 
 Feel free to submit PRs to develop!
+
+### Credits
+
+Licenses for borrowed code can be found in LICENSES/Licenses.md
+
+- stable-diffusion-webui-state - https://github.com/ilian6806/stable-diffusion-webui-state
+
+*Our team urgently needs a solution to quickly share the stable diffusion web UI settings, and Ilian Iliev's project provided us with the basic code, thank you Ilian Iliev!*
+
+- Thanks to Joshua Yu and Hali for providing the inspiration for this project.
