@@ -437,9 +437,9 @@ class Script(scripts.Script):
 
                 json2js = gr.Textbox(label="json2js",visible=False)
                 State_Comps["json2js"] = json2js
-                
-                State_Comps["test_button"] = gr.Button(value='测试',visible=True)
-                
+
+                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
+
                 with gr.Row():
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
                     
