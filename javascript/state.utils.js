@@ -2,11 +2,68 @@ window.state = window.state || {};
 state = window.state;
 
 state.utils = {
-    testFunction: function testFunction() {
 
+    
+    testFunction: function testFunction() {
         
-        const elements = gradioApp().getElementById('html_info_txt2img').querySelectorAll(`#html_info_txt2img`);
-        console.log(elements[0].innerText)
+        // 遍历第一级子节点  每个节点选出一个层级最小且innerText不为空的子节点
+        function walks_element(element, cur_gen){
+            if(element.innerText != "" && element.innerText != undefined && element.children.length == 0){
+                return [[element.innerText,cur_gen]]
+            }
+            let res = []
+            for(child of element.children){
+                res = res.concat(walks_element(child,cur_gen+1,res))
+            }
+
+            return res
+        }
+
+        let cur_tab_name = "txt2img"
+        let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
+
+        for (child of container.children){
+            res = walks_element(child, 0)
+            let min_gen = 10
+            let title = undefined
+            for(pair of res){
+                if(pair[1] < min_gen){
+                    min_gen = pair[1]
+                    title = pair[0]
+                }
+            }
+            if(title == 'Script'){break}
+            console.log(title)
+        }
+
+        // function get_child_from_tree(parent, target_gen, cur_gen, condition_fn = undefined){
+        //     //console.log(cur_gen)
+        //     if(target_gen == cur_gen){
+        //         if(condition_fn == undefined){
+        //             return Array.from(parent.children)
+        //         }
+        //         res = []
+        //         for (child of parent.children){
+        //             if(condition_fn(child)){
+        //                 res.push(child)
+        //             }
+        //         }
+        //         //console.log(res)
+        //         return res
+        //     }
+            
+        //     target_children = []
+        //     for (child of parent.children){
+        //         target_children = target_children.concat(get_child_from_tree(child, target_gen, cur_gen+1, condition_fn))
+        //     }
+        //     //console.log(target_children)
+        //     return target_children
+        // }
+
+        // }
+        
+        //const elements = gradioApp().getElementById('html_info_txt2img').querySelectorAll(`#html_info_txt2img`);
+        //console.log(elements[0].innerText)
 
         //console.log("test function")
         //res = "state-txt2img_ext-control-net-0-model".indexOf("txt2img")

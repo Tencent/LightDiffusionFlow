@@ -51,7 +51,7 @@ PNGINFO_2_LIGHTFLOW = {
 
 PNGINFO_CN_2_LIGHTFLOW = {
     "preprocessor": "state-ext-control-net-txt2img_0-preprocessor",
-    "model": "state-ext-control-net-txt2img_0-models",
+    "model": "state-ext-control-net-txt2img_0-model",
     "weight": "state-ext-control-net-txt2img_0-control-weight",
     "starting": "state-ext-control-net-txt2img_0-starting-control-step",
     "ending": "state-ext-control-net-txt2img_0-guidance-end-(t)",
@@ -110,9 +110,9 @@ def find_checkpoint_from_hash(hash:str):
 python触发导入事件，按正常逻辑先执行js代码，把除图片以外的参数全部设置好，然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
 '''
 def on_after_component(component, **kwargs):
-    global temp_index,next_index
-    #if isinstance(component, gr.Image):
+
     try:
+
         if(Webui_Comps.get(kwargs["elem_id"], None) == None):
             Webui_Comps[kwargs["elem_id"]] = component
     except BaseException as e:
@@ -344,7 +344,7 @@ class StateApi():
                 cn_info = self.str_2_json(geninfo[key])
                 #print(cn_info)
                 if(len(cn_info.keys()) > 0):
-                    temp_json["state-ext-control-net-txt2img_0-enabled".replace("0",matchObj.group(1))] = True
+                    temp_json["state-ext-control-net-txt2img_0-enable".replace("0",matchObj.group(1))] = True
 
                 for cn_key in cn_info.keys():
                     if(cn_key == "starting/ending"):
@@ -422,7 +422,7 @@ class Script(scripts.Script):
             State_Comps["export"] = []
             State_Comps["outlog"] = []
 
-        with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=False, visible=True):
+        with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=True, visible=True):
             with gr.Row():
                 lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow",".json"])
                 State_Comps["import"].append(lightflow_file)
