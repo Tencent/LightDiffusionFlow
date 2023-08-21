@@ -34,7 +34,7 @@ Feel free to submit PRs to develop!
 
 ### Credits
 
-Licenses for borrowed code can be found in LICENSES/Licenses.md
+Licenses for borrowed code can be found in LICENSES/[**Licenses.md**](./LICENSES/Licenses.md)
 
 - stable-diffusion-webui-state - https://github.com/ilian6806/stable-diffusion-webui-state
 

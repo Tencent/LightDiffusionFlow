@@ -35,7 +35,7 @@
 
 ### 感谢
 
-本项目参考和引用的第三方代码开源许可放在 LICENSES/Licenses.md
+本项目参考和引用的第三方代码开源许可放在 LICENSES/[**Licenses.md**](./LICENSES/Licenses.md)
 
 - stable-diffusion-webui-state - https://github.com/ilian6806/stable-diffusion-webui-state
 
