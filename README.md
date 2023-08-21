@@ -5,6 +5,8 @@
 
 # stable-diffusion-lightflow
 
+[**English**](./README.md) | [**中文**](./README_CN.md)
+
 This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
 
 ### Capabilities

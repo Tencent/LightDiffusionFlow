@@ -5,6 +5,8 @@
 
 # stable-diffusion-lightflow
 
+[**English**](./README.md) | [**中文**](./README_CN.md)
+
 这是为[Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 开发的一款保存配置选项的插件
 
 ### 功能
