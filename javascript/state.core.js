@@ -590,11 +590,11 @@ state.core = (function () {
         //     reader.readAsText(file);
         // },
         handleLightflow: function (fileInput){
-            actions.output_log("开始导入工作流...")
+            actions.output_log("Start parsing settings...")
 
             if ( ! fileInput[0]) {
                 //alert('Please select a JSON file!');
-                actions.output_log("请选择一个有效的lightflow文件！")
+                actions.output_log("Please select a valid lightflow or image file!")
                 return;
             }
 
@@ -636,7 +636,7 @@ state.core = (function () {
             
             let json_obj = {}
             try { json_obj = JSON.parse(inputData) } catch (error) {
-                actions.output_log("请选择一个有效的lightflow文件！")
+                actions.output_log("Please select a valid lightflow or image file!")
                 return;
             }
 

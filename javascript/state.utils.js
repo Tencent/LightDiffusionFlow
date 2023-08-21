@@ -474,7 +474,7 @@ state.utils = {
                             if (localized_value === child_text) {
                                 state.utils.triggerMouseEvent(li, 'mousedown');
                                 successed = true
-                                state.core.actions.output_warning(`未找到选项: ${value} ，已使用 ${li.lastChild.wholeText.trim()} 代替！`)
+                                state.core.actions.output_warning(`The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
                                 break
                             }
                         }
@@ -482,8 +482,8 @@ state.utils = {
 
                     if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
                     {
-                        state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
-                        state.core.actions.output_error(`未找到选项: ${value} ！`)
+                        state.core.actions.output_error(`'${store.prefix + id}' import failed!`)
+                        state.core.actions.output_error(`The option '${value}' was not found!`)
                     }
 
                     state.utils.triggerMouseEvent(input, 'blur');
@@ -541,8 +541,8 @@ state.utils = {
                                 }
                             });
                             if(!successed){
-                                state.core.actions.output_error(`${store.prefix + id} 导入失败！`)
-                                state.core.actions.output_error(`未找到选项: ${value} ！`)
+                                state.core.actions.output_error(`'${store.prefix + id}' import failed!`)
+                                state.core.actions.output_error(`The option '${value}' was not found!`)
                             }
                             setTimeout(selectOption, 100);
                         }, 100);

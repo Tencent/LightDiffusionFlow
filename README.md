@@ -36,6 +36,6 @@ Licenses for borrowed code can be found in LICENSES/Licenses.md
 
 - stable-diffusion-webui-state - https://github.com/ilian6806/stable-diffusion-webui-state
 
-*Our team urgently needs a solution to quickly share the stable diffusion web UI settings, and Ilian Iliev's project provided us with the basic code, thank you Ilian Iliev!*
+*Our team urgently needs a solution to quickly share the stable diffusion web UI settings, and Ilian Iliev's project provided us with great help, thank you Ilian Iliev!*
 
-- Thanks to Joshua Yu and Hali for providing the inspiration for this project.
+- Thanks to Joshua Yu and Hali for providing the inspiration and suggestions for this project.

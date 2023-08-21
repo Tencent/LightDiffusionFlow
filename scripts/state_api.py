@@ -175,10 +175,10 @@ def func_for_invisiblebutton():
     #     pass
     
     if(temp_index > 0):
-        add_output_log(f"导入图片：{Return_Key[temp_index]} ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
+        add_output_log(f"import image {Return_Key[temp_index]} ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
         
     if(next_index+1 == len(Webui_Comps_Cur_Val)):
-        add_output_log(f"导入完成！")
+        add_output_log(f"import completed!")
     
     return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
 
