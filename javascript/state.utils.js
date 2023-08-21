@@ -482,8 +482,8 @@ state.utils = {
 
                     if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
                     {
-                        state.core.actions.output_error(`'${store.prefix + id}' import failed!`)
-                        state.core.actions.output_error(`The option '${value}' was not found!`)
+                        state.core.actions.output_error(`\'${store.prefix + id}\' import failed!`)
+                        state.core.actions.output_error(`The option \'${value}\' was not found!`)
                     }
 
                     state.utils.triggerMouseEvent(input, 'blur');
@@ -541,8 +541,8 @@ state.utils = {
                                 }
                             });
                             if(!successed){
-                                state.core.actions.output_error(`'${store.prefix + id}' import failed!`)
-                                state.core.actions.output_error(`The option '${value}' was not found!`)
+                                state.core.actions.output_error(`\'${store.prefix + id}\' import failed!`)
+                                state.core.actions.output_error(`The option \'${value}\' was not found!`)
                             }
                             setTimeout(selectOption, 100);
                         }, 100);
