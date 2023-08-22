@@ -183,5 +183,5 @@ function constrol_net(tab_name) {
     return { init,LS_PREFIX };
 }
 
-state.extensions['img2img-ext-control-net'] = constrol_net("img2img");
-state.extensions['txt2img-ext-control-net'] = constrol_net("txt2img");
+// state.extensions['img2img-ext-control-net'] = constrol_net("img2img");
+// state.extensions['txt2img-ext-control-net'] = constrol_net("txt2img");

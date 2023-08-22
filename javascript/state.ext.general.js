@@ -159,7 +159,7 @@ function general_ext(tab_name, extension_name, root_container) {
         }
 
         let tabs = container.querySelectorAll('.tabitem');
-        //console.log(tabs)
+        console.log(tabs)
         
         if (tabs.length) {
             cnTabs = [];
@@ -202,6 +202,8 @@ function general_ext_main(){
         let cur_tab_name = "txt2img"
         let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
         for (child of container.children){
+            let root_container = child
+            //console.log(root_container)
             res = walks_element(child, 0)
             let min_gen = 99
             let title = undefined
@@ -211,18 +213,28 @@ function general_ext_main(){
                     title = pair[0]
                 }
             }
+            
             if(title == undefined){continue}
+
+            let translations = state.utils.revokeTranslation(title)
+            title = translations[0] // 标题翻译一般只会有一个？
             if(title == 'Script'){break}
             
-            if(title == 'ControlNet v1.1.229'){
+            //if(title == 'Additional Networks'){
                 console.log(title)
-                let ext_name = 'ext-'+ title.replace(" ","-").toLowerCase() + "-"
-                general_ext(cur_tab_name, ext_name, child).init();
-            }
+                reg = /(.+) v[0-9\.]+/
+                if(reg.test(title)){
+                    title = RegExp.$1
+                }
+                console.log(title)
+                let ext_name = title.replace(" ","-").toLowerCase()
+                console.log(ext_name)
+                general_ext(cur_tab_name, ext_name, root_container).init();
+            //}
         }
         
     }
     return {init}
 }
 
-//state.extensions['txt2img-ext-general'] = general_ext_main();
+state.extensions['txt2img-ext-general'] = general_ext_main();
