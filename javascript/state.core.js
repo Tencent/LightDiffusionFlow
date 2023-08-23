@@ -591,7 +591,7 @@ state.core = (function () {
         // },
         handleLightflow: function (fileInput){
             actions.output_log("Start parsing settings...")
-
+            console.log(fileInput)
             if ( ! fileInput[0]) {
                 //alert('Please select a JSON file!');
                 actions.output_log("Please select a valid lightflow or image file!")
@@ -599,6 +599,7 @@ state.core = (function () {
             }
 
             let file_name = fileInput[0].name;
+            console.log(file_name)
             let extension = file_name.substring(file_name.lastIndexOf("."));
             console.log(extension)
             if( Image_extensions.indexOf(extension) != -1 ){
@@ -618,8 +619,8 @@ state.core = (function () {
                 });
             }
             else{
-
                 const file = fileInput[0].blob;
+                //console.log(file)
                 const reader = new FileReader();
                 reader.onload = function (event) {
                     actions.importLightflow(event.target.result)
