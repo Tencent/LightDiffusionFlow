@@ -19,19 +19,15 @@ from modules.generation_parameters_copypaste import paste_fields, registered_par
 from modules.sd_models import checkpoints_list
 
 from scripts import lightflow_version, lightflow_config
-import lightflow_config.PNGINFO_2_LIGHTFLOW as PNGINFO_2_LIGHTFLO
-import lightflow_config.PNGINFO_CN_2_LIGHTFLOW as PNGINFO_CN_2_LIGHTFLOW
-import lightflow_config.Image_Components_Key as Image_Components_Key
+from scripts.lightflow_config import PNGINFO_2_LIGHTFLOW
+from scripts.lightflow_config import PNGINFO_CN_2_LIGHTFLOW
+from scripts.lightflow_config import Image_Components_Key
 
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
 invisible_buttons = {}
 Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
-# Image_Components_Key = [
-#     "useless_Textbox", # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
-#     "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask" # 每个图片组件的elem_id
-#     ] # 只操作图片相关参数，其他参数js里搞定
 Output_Log = ""
 
 
@@ -98,7 +94,6 @@ def on_after_component(component, **kwargs):
     if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
         print("开始绑定按钮")
 
-
         target_comps = []
         # for key in Image_Components_Key:
         #     try:
@@ -109,7 +104,7 @@ def on_after_component(component, **kwargs):
         target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
         target_comps.append(State_Comps["outlog"][0])
         target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
-        print(target_comps)
+        # print(target_comps)
 
         for btn in State_Comps["export"]:
             btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
@@ -126,7 +121,10 @@ def on_after_component(component, **kwargs):
             segs = key.split("_")
             comp_name = "_".join(segs[2:])
             print(comp_name)
-            invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
+            try:
+                invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
+            except KeyError:
+                print(f"No such component: {comp_name}")
 
 
 temp_index = -1
@@ -150,8 +148,10 @@ def func_for_invisiblebutton():
     # except:
     #     pass
     
+    
+    # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
     if(temp_index > 0):
-        add_output_log(f"import image: \'{Image_Components_Key[temp_index]}\' ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
+        add_output_log(f"import image: \'{Image_Components_Key[temp_index]}\' ") 
         
     if(next_index+1 == len(Webui_Comps_Cur_Val)):
         add_output_log(f"import completed!")
@@ -239,7 +239,6 @@ class StateApi():
         print("-----------------state_api start------------------")
         self.app = app 
         self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
-        #self.add_api_route('/lightflow_get_localization', self.get_localization, methods=['GET']) # 读取localization.json
         self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
@@ -249,25 +248,6 @@ class StateApi():
 
     def get_config(self):
         return FileResponse(shared.cmd_opts.ui_settings_file)
-
-    # def get_localization(self):
-
-    #     print(f"---------start--------get_localization------------------")
-    #     localization_file = ""
-    #     try:
-    #         with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
-    #             json_str = f.read()
-    #             config_json = json.loads(json_str)
-    #             #print(config_json['localization'])
-    #             localization_file = localization.localizations[config_json['localization']]
-    #     except:
-    #         pass
-
-    #     print(f"-----------------get_localization {localization_file}------------------")
-    #     if(os.path.exists(localization_file)):
-    #         return FileResponse(localization_file)
-        
-    #     return ""
 
     def get_lightflow_config(self, onlyimg:bool = False):
         global workflow_json
@@ -295,14 +275,6 @@ class StateApi():
                 out_json[data[0].strip()] = data[1].strip()
             except IndexError as e:
                 print(f"str_2_json [key error]: {e}")
-
-        # fields = str_data.split(",")
-        # for field in fields:
-        #     data = field.split(":")
-        #     try:
-        #         out_json[data[0].strip()] = data[1].strip()
-        #     except IndexError as e:
-        #         print(f"str_2_json [key error]: {e}")
         return out_json
 
     def png_info(self, img_data:png_info_params):
@@ -431,23 +403,3 @@ class Script(scripts.Script):
 api = StateApi()
 script_callbacks.on_app_started(api.start)
 script_callbacks.on_after_component(on_after_component)
-
-
-# # init number of controlnet
-# try:
-#     webui_settings = {}
-#     with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
-#         json_str = f.read()
-#         webui_settings = json.loads(json_str)
-    
-#     Multi_ControlNet  = webui_settings["control_net_max_models_num"]
-#     if(Multi_ControlNet == 1):
-#         Image_Components_Key.append(f"txt2img_controlnet_ControlNet_input_image")
-#         Image_Components_Key.append(f"img2img_controlnet_ControlNet_input_image")
-#     else:
-#         for i in range(Multi_ControlNet):
-#             Image_Components_Key.append(f"txt2img_controlnet_ControlNet-{i}_input_image")
-#             Image_Components_Key.append(f"img2img_controlnet_ControlNet-{i}_input_image")
-# except:
-#     pass
-

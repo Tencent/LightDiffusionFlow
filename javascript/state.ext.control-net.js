@@ -39,7 +39,7 @@ function constrol_net(tab_name) {
         let value = store.get('tab');
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
-                let translations = state.utils.revokeTranslation(tabs[i].textContent)
+                let translations = state.utils.reverseTranslation(tabs[i].textContent)
                 if (value in translations) {
                 //if (tabs[i].textContent === value) {
                     state.utils.triggerEvent(tabs[i], 'click');
@@ -50,7 +50,7 @@ function constrol_net(tab_name) {
     }
 
     function onTabClick() {
-        store.set('tab', state.utils.revokeTranslation(this.textContent)[0]);
+        store.set('tab', state.utils.reverseTranslation(this.textContent)[0]);
         bindTabEvents();
     }
 
@@ -59,7 +59,7 @@ function constrol_net(tab_name) {
             let checkboxes = container.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(function (checkbox) {
                 let label = checkbox.nextElementSibling;
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -78,7 +78,7 @@ function constrol_net(tab_name) {
     function handleSelects() {
         cnTabs.forEach(({ container, store }) => {
             container.querySelectorAll('.gradio-dropdown').forEach(select => {
-                let translations = state.utils.revokeTranslation(select.querySelector('label').firstChild.textContent)
+                let translations = state.utils.reverseTranslation(select.querySelector('label').firstChild.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -97,7 +97,7 @@ function constrol_net(tab_name) {
             let sliders = container.querySelectorAll('input[type="range"]');
             sliders.forEach(function (slider) {
                 let label = slider.previousElementSibling.querySelector('label span');
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -107,7 +107,7 @@ function constrol_net(tab_name) {
                     state.utils.setValue(slider, value, 'change');
                 }
                 slider.addEventListener('change', function () {
-                    store.set(id, state.utils.revokeTranslation(this.value)[0]);
+                    store.set(id, state.utils.reverseTranslation(this.value)[0]);
                 });
             });
         });
@@ -119,7 +119,7 @@ function constrol_net(tab_name) {
             fieldsets.forEach(function (fieldset) {
                 let label = fieldset.firstChild.nextElementSibling;
                 let radios = fieldset.querySelectorAll('input[type="radio"]');
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -132,7 +132,7 @@ function constrol_net(tab_name) {
                 }
                 radios.forEach(function (radio) {
                     radio.addEventListener('change', function () {
-                        store.set(id, state.utils.revokeTranslation(this.value)[0]);
+                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
                     });
                 });
             });

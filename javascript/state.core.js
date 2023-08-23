@@ -267,7 +267,7 @@ state.core = (function () {
 
     function storeTab() {
         //console.log("-------------state.core.storeTab----------------")
-        store.set('tab', state.utils.revokeTranslation(gradioApp().querySelector('#tabs .tab-nav button.selected').textContent)[0]);
+        store.set('tab', state.utils.reverseTranslation(gradioApp().querySelector('#tabs .tab-nav button.selected').textContent)[0]);
         bindTabClickEvents(); // dirty hack here...
     }
 

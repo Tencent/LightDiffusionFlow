@@ -120,20 +120,20 @@ state.utils = {
         return new_key
     },
 
-    revokeTranslation: function revokeTranslation(key){
+    reverseTranslation: function reverseTranslation(key){
         new_key = []
         try{
             //key=key.replace(/^\s+|\s+$/g,"");
             for (localize_key of Object.keys(window.localization)) {
                 //console.log("----------------" + key +': '+ localize_key + '-----' + window.localization[localize_key]);
-                if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key]){ 
+                if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key].replace(/^\s+|\s+$/g,"")){ 
                     tmp_key = localize_key
                     new_key.push(tmp_key)
                     //break
                 }
             }
         } catch (error) {
-            console.warn('revokeTranslation error:', error);
+            console.warn('reverseTranslation error:', error);
         }
 
         //console.log("----------------" + key +': '+ new_key + '-----' + window.localization[new_key]);

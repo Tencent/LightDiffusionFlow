@@ -40,7 +40,7 @@ function general_ext(tab_name, extension_name, root_container) {
         let value = store.get('tab');
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
-                let translations = state.utils.revokeTranslation(tabs[i].textContent)
+                let translations = state.utils.reverseTranslation(tabs[i].textContent)
                 if (value in translations) {
                 //if (tabs[i].textContent === value) {
                     state.utils.triggerEvent(tabs[i], 'click');
@@ -51,7 +51,7 @@ function general_ext(tab_name, extension_name, root_container) {
     }
 
     function onTabClick() {
-        store.set('tab', state.utils.revokeTranslation(this.textContent)[0]);
+        store.set('tab', state.utils.reverseTranslation(this.textContent)[0]);
         bindTabEvents();
     }
 
@@ -60,7 +60,7 @@ function general_ext(tab_name, extension_name, root_container) {
             let checkboxes = container.querySelectorAll('input[type="checkbox"]');
             checkboxes.forEach(function (checkbox) {
                 let label = checkbox.nextElementSibling;
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -79,7 +79,7 @@ function general_ext(tab_name, extension_name, root_container) {
     function handleSelects() {
         cnTabs.forEach(({ container, store }) => {
             container.querySelectorAll('.gradio-dropdown').forEach(select => {
-                let translations = state.utils.revokeTranslation(select.querySelector('label').firstChild.textContent)
+                let translations = state.utils.reverseTranslation(select.querySelector('label').firstChild.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -98,7 +98,7 @@ function general_ext(tab_name, extension_name, root_container) {
             let sliders = container.querySelectorAll('input[type="range"]');
             sliders.forEach(function (slider) {
                 let label = slider.previousElementSibling.querySelector('label span');
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -108,7 +108,7 @@ function general_ext(tab_name, extension_name, root_container) {
                     state.utils.setValue(slider, value, 'change');
                 }
                 slider.addEventListener('change', function () {
-                    store.set(id, state.utils.revokeTranslation(this.value)[0]);
+                    store.set(id, state.utils.reverseTranslation(this.value)[0]);
                 });
             });
         });
@@ -120,7 +120,7 @@ function general_ext(tab_name, extension_name, root_container) {
             fieldsets.forEach(function (fieldset) {
                 let label = fieldset.firstChild.nextElementSibling;
                 let radios = fieldset.querySelectorAll('input[type="radio"]');
-                let translations = state.utils.revokeTranslation(label.textContent)
+                let translations = state.utils.reverseTranslation(label.textContent)
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
@@ -133,7 +133,7 @@ function general_ext(tab_name, extension_name, root_container) {
                 }
                 radios.forEach(function (radio) {
                     radio.addEventListener('change', function () {
-                        store.set(id, state.utils.revokeTranslation(this.value)[0]);
+                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
                     });
                 });
             });
@@ -183,8 +183,9 @@ function general_ext(tab_name, extension_name, root_container) {
 }
 
 
-function general_ext_main(){
+function general_ext_main(tab){
 
+    let cur_tab_name = tab
     // 遍历第一级子节点  每个节点选出一个层级最小且innerText不为空的子节点
     function walks_element(element, cur_gen){
         if(element.innerText != "" && element.innerText != undefined && element.children.length == 0){
@@ -199,11 +200,9 @@ function general_ext_main(){
     }
 
     function init() {
-        let cur_tab_name = "txt2img"
         let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
         for (child of container.children){
             let root_container = child
-            //console.log(root_container)
             res = walks_element(child, 0)
             let min_gen = 99
             let title = undefined
@@ -216,25 +215,28 @@ function general_ext_main(){
             
             if(title == undefined){continue}
 
-            let translations = state.utils.revokeTranslation(title)
+            let translations = state.utils.reverseTranslation(title)
             title = translations[0] // 标题翻译一般只会有一个？
             if(title == 'Script'){break}
+            console.log(title)
             
-            //if(title == 'Additional Networks'){
-                console.log(title)
-                reg = /(.+) v[0-9\.]+/
-                if(reg.test(title)){
-                    title = RegExp.$1
-                }
-                console.log(title)
-                let ext_name = title.replace(" ","-").toLowerCase()
-                console.log(ext_name)
-                general_ext(cur_tab_name, ext_name, root_container).init();
-            //}
+            reg = /(.+) v[0-9\.]+/
+            if(reg.test(title)){title = RegExp.$1}
+
+            if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
+            
+            let ext_name = title.replace(" ","-").toLowerCase()
+            console.log(ext_name)
+            general_ext(cur_tab_name, ext_name, root_container).init();
+
         }
         
     }
     return {init}
 }
 
-state.extensions['txt2img-ext-general'] = general_ext_main();
+const TABS = ['txt2img', 'img2img'];
+
+for (tab of TABS){
+    state.extensions[`${tab}-ext-general`] = general_ext_main(tab);
+}
