@@ -71,7 +71,7 @@ state.core = (function () {
 
     function init() {
         
-        console.log(window.localization)
+        //console.log(window.localization)
 
         fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
 
@@ -79,7 +79,6 @@ state.core = (function () {
         .then(response => response.json())
         .then(data => {
             img_elem_keys = data.split(",")
-            console.log("get_imgs_elem_key")
             img_elem_keys.forEach(key => {
                 IMAGES_WITHOUT_PREFIX[key] = key
             });
@@ -87,9 +86,7 @@ state.core = (function () {
             // 等上面的组件ID同步过来后 再加载其他配置
             fetch('/state/config.json?_=' + (+new Date()))
                 .then(response => response.json())
-                .then(config => {
-                    // console.log("-------------state.core.init----------------")
-                    
+                .then(config => {                    
                     try {
                         store = new state.Store();
                         store.clearAll();
@@ -240,8 +237,6 @@ state.core = (function () {
 
         const tabs = gradioApp().querySelectorAll('#tabs > div:first-child button');
         const value = store.get('tab');
-        //console.log(tabs)
-        //console.log(value)
         if (value) {
             for (var i = 0; i < tabs.length; i++) {
                 if (tabs[i].textContent === state.utils.getTranslation(value)) {
@@ -266,7 +261,6 @@ state.core = (function () {
     }
 
     function storeTab() {
-        //console.log("-------------state.core.storeTab----------------")
         store.set('tab', state.utils.reverseTranslation(gradioApp().querySelector('#tabs .tab-nav button.selected').textContent)[0]);
         bindTabClickEvents(); // dirty hack here...
     }
@@ -279,44 +273,6 @@ state.core = (function () {
             }
         }
         return gradioApp().getElementById(id);
-    }
-
-    function handleHTML(id) {
-        console.log("-------------state.core.handleHTML----------------")
-        const elements = gradioApp().getElementById(id).querySelectorAll(`#${id}`);
-        console.log(element.innerText)
-        const events = ['onchange'];
-        console.log(elements)
-        if (! elements || ! elements.length) {
-            return;
-        }
-
-        elements.forEach(function (element) {
-            console.log(element.innerText)
-            element.change(function(e){
-                console.log("+++++")
-                console.log(e.innerText)
-            });
-        });
-                
-        // let forEach = function (action) {
-        //     events.forEach(function(event) {
-        //         elements.forEach(function (element) {
-        //             console.log(element.innerText)
-        //             action.call(element, event);
-        //         });
-        //     });
-        // };
-
-        // forEach(function (event) {
-        //     this.addEventListener(event, function () {
-        //         let value = this.innerText;
-        //         console.log(value)
-        //         store.set(id, value);
-        //     });
-        // });
-
-        console.log("-------------state.core.handleHTML-------end---------")
     }
 
     function handleSavedInput(id) {
@@ -475,9 +431,6 @@ state.core = (function () {
         //         alert('All state values deleted!');
         //     }
         // },
-        // exportState: function () {
-        //     state.utils.saveFile('sd-webui-state', store.getAll());
-        // },
         applyState: function () {
             fetch('/state/config.json?_=' + (+new Date()))
             .then(response => response.json())
@@ -541,11 +494,7 @@ state.core = (function () {
                 config = JSON.parse(config)
                 stored_config = store.getAll()
                 
-                //console.log(config)
-                console.log(store)
-                console.log(stored_config)
                 for (let key in config){
-                    //console.log(config[key])
                     if(config[key] != ""){
                         stored_config[key] = config[key]
                     }
@@ -563,7 +512,6 @@ state.core = (function () {
                 let m = String(checkTime(nowdate.getMinutes()))
                 let s = String(checkTime(nowdate.getSeconds()))
                 let time_str = year+month+day+h+m+s
-                //console.log(stored_config)
                 state.utils.saveFile('flow-'+time_str, stored_config);
 
             }).catch(error => console.error('[state]: Error getting JSON file:', error));
@@ -572,23 +520,6 @@ state.core = (function () {
             //fetch(`/state/ExportLightflow?config=${config}`)
         },
 
-        // importState: function (id) {
-        //     //console.log(`==================importState click = ${id}`)
-        //     const fileInput = gradioApp().getElementById(id || 'state-import-file');
-        //     //console.log(`==================importState click = ${fileInput.files[0]}`)
-        //     if (! fileInput.files || ! fileInput.files[0]) {
-        //         alert('Please select a JSON file!');
-        //         return;
-        //     }
-        //     const file = fileInput.files[0];
-        //     const reader = new FileReader();
-        //     reader.onload = function (event) {
-        //         store.load(JSON.parse(event.target.result));
-        //         actions.applyState()
-        //         //window.location.reload();
-        //     };
-        //     reader.readAsText(file);
-        // },
         handleLightflow: function (fileInput){
             actions.output_log("Start parsing settings...")
 
@@ -597,7 +528,7 @@ state.core = (function () {
                 actions.output_log("Please select a valid lightflow or image file!")
                 return;
             }
-
+            console.log(fileInput)
             let file_name = fileInput[0].name;
             let extension = file_name.substring(file_name.lastIndexOf("."));
             console.log(extension)
@@ -618,7 +549,6 @@ state.core = (function () {
                 });
             }
             else{
-
                 const file = fileInput[0].blob;
                 const reader = new FileReader();
                 reader.onload = function (event) {
@@ -670,7 +600,6 @@ state.core = (function () {
 
             state.utils.sleep(300).then(() => {
 
-                //console.log(index)
                 try{
                     key = "txt2img_invisible_"+img_elem_keys[Number(index)+1]
                     //console.log(key)

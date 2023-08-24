@@ -19,11 +19,13 @@ function general_ext(tab_name, extension_name, root_container) {
             state.utils.triggerEvent(toggleBtn, 'click');
             load();
         }
-        toggleBtn.addEventListener('click', function () {
-            let span = this.querySelector('.transition, .icon');
-            store.set('toggled', span.style.transform !== 'rotate(90deg)');
-            load();
-        });
+        if(toggleBtn){
+            toggleBtn.addEventListener('click', function () {
+                let span = this.querySelector('.transition, .icon');
+                store.set('toggled', span.style.transform !== 'rotate(90deg)');
+                load();
+            });
+        }
     }
 
     function bindTabEvents() {
@@ -159,7 +161,7 @@ function general_ext(tab_name, extension_name, root_container) {
         }
 
         let tabs = container.querySelectorAll('.tabitem');
-        console.log(tabs)
+        //console.log(tabs)
         
         if (tabs.length) {
             cnTabs = [];
@@ -186,6 +188,7 @@ function general_ext(tab_name, extension_name, root_container) {
 function general_ext_main(tab){
 
     let cur_tab_name = tab
+    let general_ext_obj = undefined
     // 遍历第一级子节点  每个节点选出一个层级最小且innerText不为空的子节点
     function walks_element(element, cur_gen){
         if(element.innerText != "" && element.innerText != undefined && element.children.length == 0){
@@ -200,6 +203,8 @@ function general_ext_main(tab){
     }
 
     function init() {
+        console.log(`------------${cur_tab_name}----init-------`)
+
         let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
         for (child of container.children){
             let root_container = child
@@ -217,7 +222,7 @@ function general_ext_main(tab){
 
             let translations = state.utils.reverseTranslation(title)
             title = translations[0] // 标题翻译一般只会有一个？
-            if(title == 'Script'){break}
+            if(title.toLowerCase() == 'script'){break}
             console.log(title)
             
             reg = /(.+) v[0-9\.]+/
@@ -228,7 +233,6 @@ function general_ext_main(tab){
             let ext_name = title.replace(" ","-").toLowerCase()
             console.log(ext_name)
             general_ext(cur_tab_name, ext_name, root_container).init();
-
         }
         
     }
@@ -236,7 +240,7 @@ function general_ext_main(tab){
 }
 
 const TABS = ['txt2img', 'img2img'];
-
 for (tab of TABS){
     state.extensions[`${tab}-ext-general`] = general_ext_main(tab);
 }
+
