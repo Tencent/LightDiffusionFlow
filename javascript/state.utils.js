@@ -37,6 +37,8 @@ state.utils = {
         }
 
         if(new_key.length == 0){new_key.push(key)}
+        console.log(`---------reverseTranslation---------${key}---------`)
+        console.log(new_key)
         return new_key
     },
 

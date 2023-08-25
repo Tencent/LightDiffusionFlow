@@ -66,14 +66,14 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    if (value) {break}
+                    //if (value) {break}
+                    if (value) {
+                        state.utils.setValue(checkbox, value, 'change');
+                    }
+                    checkbox.addEventListener('change', function () {
+                        store.set(id, this.checked);
+                    });
                 }
-                if (value) {
-                    state.utils.setValue(checkbox, value, 'change');
-                }
-                checkbox.addEventListener('change', function () {
-                    store.set(id, this.checked);
-                });
             });
         });
     }
@@ -85,11 +85,11 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    if (value) {break}
-                }
-                state.utils.handleSelect(select, id, store);
-                if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
-                    state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
+                    //if (value) {break}
+                    state.utils.handleSelect(select, id, store);
+                    if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
+                        state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
+                    }
                 }
             });
         });
@@ -104,14 +104,14 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    if (value) {break}
+                    //if (value) {break}
+                    if (value) {
+                        state.utils.setValue(slider, value, 'change');
+                    }
+                    slider.addEventListener('change', function () {
+                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
+                    });
                 }
-                if (value) {
-                    state.utils.setValue(slider, value, 'change');
-                }
-                slider.addEventListener('change', function () {
-                    store.set(id, state.utils.reverseTranslation(this.value)[0]);
-                });
             });
         });
     }
@@ -126,18 +126,18 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    if (value) {break}
-                }
-                if (value) {
+                    //if (value) {break}
+                    if (value) {
+                        radios.forEach(function (radio) {
+                            state.utils.setValue(radio, value, 'change');
+                        });
+                    }
                     radios.forEach(function (radio) {
-                        state.utils.setValue(radio, value, 'change');
+                        radio.addEventListener('change', function () {
+                            store.set(id, state.utils.reverseTranslation(this.value)[0]);
+                        });
                     });
                 }
-                radios.forEach(function (radio) {
-                    radio.addEventListener('change', function () {
-                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
-                    });
-                });
             });
         });
     }

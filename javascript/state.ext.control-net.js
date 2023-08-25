@@ -63,14 +63,14 @@ function constrol_net(tab_name) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    if (value) {break}
-                }
+                    //if (value) {break}
                 if (value) {
                     state.utils.setValue(checkbox, value, 'change');
                 }
                 checkbox.addEventListener('change', function () {
                     store.set(id, this.checked);
                 });
+                }
             });
         });
     }
