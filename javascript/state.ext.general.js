@@ -66,14 +66,19 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    //if (value) {break}
-                    if (value) {
-                        state.utils.setValue(checkbox, value, 'change');
-                    }
-                    checkbox.addEventListener('change', function () {
-                        store.set(id, this.checked);
-                    });
+                    if (value) {break}
                 }
+                if (value) {
+                    state.utils.setValue(checkbox, value, 'change');
+                }
+                checkbox.addEventListener('change', function () {
+                    let label = checkbox.nextElementSibling;
+                    let translations = state.utils.reverseTranslation(label.textContent)
+                    for (var text of translations){
+                        var id = state.utils.txtToId(text);
+                        store.set(id, this.checked);
+                    }
+                });
             });
         });
     }
@@ -85,11 +90,12 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    //if (value) {break}
-                    state.utils.handleSelect(select, id, store);
-                    if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
-                        state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
-                    }
+                    if (value) {break}
+                }
+                id = state.utils.txtToId(translations[0]);
+                state.utils.handleSelect(select, id, store, force=true);
+                if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
+                    state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
                 }
             });
         });
@@ -104,14 +110,20 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    //if (value) {break}
-                    if (value) {
-                        state.utils.setValue(slider, value, 'change');
-                    }
-                    slider.addEventListener('change', function () {
-                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
-                    });
+                    if (value) {break}
                 }
+                if (value) {
+                    state.utils.setValue(slider, value, 'change');
+                }
+                slider.addEventListener('change', function () {
+                    //store.set(id, state.utils.reverseTranslation(this.value)[0]);
+                    let label = slider.previousElementSibling.querySelector('label span');
+                    let translations = state.utils.reverseTranslation(label.textContent)
+                    for (var text of translations){
+                        var id = state.utils.txtToId(text);
+                        store.set(id, state.utils.reverseTranslation(this.value)[0]);
+                    }
+                });
             });
         });
     }
@@ -126,18 +138,23 @@ function general_ext(tab_name, extension_name, root_container) {
                 for (var text of translations){
                     var id = state.utils.txtToId(text);
                     var value = store.get(id);
-                    //if (value) {break}
-                    if (value) {
-                        radios.forEach(function (radio) {
-                            state.utils.setValue(radio, value, 'change');
-                        });
-                    }
+                    if (value) {break}
+                }
+                if (value) {
                     radios.forEach(function (radio) {
-                        radio.addEventListener('change', function () {
-                            store.set(id, state.utils.reverseTranslation(this.value)[0]);
-                        });
+                        state.utils.setValue(radio, value, 'change');
                     });
                 }
+                radios.forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        let label = fieldset.firstChild.nextElementSibling;
+                        let translations = state.utils.reverseTranslation(label.textContent)
+                        for (var text of translations){
+                            var id = state.utils.txtToId(text);
+                            store.set(id, state.utils.reverseTranslation(this.value)[0]);
+                        }
+                    });
+                });
             });
         });
     }

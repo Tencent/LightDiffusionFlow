@@ -37,8 +37,8 @@ state.utils = {
         }
 
         if(new_key.length == 0){new_key.push(key)}
-        console.log(`---------reverseTranslation---------${key}---------`)
-        console.log(new_key)
+        //console.log(`---------reverseTranslation---------${key}---------`)
+        //console.log(new_key)
         return new_key
     },
 
@@ -264,7 +264,7 @@ state.utils = {
         }
     },
 
-    handleSelect: function handleSelect(select, id, store) {
+    handleSelect: function handleSelect(select, id, store, force=false) {
         try {
             let value = store.get(id);
             if (value) {
@@ -311,13 +311,31 @@ state.utils = {
             setTimeout(() => {
                 state.utils.onContentChange(select, function (el) {
                     let selected = el.querySelector('span.single-select');
-                    if (selected) {
-                        store.set(id, selected.textContent);
-                    } else {
-                        // new gradio version...
-                        let input = el.querySelector('input');
-                        if (input) {
-                            store.set(id, input.value);
+                    if(force){
+                        let localized_id = state.utils.getTranslation(id)
+                        let id_translations = state.utils.reverseTranslation(localized_id)
+                        //宁可错存一千，也不漏存一个
+                        for (trans_id of id_translations){
+                            if (selected) {
+                                store.set(trans_id, selected.textContent);
+                            } else {
+                                // new gradio version...
+                                let input = el.querySelector('input');
+                                if (input) {
+                                    store.set(trans_id, input.value);
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        if (selected) {
+                            store.set(id, selected.textContent);
+                        } else {
+                            // new gradio version...
+                            let input = el.querySelector('input');
+                            if (input) {
+                                store.set(id, input.value);
+                            }
                         }
                     }
                 });
