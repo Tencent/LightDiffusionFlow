@@ -3,107 +3,9 @@ state = window.state;
 
 state.utils = {
 
-    
     testFunction: function testFunction() {
         
-        // 遍历第一级子节点  每个节点选出一个层级最小且innerText不为空的子节点
-        function walks_element(element, cur_gen){
-            if(element.innerText != "" && element.innerText != undefined && element.children.length == 0){
-                return [[element.innerText,cur_gen]]
-            }
-            let res = []
-            for(child of element.children){
-                res = res.concat(walks_element(child,cur_gen+1,res))
-            }
-
-            return res
-        }
-
-        let cur_tab_name = "txt2img"
-        let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
-
-        for (child of container.children){
-            res = walks_element(child, 0)
-            let min_gen = 10
-            let title = undefined
-            for(pair of res){
-                if(pair[1] < min_gen){
-                    min_gen = pair[1]
-                    title = pair[0]
-                }
-            }
-            if(title == 'Script'){break}
-            console.log(title)
-        }
-
-        // function get_child_from_tree(parent, target_gen, cur_gen, condition_fn = undefined){
-        //     //console.log(cur_gen)
-        //     if(target_gen == cur_gen){
-        //         if(condition_fn == undefined){
-        //             return Array.from(parent.children)
-        //         }
-        //         res = []
-        //         for (child of parent.children){
-        //             if(condition_fn(child)){
-        //                 res.push(child)
-        //             }
-        //         }
-        //         //console.log(res)
-        //         return res
-        //     }
-            
-        //     target_children = []
-        //     for (child of parent.children){
-        //         target_children = target_children.concat(get_child_from_tree(child, target_gen, cur_gen+1, condition_fn))
-        //     }
-        //     //console.log(target_children)
-        //     return target_children
-        // }
-
-        // }
-        
-        //const elements = gradioApp().getElementById('html_info_txt2img').querySelectorAll(`#html_info_txt2img`);
-        //console.log(elements[0].innerText)
-
-        //console.log("test function")
-        //res = "state-txt2img_ext-control-net-0-model".indexOf("txt2img")
-        //res1 = "state-txt2img_ext-control-net-0-model".indexOf("txt2img1")
-        // res2 = "state-txt2img_ext-control-net-0-model".replace("txt2img123", "文生图/txt2img")
-        //console.log(res)
-        //console.log(res1)
-
-
-        // model_str = "deliberate_v2.safetensors [9aba26abdf]"
-        // let res = model_str.search(/\[/)
-        // console.log(res)
-
-        // res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
-        // console.log(res)
-        // console.log(model_str.substring(res,res+12))
-
-        // model_str = "deliberate_v2.safetensors [9aba261abdf]"
-        // res = model_str.search(/\[[0-9A-Fa-f]{10}\]/)
-        // console.log(res)
-        // console.log(model_str.substring(res,res+12))
-
-
-        // let select = gradioApp().getElementById('setting_sd_model_checkpoint')
-        
-        // let input = select.querySelector('input');
-        // state.utils.triggerMouseEvent(input, 'focus');
-
-        // setTimeout(() => {
-        //     let items = Array.from(select.querySelectorAll('ul li'));
-        //     console.log(`-----handleSelect--------${items}--------------`)
-        //     items.forEach(li => {
-        //         console.log(`==========handleSelect======${li.lastChild.wholeText.trim()}===========`)
-        //         if (li.lastChild.wholeText.trim() === "deliberate_v2.safetensors [9aba26abdf]") {
-        //             state.utils.triggerMouseEvent(li, 'mousedown');
-        //             return false;
-        //         }
-        //     });
-        //     state.utils.triggerMouseEvent(input, 'blur');
-        // }, 100);
+        console.log(state.extensions)
 
     },
 
@@ -112,7 +14,6 @@ state.utils = {
         try{
             if(window.localization[new_key.replace(/^\s+|\s+$/g,"")] != undefined){
                 new_key = window.localization[new_key]
-                //console.log("getTranslation===========" + key +': '+ new_key);
             }
         } catch (error) {
             console.warn('getTranslation error:', error);
@@ -120,24 +21,24 @@ state.utils = {
         return new_key
     },
 
-    revokeTranslation: function revokeTranslation(key){
+    reverseTranslation: function reverseTranslation(key){
         new_key = []
         try{
             //key=key.replace(/^\s+|\s+$/g,"");
             for (localize_key of Object.keys(window.localization)) {
-                //console.log("----------------" + key +': '+ localize_key + '-----' + window.localization[localize_key]);
-                if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key]){ 
+                if(key.replace(/^\s+|\s+$/g,"") === window.localization[localize_key].replace(/^\s+|\s+$/g,"")){ 
                     tmp_key = localize_key
                     new_key.push(tmp_key)
                     //break
                 }
             }
         } catch (error) {
-            console.warn('revokeTranslation error:', error);
+            console.warn('reverseTranslation error:', error);
         }
 
-        //console.log("----------------" + key +': '+ new_key + '-----' + window.localization[new_key]);
         if(new_key.length == 0){new_key.push(key)}
+        //console.log(`---------reverseTranslation---------${key}---------`)
+        //console.log(new_key)
         return new_key
     },
 
@@ -190,82 +91,6 @@ state.utils = {
             console.warn('[switch_to_img2img_ControlNet]: Error:', error);
         }
     },
-
-    // importState: function () {
-    //     let store = new state.Store();
-    //     const fileInput = gradioApp().getElementById('state-import-file-inline' || 'state-import-file');
-    //     state.utils.triggerMouseEvent(fileInput);
-    //     console.log(`==================state.utils importState click = ${fileInput.files[0]}`)
-        
-    //     setTimeout(() => {
-    //         if (! fileInput.files || ! fileInput.files[0]) {
-    //             alert('Please select a JSON file!');
-    //             return;
-    //         }
-    //         const file = fileInput.files[0];
-    //         const reader = new FileReader();
-    //         reader.onload = function (event) {
-    //             store.load(JSON.parse(event.target.result));
-    //             actions.applyState()
-    //             //window.location.reload();
-    //         };
-    //         reader.readAsText(file);
-    //     }, 150);
-    // },
-
-    // importLightflow: function () {
-
-    //     fetch('/state/lightflowconfig')
-    //         .then(response => response.json())
-    //         .then(config => {
-    //             let store = new state.Store();
-    //             console.log(`lightflowconfig = ${config}`)
-    //             store.load(JSON.parse(config));
-    //             state.core.actions.applyState();
-
-    //         }).catch(error => console.error('[state]: Error getting JSON file:', error));
-    // },
-    //exportState: function () {
-        // let store = new state.Store();
-        // //state.utils.saveFile('sd-webui-state', store.getAll());
-        
-
-        // fetch('/state/lightflowconfig?onlyimg=true')
-        // .then(response => response.json())
-        // .then(config => {
-        //     config = JSON.parse(config)
-        //     stored_config = store.getAll()
-        //     this.getCurSeed('txt2img')
-        //     //console.log(config)
-        //     //console.log(stored_config)
-        //     for (let key in config){
-        //         //console.log(config[key])
-        //         if(config[key] != ""){
-        //             stored_config[key] = config[key]
-        //         }
-        //     }
-
-        //     var checkTime = function (i) {
-        //         if (i < 10) { i = "0" + i; }
-        //         return i;
-        //     }
-        //     let nowdate = new Date();
-        //     let year = String(nowdate.getFullYear())
-        //     let month = String(checkTime(nowdate.getMonth() + 1))
-        //     let day = String(checkTime(nowdate.getDate()))
-        //     let h = String(checkTime(nowdate.getHours()))
-        //     let m = String(checkTime(nowdate.getMinutes()))
-        //     let s = String(checkTime(nowdate.getSeconds()))
-        //     let time_str = year+month+day+h+m+s
-        //     //console.log(stored_config)
-        //     state.utils.saveFile('lightflow-'+time_str, stored_config);
-
-        // }).catch(error => console.error('[state]: Error getting JSON file:', error));
-
-        //config = JSON.stringify(store.getAll(), null, 4);
-        //fetch(`/state/ExportLightflow?config=${config}`)
-    //},
-
     triggerEvent: function triggerEvent(element, event) {
         if (! element) {
             return;
@@ -305,25 +130,23 @@ state.utils = {
         }
     },
     onContentChange: function onContentChange(targetNode, func) {
-        const observer = new MutationObserver((mutationsList, observer) => {
-            for (const mutation of mutationsList) {
-                if (mutation.type === 'childList' || 
-                    (mutation.type === 'attributes' && mutation.attributeName == 'src') // 图片被更改
-                ) {
-                    // console.log(`type = ${mutation.type}`)
-                    // console.log(`target = ${mutation.target.id}`)
-                    // console.log(`attributeName = ${mutation.attributeName}`)
-                    // console.log(`targetNode = ${targetNode.id}`)
-                    func(targetNode);
+        if(targetNode) {
+            const observer = new MutationObserver((mutationsList, observer) => {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'childList' || 
+                        (mutation.type === 'attributes' && mutation.attributeName == 'src') // 图片被更改
+                    ) {
+                        func(targetNode);
+                    }
                 }
-            }
-        });
-        observer.observe(targetNode, {
-            attributes: true,
-            childList: true,
-            characterData: true,
-            subtree: true
-        });
+            });
+            observer.observe(targetNode, {
+                attributes: true,
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
     },
 
     getCurSeed: function getCurSeed(tab) {
@@ -344,7 +167,6 @@ state.utils = {
 
     handleImage: function handleImage(select, id, store) {
         setTimeout(() => {
-            //console.log(`------ onContentChange select = ${id}  ${select}  125 -----`)
             state.utils.onContentChange(select, function (el) {
                 
                 let data = {
@@ -378,9 +200,7 @@ state.utils = {
         try {
             // new gradio version...
             let buttons = select.querySelectorAll('button');
-            //console.log(`------ onContentChange select = ${select} ----- ${img.src}`)
             buttons.forEach(button => {
-                //console.log(button.getAttribute("aria-label"))
                 if(button.getAttribute("aria-label") == "Clear"){
                     button.click();
                     //state.utils.triggerMouseEvent(button, 'mousedown');
@@ -444,11 +264,10 @@ state.utils = {
         }
     },
 
-    handleSelect: function handleSelect(select, id, store) {
+    handleSelect: function handleSelect(select, id, store, force=false) {
         try {
             let value = store.get(id);
             if (value) {
-                //console.log(`-----start---handleSelect = ${id} ---${value}----`)
                 
                 let input = select.querySelector('input');
                 state.utils.triggerMouseEvent(input, 'focus');
@@ -459,7 +278,6 @@ state.utils = {
                     let successed = false
                     for (li of items){
                         // li.lastChild.wholeText.trim() === value
-                        // console.log(`------ handleSelect = ${value} ----- ${localized_value}----${li.lastChild.wholeText.trim()}`)
                         if (localized_value === li.lastChild.wholeText.trim()) {
                             state.utils.triggerMouseEvent(li, 'mousedown');
                             successed = true
@@ -493,13 +311,31 @@ state.utils = {
             setTimeout(() => {
                 state.utils.onContentChange(select, function (el) {
                     let selected = el.querySelector('span.single-select');
-                    if (selected) {
-                        store.set(id, selected.textContent);
-                    } else {
-                        // new gradio version...
-                        let input = el.querySelector('input');
-                        if (input) {
-                            store.set(id, input.value);
+                    if(force){
+                        let localized_id = state.utils.getTranslation(id)
+                        let id_translations = state.utils.reverseTranslation(localized_id)
+                        //宁可错存一千，也不漏存一个
+                        for (trans_id of id_translations){
+                            if (selected) {
+                                store.set(trans_id, selected.textContent);
+                            } else {
+                                // new gradio version...
+                                let input = el.querySelector('input');
+                                if (input) {
+                                    store.set(trans_id, input.value);
+                                }
+                            }
+                        }
+                    }
+                    else{
+                        if (selected) {
+                            store.set(id, selected.textContent);
+                        } else {
+                            // new gradio version...
+                            let input = el.querySelector('input');
+                            if (input) {
+                                store.set(id, input.value);
+                            }
                         }
                     }
                 });
@@ -550,7 +386,6 @@ state.utils = {
                     selectOption();
                 }
             }
-            //console.log(`------ onContentChange select = ${select}  250 -----`)
             state.utils.onContentChange(select, function (el) {
                 const selected = Array.from(el.querySelectorAll('.token > span')).map(item => item.textContent);
                 store.set(id, selected);

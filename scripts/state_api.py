@@ -16,50 +16,20 @@ import modules.scripts as scripts
 import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
-from scripts import lightflow_version 
 from modules.sd_models import checkpoints_list
+
+from scripts import lightflow_version, lightflow_config
+from scripts.lightflow_config import PNGINFO_2_LIGHTFLOW
+from scripts.lightflow_config import PNGINFO_CN_2_LIGHTFLOW
+from scripts.lightflow_config import Image_Components_Key
 
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
 invisible_buttons = {}
 Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
-Return_Key = [
-    "useless_Textbox", # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
-    "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask"
-    ] # 只操作图片相关参数，其他参数js里搞定
 Output_Log = ""
 
-PNGINFO_2_LIGHTFLOW = {
-    "Prompt": "state-txt2img_prompt",
-    "Negative prompt": "state-txt2img_neg_prompt",
-    "Steps": "state-txt2img_steps",
-    "Sampler": "state-txt2img_sampling",
-    "CFG scale": "state-txt2img_cfg_scale",
-    "Seed": "state-txt2img_seed",
-    "Face restoration": "state-txt2img_restore_faces",
-    "Size-1": "state-txt2img_width",
-    "Size-2": "state-txt2img_height",
-    "Model hash": "state-setting_sd_model_checkpoint",
-    "Denoising strength": "state-txt2img_denoising_strength",
-    "Hires upscale": "state-txt2img_hr_scale",
-    "Hires steps": "state-txt2img_hires_steps",
-    "Hires upscaler": "state-txt2img_hr_upscaler",
-    "Hires resize-1": "state-txt2img_hr_resize_x",
-    "Hires resize-2": "state-txt2img_hr_resize_y"
-}
-
-PNGINFO_CN_2_LIGHTFLOW = {
-    "preprocessor": "state-ext-control-net-txt2img_0-preprocessor",
-    "model": "state-ext-control-net-txt2img_0-model",
-    "weight": "state-ext-control-net-txt2img_0-control-weight",
-    "starting": "state-ext-control-net-txt2img_0-starting-control-step",
-    "ending": "state-ext-control-net-txt2img_0-guidance-end-(t)",
-    "resize mode": "state-ext-control-net-txt2img_0-resize-mode",
-    "pixel perfect": "state-ext-control-net-txt2img_0-pixel-perfect",
-    "control mode": "state-ext-control-net-txt2img_0-control-mode",
-    "preprocessor params": ""
-}
 
 def test_func():
     # with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
@@ -112,6 +82,8 @@ python触发导入事件，按正常逻辑先执行js代码，把除图片以外
 def on_after_component(component, **kwargs):
 
     try:
+        if(kwargs["elem_id"] == "img2img_image"):
+            print(kwargs)
 
         if(Webui_Comps.get(kwargs["elem_id"], None) == None):
             Webui_Comps[kwargs["elem_id"]] = component
@@ -122,9 +94,8 @@ def on_after_component(component, **kwargs):
     if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
         print("开始绑定按钮")
 
-
         target_comps = []
-        # for key in Return_Key:
+        # for key in Image_Components_Key:
         #     try:
         #         target_comps.append(Webui_Comps[key])
         #     except:
@@ -133,7 +104,7 @@ def on_after_component(component, **kwargs):
         target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
         target_comps.append(State_Comps["outlog"][0])
         target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
-        print(target_comps)
+        # print(target_comps)
 
         for btn in State_Comps["export"]:
             btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
@@ -150,7 +121,10 @@ def on_after_component(component, **kwargs):
             segs = key.split("_")
             comp_name = "_".join(segs[2:])
             print(comp_name)
-            invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
+            try:
+                invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
+            except KeyError:
+                print(f"No such component: {comp_name}")
 
 
 temp_index = -1
@@ -170,12 +144,14 @@ def func_for_invisiblebutton():
     
     # try:
     #     print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
-    #     print(f"aaaaaaaaa {Return_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+    #     print(f"aaaaaaaaa {Image_Components_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
     # except:
     #     pass
     
+    
+    # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
     if(temp_index > 0):
-        add_output_log(f"import image: \'{Return_Key[temp_index]}\' ") # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
+        add_output_log(f"import image: \'{Image_Components_Key[temp_index]}\' ") 
         
     if(next_index+1 == len(Webui_Comps_Cur_Val)):
         add_output_log(f"import completed!")
@@ -204,7 +180,7 @@ def fn_import_workflow(workflow_file):
             workflow_json = json.loads(json_str)
 
     Webui_Comps_Cur_Val = []
-    for key in Return_Key:
+    for key in Image_Components_Key:
         image = None
         successed = 2
         tempkey = key
@@ -263,7 +239,6 @@ class StateApi():
         print("-----------------state_api start------------------")
         self.app = app 
         self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
-        #self.add_api_route('/lightflow_get_localization', self.get_localization, methods=['GET']) # 读取localization.json
         self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
         self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
         self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
@@ -274,37 +249,18 @@ class StateApi():
     def get_config(self):
         return FileResponse(shared.cmd_opts.ui_settings_file)
 
-    # def get_localization(self):
-
-    #     print(f"---------start--------get_localization------------------")
-    #     localization_file = ""
-    #     try:
-    #         with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
-    #             json_str = f.read()
-    #             config_json = json.loads(json_str)
-    #             #print(config_json['localization'])
-    #             localization_file = localization.localizations[config_json['localization']]
-    #     except:
-    #         pass
-
-    #     print(f"-----------------get_localization {localization_file}------------------")
-    #     if(os.path.exists(localization_file)):
-    #         return FileResponse(localization_file)
-        
-    #     return ""
-
     def get_lightflow_config(self, onlyimg:bool = False):
         global workflow_json
         temp_json = {}
         if(onlyimg):
-            for key in Return_Key:
+            for key in Image_Components_Key:
                 try:
                     temp_json[key] = workflow_json[key]
                 except:
                     pass
         else:
             temp_json = copy.deepcopy(workflow_json)
-            for key in Return_Key:
+            for key in Image_Components_Key:
                 temp_json[key] = ""
 
         # print(f"temp_json = {temp_json}")
@@ -319,14 +275,6 @@ class StateApi():
                 out_json[data[0].strip()] = data[1].strip()
             except IndexError as e:
                 print(f"str_2_json [key error]: {e}")
-
-        # fields = str_data.split(",")
-        # for field in fields:
-        #     data = field.split(":")
-        #     try:
-        #         out_json[data[0].strip()] = data[1].strip()
-        #     except IndexError as e:
-        #         print(f"str_2_json [key error]: {e}")
         return out_json
 
     def png_info(self, img_data:png_info_params):
@@ -384,7 +332,7 @@ class StateApi():
         return json.dumps(temp_json)
 
     def get_img_elem_key(self):
-        keys_str = ",".join(Return_Key)
+        keys_str = ",".join(Image_Components_Key)
         return keys_str
 
     def imgs_callback(self, img_data:imgs_callback_params):
@@ -443,7 +391,7 @@ class Script(scripts.Script):
                 with gr.Row():
                     State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
                     
-                    for key in Return_Key:
+                    for key in Image_Components_Key:
                         elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
                         invisible_button = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
                         invisible_buttons[elem_id] = invisible_button
@@ -455,23 +403,3 @@ class Script(scripts.Script):
 api = StateApi()
 script_callbacks.on_app_started(api.start)
 script_callbacks.on_after_component(on_after_component)
-
-
-# init number of controlnet
-try:
-    webui_settings = {}
-    with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
-        json_str = f.read()
-        webui_settings = json.loads(json_str)
-    
-    Multi_ControlNet  = webui_settings["control_net_max_models_num"]
-    if(Multi_ControlNet == 1):
-        Return_Key.append(f"txt2img_controlnet_ControlNet_input_image")
-        Return_Key.append(f"img2img_controlnet_ControlNet_input_image")
-    else:
-        for i in range(Multi_ControlNet):
-            Return_Key.append(f"txt2img_controlnet_ControlNet-{i}_input_image")
-            Return_Key.append(f"img2img_controlnet_ControlNet-{i}_input_image")
-except:
-    pass
-
