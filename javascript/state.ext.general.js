@@ -92,7 +92,7 @@ function general_ext(tab_name, extension_name, root_container) {
                     var value = store.get(id);
                     if (value) {break}
                 }
-                id = state.utils.txtToId(translations[0]);
+                //id = state.utils.txtToId(translations[0]);
                 state.utils.handleSelect(select, id, store, force=true);
                 if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
                     state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
