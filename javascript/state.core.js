@@ -28,6 +28,9 @@ state.core = (function () {
 
     const ELEMENTS_WITHOUT_PREFIX = {
         'resize_mode': 'resize_mode',
+        'setting_inpainting_mask_weight': 'setting_inpainting_mask_weight',
+        'setting_CLIP_stop_at_last_layers': 'setting_CLIP_stop_at_last_layers',
+        'setting_eta_noise_seed_delta': 'setting_eta_noise_seed_delta'
         //'generation_info_txt2img': 'generation_info_txt2img' // 可能因为是visible=false 所以触发不了onchange事件？
     };
 
@@ -38,7 +41,8 @@ state.core = (function () {
     };
 
     const SELECTS_WITHOUT_PREFIX = {
-        'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint'
+        'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint',
+        'setting_sd_vae': 'setting_sd_vae'
     };
 
     const MULTI_SELECTS = {

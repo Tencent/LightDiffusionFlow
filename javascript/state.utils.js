@@ -198,15 +198,17 @@ state.utils = {
 
     clearImage: function clearImage(select) {
         try {
-            // new gradio version...
-            let buttons = select.querySelectorAll('button');
-            buttons.forEach(button => {
-                if(button.getAttribute("aria-label") == "Clear"){
-                    button.click();
-                    //state.utils.triggerMouseEvent(button, 'mousedown');
-                }
-            });
-
+            if(select){
+                
+                let buttons = select.querySelectorAll('button');
+                buttons.forEach(button => {
+                    if(button.getAttribute("aria-label") == "Clear"){
+                        button.click();
+                        //state.utils.triggerMouseEvent(button, 'mousedown');
+                    }
+                });
+                
+            }
         } catch (error) {
             console.error('[state]: Error:', error);
         }

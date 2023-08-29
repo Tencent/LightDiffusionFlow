@@ -17,7 +17,9 @@ PNGINFO_2_LIGHTFLOW = {
     "Hires steps": "state-txt2img_hires_steps",
     "Hires upscaler": "state-txt2img_hr_upscaler",
     "Hires resize-1": "state-txt2img_hr_resize_x",
-    "Hires resize-2": "state-txt2img_hr_resize_y"
+    "Hires resize-2": "state-txt2img_hr_resize_y",
+    "Clip skip": "setting_CLIP_stop_at_last_layers",
+    "ENSD": "setting_eta_noise_seed_delta"
 }
 
 PNGINFO_CN_2_LIGHTFLOW = {
