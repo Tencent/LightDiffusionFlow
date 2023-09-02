@@ -70,13 +70,25 @@ state.core = (function () {
         return this[`state${suffix}`] && this[`state${suffix}`].indexOf(id) > -1;
     }
 
-    
-    let img_elem_keys=[];
+    let preload_file = ""
+    function fn_timer(){
+        fetch('/state/should_preload')
+        .then(response => response.json())
+        .then(data => {
+            if (preload_file != data){
+                preload_file = data
+                console.log("1111")
+                const btn = gradioApp().querySelector(`button#preload_button`);
+                state.utils.triggerMouseEvent(btn);
 
+            }
+        });
+    }
+
+    let img_elem_keys=[];
     function init() {
         
         //console.log(window.localization)
-
         fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
 
         fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
@@ -101,6 +113,8 @@ state.core = (function () {
                 })
                 .catch(error => console.error('[state]: Error getting JSON file:', error));
         });
+
+        window.setInterval(fn_timer,1000);
 
     }
     
@@ -265,7 +279,8 @@ state.core = (function () {
     }
 
     function storeTab() {
-        store.set('tab', state.utils.reverseTranslation(gradioApp().querySelector('#tabs .tab-nav button.selected').textContent)[0]);
+        let tab_name = gradioApp().querySelector('#tabs .tab-nav button.selected').textContent;
+        store.set('tab', state.utils.reverseTranslation(tab_name)[0]);
         bindTabClickEvents(); // dirty hack here...
     }
 
@@ -333,7 +348,7 @@ state.core = (function () {
     }
 
     function handleSavedSelects(id) {
-        state.utils.handleSelect(getElement(id), id, store);
+        state.utils.handleSelect(getElement(id), id, store, force=false);
     }
 
     function handleSavedMultiSelects(id) {
@@ -417,7 +432,9 @@ state.core = (function () {
     //         'marginBottom': '10px'
     //     });
     //     buttonsContainer.appendChild(state.utils.html.create('hr'));
-    //     buttonsContainer.appendChild(state.utils.html.create('div', { innerHTML: 'Actions' }, { marginBottom: '10px' }));
+    //     buttonsContainer.appendChild(state.utils.html.create('div',
+    //      { innerHTML: 'Actions' },
+    //      { marginBottom: '10px' }));
     //     buttonsContainer.appendChild(state.utils.html.createButton('Reset All', actions.resetAll));
     //     buttonsContainer.appendChild(state.utils.html.createButton('Export State', actions.exportState));
     //     buttonsContainer.appendChild(state.utils.html.createButton('Import State', actions.importState));
@@ -443,36 +460,36 @@ state.core = (function () {
                     config.hasSetting = hasSetting
                     //console.log(config)
                     //restoreTabs(config); // 恢复到最后点击的tab页面
+                    load(config);
+                    // forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
+                    //     handleSavedSelects(element);
+                    // });
 
-                    forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
-                        handleSavedSelects(element);
-                    });
+                    // forEachElement(ELEMENTS, config, (element, tab) => {
+                    //     handleSavedInput(`${tab}_${element}`);
+                    // });
 
-                    forEachElement(ELEMENTS, config, (element, tab) => {
-                        handleSavedInput(`${tab}_${element}`);
-                    });
+                    // forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
+                    //     handleSavedInput(element);
+                    // });
 
-                    forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
-                        handleSavedInput(element);
-                    });
+                    // forEachElement(SELECTS, config, (element, tab) => {
+                    //     handleSavedSelects(`${tab}_${element}`);
+                    // });
 
-                    forEachElement(SELECTS, config, (element, tab) => {
-                        handleSavedSelects(`${tab}_${element}`);
-                    });
+                    // forEachElement(MULTI_SELECTS, config, (element, tab) => {
+                    //     handleSavedMultiSelects(`${tab}_${element}`);
+                    // });
 
-                    forEachElement(MULTI_SELECTS, config, (element, tab) => {
-                        handleSavedMultiSelects(`${tab}_${element}`);
-                    });
+                    // forEachElement(TOGGLE_BUTTONS, config, (element, tab) => {
+                    //     handleToggleButton(`${tab}_${element}`);
+                    // });
 
-                    forEachElement(TOGGLE_BUTTONS, config, (element, tab) => {
-                        handleToggleButton(`${tab}_${element}`);
-                    });
-
-                    forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
-                        handleSavedImage(element);
-                    });
+                    // forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
+                    //     handleSavedImage(element);
+                    // });
             
-                    handleExtensions(config);
+                    // handleExtensions(config);
 
                     
                     //handleSettingsPage();
@@ -582,7 +599,7 @@ state.core = (function () {
             // webui主界面 没有localization相关的兼容问题 所以不用管
             store.clear();
             store.load(json_obj);
-            actions.applyState()
+            actions.applyState();
             
             return;
         },

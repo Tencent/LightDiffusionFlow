@@ -36,9 +36,10 @@ PNGINFO_CN_2_LIGHTFLOW = {
 
 
 Image_Components_Key = [
-    "useless_Textbox", # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
-    "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask", # 每个图片组件的elem_id
-    "txt2img_sam_input_image","img2img_sam_input_image" # Segment Anything images
+    # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
+    "useless_Textbox", 
+    # 每个图片组件的elem_id
+    "img2img_image","img2img_sketch","img2maskimg","inpaint_sketch","img_inpaint_base","img_inpaint_mask", 
     ] # 只保存图片组件id，其他参数js里搞定
 
 # init number of controlnet
@@ -59,3 +60,5 @@ try:
 except:
     pass
 
+# Segment Anything images
+Image_Components_Key.extend(["txt2img_sam_input_image","img2img_sam_input_image"])

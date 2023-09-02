@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import gradio as gr
 
-import os, io
+import os, io, sys
 import json
 from PIL import Image
 import re,base64
@@ -23,6 +23,11 @@ from scripts.lightflow_config import PNGINFO_2_LIGHTFLOW
 from scripts.lightflow_config import PNGINFO_CN_2_LIGHTFLOW
 from scripts.lightflow_config import Image_Components_Key
 
+# current_path = os.path.abspath(os.path.dirname(__file__))
+# print(current_path)
+# sys.path.append(os.path.join(current_path,"lib"))
+
+
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
 invisible_buttons = {}
@@ -30,18 +35,27 @@ Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
 Output_Log = ""
 
+# preload_file = "https://sdmodels-1300343106.cos.ap-guangzhou.myqcloud.com/sd-webui-example.lightflow?\
+# q-sign-algorithm=sha1&q-ak=AKIDBKXdgXM2nOuKWHtR1cCYegYCmBLHzVr9&\
+# q-sign-time=1693380740%3B1693384400&q-key-time=1693380740%3B1693384400\
+# &q-header-list=host&q-url-param-list=&q-signature=3729ac9b25e83a361467e28d743cd69420b658de"
+preload_file = r"A:\AIPainter\stable-diffusion-webui-git\extensions\sd-webui-lightflow\dev\sd-webui-example.lightflow"
+
 
 def test_func():
+    print("test_func")
     # with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
     #     json_str = f.read()
     #     config_json = json.loads(json_str)
     #     print(config_json['localization'])
     #     print(localization.localizations[config_json['localization']])
 
-    # data = "preprocessor: depth_midas, model: control_v11f1p_sd15_depth [cfd03158], weight: 0.95, starting/ending: (0.07, 0.93), resize mode: Just Resize, pixel perfect: True, control mode: My prompt is more important, preprocessor params: (512, 100, 200)"
+    # data = "preprocessor: depth_midas, model: control_v11f1p_sd15_depth [cfd03158], \
+    # weight: 0.95, starting/ending: (0.07, 0.93), resize mode: Just Resize, pixel perfect: True, \
+    # control mode: My prompt is more important, preprocessor params: (512, 100, 200)"
     # res = re.findall(r"([^:]+:[^:]{1,})(,|$)",data)
     # print(res)
-    find_checkpoint_from_name("hanfuDreambooth_v12")
+    #find_checkpoint_from_name("hanfuDreambooth_v12")
     #print(checkpoints_list)
 
 def add_output_log(msg:str, style:str=""):
@@ -76,8 +90,27 @@ def find_checkpoint_from_hash(hash:str):
             pass
     return hash
 
+def should_preload():
+    return preload_file
+
+def preload_func():
+    global preload_file
+
+    # ctx = PyV8.JSContext()
+    # ctx.enter()
+
+    # code_2 = '''
+    # const button = gradioApp().getElementById("test_button");
+    # button.click();
+    # '''
+    # ctx.eval(code_2)
+
+    return preload_file
+
 '''
-python触发导入事件，按正常逻辑先执行js代码，把除图片以外的参数全部设置好，然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
+python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
+然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，
+再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
 '''
 def on_after_component(component, **kwargs):
 
@@ -110,11 +143,16 @@ def on_after_component(component, **kwargs):
             btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
 
         for btn in State_Comps["import"]:
-            btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightflow",inputs=[btn],outputs=target_comps) # js里加载除图片以外的参数 python加载图片
+            # js里加载除图片以外的参数 python加载图片
+            btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightflow",
+                inputs=[btn],outputs=target_comps)
 
-        State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",inputs=[State_Comps["json2js"]])
+        State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
+            inputs=[State_Comps["json2js"]])
         
         State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
+
+        State_Comps["preload_button"].click(preload_func,inputs=[],outputs=State_Comps["import"][0])
 
         print(f"invisible_buttons: ")
         for key in invisible_buttons.keys():
@@ -122,7 +160,14 @@ def on_after_component(component, **kwargs):
             comp_name = "_".join(segs[2:])
             print(comp_name)
             try:
-                invisible_buttons[key].click(func_for_invisiblebutton,inputs=[],outputs=[ Webui_Comps[comp_name], State_Comps["json2js"], State_Comps["outlog"][0], State_Comps["outlog"][1]])
+                invisible_buttons[key].click(func_for_invisiblebutton,
+                    inputs=[], 
+                    outputs=[
+                        Webui_Comps[comp_name], 
+                        State_Comps["json2js"], 
+                        State_Comps["outlog"][0], 
+                        State_Comps["outlog"][1]
+                    ])
             except KeyError:
                 print(f"No such component: {comp_name}")
 
@@ -156,7 +201,8 @@ def func_for_invisiblebutton():
     if(next_index+1 == len(Webui_Comps_Cur_Val)):
         add_output_log(f"import completed!")
     
-    return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+    # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+    return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log 
 
 
 def fn_import_workflow(workflow_file):
@@ -238,13 +284,19 @@ class StateApi():
     def start(self, _: gr.Blocks, app: FastAPI):
         print("-----------------state_api start------------------")
         self.app = app 
-        self.add_api_route('/config.json', self.get_config, methods=['GET']) # 读取本地的config.json
-        self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) # python已经加载好的配置workflow_json  发送给 js
-        self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) # 获取图片的组件id 由js来设置onchange事件
-        self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) # 用户设置了新图片 触发回调保存到 workflow_json
-        self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) # 刷新页面之后触发
+        # 读取本地的config.json
+        self.add_api_route('/config.json', self.get_config, methods=['GET']) 
+        # python已经加载好的配置workflow_json  发送给 js
+        self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) 
+        # 获取图片的组件id 由js来设置onchange事件
+        self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
+        # 用户设置了新图片 触发回调保存到 workflow_json
+        self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) 
+        # 刷新页面之后触发
+        self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) 
         self.add_api_route('/output_log', add_output_log, methods=['GET']) 
         self.add_api_route('/png_info', self.png_info, methods=['POST']) # 
+        self.add_api_route('/should_preload', should_preload, methods=['GET'])
 
     def get_config(self):
         return FileResponse(shared.cmd_opts.ui_settings_file)
@@ -298,10 +350,13 @@ class StateApi():
                     if(cn_key == "starting/ending"):
                         cn_key_split = cn_key.split("/")
                         data = cn_info[cn_key].replace("(","").replace(")","").split(",")
-                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[0]].replace("0",matchObj.group(1))] = data[0].strip()
-                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[1]].replace("0",matchObj.group(1))] = data[1].strip()
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
+                             = data[0].strip()
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
+                             = data[1].strip()
                     elif(cn_key == "pixel perfect"):
-                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = (cn_info[cn_key].lower() == "true")
+                        temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))]\
+                             = (cn_info[cn_key].lower() == "true")
                     else:
                         temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
 
@@ -372,9 +427,12 @@ class Script(scripts.Script):
 
         with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=True, visible=True):
             with gr.Row():
-                lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow",".json"])
+                lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
                 State_Comps["import"].append(lightflow_file)
-                State_Comps["outlog"].append(gr.HTML(label="Output Log",value="<p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p><p style=color:DodgerBlue;>Welcome to Lightflow!  \(^o^)/~</p>"))
+                State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
+                <p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p>
+                <p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p>
+                <p style=color:DodgerBlue;>Welcome to Lightflow!  \(^o^)/~</p>'''))
                 #print(State_Comps["import"])
 
             with gr.Row():
@@ -386,10 +444,13 @@ class Script(scripts.Script):
                 json2js = gr.Textbox(label="json2js",visible=False)
                 State_Comps["json2js"] = json2js
 
-                State_Comps["test_button"] = gr.Button(value='测试',visible=False)
+                State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
+
+                State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=True)
 
                 with gr.Row():
-                    State_Comps["useless_Textbox"] = gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
+                    State_Comps["useless_Textbox"] = \
+                        gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
                     
                     for key in Image_Components_Key:
                         elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
