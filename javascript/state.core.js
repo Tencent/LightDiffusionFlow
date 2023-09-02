@@ -73,16 +73,16 @@ state.core = (function () {
   let preload_file = ""
   function fn_timer(){
     fetch('/state/should_preload')
-    .then(response => response.json())
-    .then(data => {
-      if (preload_file != data){
-        preload_file = data
-        console.log("1111")
-        const btn = gradioApp().querySelector(`button#preload_button`);
-        state.utils.triggerMouseEvent(btn);
+      .then(response => response.json())
+      .then(data => {
+        if (preload_file != data){
+          preload_file = data
+          console.log("1111")
+          const btn = gradioApp().querySelector(`button#preload_button`);
+          state.utils.triggerMouseEvent(btn);
 
-      }
-    });
+        }
+      });
   }
 
   let img_elem_keys=[];
@@ -92,27 +92,27 @@ state.core = (function () {
     fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
 
     fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
-    .then(response => response.json())
-    .then(data => {
-      img_elem_keys = data.split(",")
-      img_elem_keys.forEach(key => {
-        IMAGES_WITHOUT_PREFIX[key] = key
+      .then(response => response.json())
+      .then(data => {
+        img_elem_keys = data.split(",")
+        img_elem_keys.forEach(key => {
+          IMAGES_WITHOUT_PREFIX[key] = key
+        });
+        
+        // 等上面的组件ID同步过来后 再加载其他配置
+        fetch('/state/config.json?_=' + (+new Date()))
+          .then(response => response.json())
+          .then(config => {          
+            try {
+              store = new state.Store();
+              store.clearAll();
+              load(config);
+            } catch (error) {
+              console.error('[state]: Error:', error);
+            }
+          })
+          .catch(error => console.error('[state]: Error getting JSON file:', error));
       });
-      
-      // 等上面的组件ID同步过来后 再加载其他配置
-      fetch('/state/config.json?_=' + (+new Date()))
-        .then(response => response.json())
-        .then(config => {          
-          try {
-            store = new state.Store();
-            store.clearAll();
-            load(config);
-          } catch (error) {
-            console.error('[state]: Error:', error);
-          }
-        })
-        .catch(error => console.error('[state]: Error getting JSON file:', error));
-    });
 
     window.setInterval(fn_timer,1000);
 
@@ -454,50 +454,50 @@ state.core = (function () {
     // },
     applyState: function () {
       fetch('/state/config.json?_=' + (+new Date()))
-      .then(response => response.json())
-      .then(config => {
-        try {
-          config.hasSetting = hasSetting
-          //console.log(config)
-          //restoreTabs(config); // 恢复到最后点击的tab页面
-          load(config);
-          // forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
-          //   handleSavedSelects(element);
-          // });
+        .then(response => response.json())
+        .then(config => {
+          try {
+            config.hasSetting = hasSetting
+            //console.log(config)
+            //restoreTabs(config); // 恢复到最后点击的tab页面
+            load(config);
+            // forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
+            //   handleSavedSelects(element);
+            // });
 
-          // forEachElement(ELEMENTS, config, (element, tab) => {
-          //   handleSavedInput(`${tab}_${element}`);
-          // });
+            // forEachElement(ELEMENTS, config, (element, tab) => {
+            //   handleSavedInput(`${tab}_${element}`);
+            // });
 
-          // forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
-          //   handleSavedInput(element);
-          // });
+            // forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
+            //   handleSavedInput(element);
+            // });
 
-          // forEachElement(SELECTS, config, (element, tab) => {
-          //   handleSavedSelects(`${tab}_${element}`);
-          // });
+            // forEachElement(SELECTS, config, (element, tab) => {
+            //   handleSavedSelects(`${tab}_${element}`);
+            // });
 
-          // forEachElement(MULTI_SELECTS, config, (element, tab) => {
-          //   handleSavedMultiSelects(`${tab}_${element}`);
-          // });
+            // forEachElement(MULTI_SELECTS, config, (element, tab) => {
+            //   handleSavedMultiSelects(`${tab}_${element}`);
+            // });
 
-          // forEachElement(TOGGLE_BUTTONS, config, (element, tab) => {
-          //   handleToggleButton(`${tab}_${element}`);
-          // });
+            // forEachElement(TOGGLE_BUTTONS, config, (element, tab) => {
+            //   handleToggleButton(`${tab}_${element}`);
+            // });
 
-          // forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
-          //   handleSavedImage(element);
-          // });
-      
-          // handleExtensions(config);
+            // forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
+            //   handleSavedImage(element);
+            // });
+        
+            // handleExtensions(config);
 
-          
-          //handleSettingsPage();
-        } catch (error) {
-          console.error('[state]: Error:', error);
-        }
-      })
-      .catch(error => console.error('[state]: Error getting JSON file:', error));
+            
+            //handleSettingsPage();
+          } catch (error) {
+            console.error('[state]: Error:', error);
+          }
+        })
+        .catch(error => console.error('[state]: Error getting JSON file:', error));
     },
     
     exportState: function () {
