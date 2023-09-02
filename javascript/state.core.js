@@ -368,7 +368,7 @@ state.core = (function () {
       state.utils.triggerMouseEvent(btn);
     }
     btn.addEventListener('click', function () {
-       store.set(id, Array.from(this.classList).indexOf('secondary-down') === -1);
+      store.set(id, Array.from(this.classList).indexOf('secondary-down') === -1);
     });
   }
 
@@ -510,32 +510,32 @@ state.core = (function () {
       }
 
       fetch('/state/lightflowconfig?onlyimg=true')
-      .then(response => response.json())
-      .then(config => {
-        config = JSON.parse(config)
-        stored_config = store.getAll()
-        
-        for (let key in config){
-          if(config[key] != ""){
-            stored_config[key] = config[key]
+        .then(response => response.json())
+        .then(config => {
+          config = JSON.parse(config)
+          stored_config = store.getAll()
+          
+          for (let key in config){
+            if(config[key] != ""){
+              stored_config[key] = config[key]
+            }
           }
-        }
 
-        var checkTime = function (i) {
-          if (i < 10) { i = "0" + i; }
-          return i;
-        }
-        let nowdate = new Date();
-        let year = String(nowdate.getFullYear())
-        let month = String(checkTime(nowdate.getMonth() + 1))
-        let day = String(checkTime(nowdate.getDate()))
-        let h = String(checkTime(nowdate.getHours()))
-        let m = String(checkTime(nowdate.getMinutes()))
-        let s = String(checkTime(nowdate.getSeconds()))
-        let time_str = year+month+day+h+m+s
-        state.utils.saveFile('flow-'+time_str, stored_config);
+          var checkTime = function (i) {
+            if (i < 10) { i = "0" + i; }
+            return i;
+          }
+          let nowdate = new Date();
+          let year = String(nowdate.getFullYear())
+          let month = String(checkTime(nowdate.getMonth() + 1))
+          let day = String(checkTime(nowdate.getDate()))
+          let h = String(checkTime(nowdate.getHours()))
+          let m = String(checkTime(nowdate.getMinutes()))
+          let s = String(checkTime(nowdate.getSeconds()))
+          let time_str = year+month+day+h+m+s
+          state.utils.saveFile('flow-'+time_str, stored_config);
 
-      }).catch(error => console.error('[state]: Error getting JSON file:', error));
+        }).catch(error => console.error('[state]: Error getting JSON file:', error));
 
       //config = JSON.stringify(store.getAll(), null, 4);
       //fetch(`/state/ExportLightflow?config=${config}`)
@@ -564,11 +564,11 @@ state.core = (function () {
           })
         }        
         fetch(`/state/png_info`, data)
-        .then(response => response.json())
-        .then(data => {
-          console.log(data)
-          actions.importLightflow(data)
-        });
+          .then(response => response.json())
+          .then(data => {
+            console.log(data)
+            actions.importLightflow(data)
+          });
       }
       else{
         const file = fileInput[0].blob;
