@@ -75,22 +75,22 @@ state.core = (function () {
   function fn_timer(){
 
     fetch('/lightspeedflow/local/need_preload')
-    .then(response => response.json())
-    .then(data => {
-      console.log(`fn_timer ${data}`)
-      if (data != ""){
-        //state.core.actions.handleLightSpeedFlow([{"name":data}]);
-        const btn1 = gradioApp().querySelector(`button#set_lightspeedflow_file`);
-        state.utils.triggerMouseEvent(btn1);
-        setTimeout(() => {
-          const btn2 = gradioApp().querySelector(`button#preload_button`);
-          state.utils.triggerMouseEvent(btn2);
-        }, 1000);
-      }
-    }).catch(function(e) {
-      clearInterval(timer)
-      console.log("Oops, error");
-    });
+      .then(response => response.json())
+      .then(data => {
+        console.log(`fn_timer ${data}`)
+        if (data != ""){
+          //state.core.actions.handleLightSpeedFlow([{"name":data}]);
+          const btn1 = gradioApp().querySelector(`button#set_lightspeedflow_file`);
+          state.utils.triggerMouseEvent(btn1);
+          setTimeout(() => {
+            const btn2 = gradioApp().querySelector(`button#preload_button`);
+            state.utils.triggerMouseEvent(btn2);
+          }, 1000);
+        }
+      }).catch(function(e) {
+        clearInterval(timer)
+        console.log("Oops, error");
+      });
 
   }
 
