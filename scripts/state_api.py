@@ -142,7 +142,8 @@ def on_after_component(component, **kwargs):
     input_component = State_Comps["import"][0]
     print(input_component)
     State_Comps["set_file_button"].click(set_lightspeedflow_file,inputs=[],outputs=[input_component])
-    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", inputs=[input_component],outputs=target_comps)
+    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", 
+      inputs=[input_component],outputs=target_comps)
     print(input_component)
 
     print(f"invisible_buttons: ")
@@ -473,7 +474,9 @@ class Script(scripts.Script):
         State_Comps["import"].append(lightspeedflow_file)
 
         # with gr.Column(scale=1):
-        #     gr.HTML(label="",value='<a style ="text-decoration:underline;color:cornflowerblue;" href="https://www.lightflow.ai/">LightFlow开源社区</a>')
+        #   gr.HTML(label="",value='''
+        # <a style ="text-decoration:underline;color:cornflowerblue;",
+        # href="https://www.lightflow.ai/">LightFlow开源社区</a>''')
         State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
         <p style=color:Tomato;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
         <p style=color:MediumSeaGreen;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
