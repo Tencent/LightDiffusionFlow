@@ -20,10 +20,10 @@ import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
 
-from scripts import lightflow_version, lightflow_config
-from scripts.lightflow_config import PNGINFO_2_LIGHTFLOW
-from scripts.lightflow_config import PNGINFO_CN_2_LIGHTFLOW
-from scripts.lightflow_config import Image_Components_Key
+from scripts import lightspeedflow_version, lightspeedflow_config
+from scripts.lightspeedflow_config import PNGINFO_2_LIGHTSPEEDFLOW
+from scripts.lightspeedflow_config import PNGINFO_CN_2_LIGHTSPEEDFLOW
+from scripts.lightspeedflow_config import Image_Components_Key
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # print(current_path)
@@ -89,7 +89,7 @@ def find_checkpoint_from_hash(hash:str):
       pass
   return hash
 
-def set_lightflow_file():
+def set_lightspeedflow_file():
   global Preload_File
   return Preload_File
 
@@ -131,7 +131,7 @@ def on_after_component(component, **kwargs):
 
     for btn in State_Comps["import"]:
       # js里加载除图片以外的参数 python加载图片
-      btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightflow",
+      btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow",
         inputs=[btn],outputs=target_comps)
 
     State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
@@ -141,8 +141,8 @@ def on_after_component(component, **kwargs):
 
     input_component = State_Comps["import"][0]
     print(input_component)
-    State_Comps["set_file_button"].click(set_lightflow_file,inputs=[],outputs=[input_component])
-    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightflow", inputs=[input_component],outputs=target_comps)
+    State_Comps["set_file_button"].click(set_lightspeedflow_file,inputs=[],outputs=[input_component])
+    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", inputs=[input_component],outputs=target_comps)
     print(input_component)
 
     print(f"invisible_buttons: ")
@@ -211,7 +211,7 @@ def fn_import_workflow(workflow_file):
       config_file = workflow_file.name
 
     print("fn_import_workflow "+str(config_file))
-    if (os.path.splitext(config_file)[-1] in  [".lightflow", ".json"]):
+    if (os.path.splitext(config_file)[-1] in  [".lightspeedflow", ".lightflow", ".json"]):
       with open(config_file, mode='r', encoding='UTF-8') as f:
         json_str = f.read()
         workflow_json = json.loads(json_str)
@@ -269,7 +269,7 @@ class file_params(BaseModel):
 
 class StateApi():
 
-  BASE_PATH = '/lightflow'
+  BASE_PATH = '/lightspeedflow'
 
   def get_path(self, path):
     return f"{self.BASE_PATH}{path}"
@@ -283,7 +283,7 @@ class StateApi():
     # 读取本地的config.json
     self.add_api_route('/local/config.json', self.get_config, methods=['GET']) 
     # python已经加载好的配置workflow_json  发送给 js
-    self.add_api_route('/local/lightflowconfig', self.get_lightflow_config, methods=['GET']) 
+    self.add_api_route('/local/lightspeedflow_config', self.get_lightspeedflow_config, methods=['GET']) 
     # 获取图片的组件id 由js来设置onchange事件
     self.add_api_route('/local/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
     # 用户设置了新图片 触发回调保存到 workflow_json
@@ -301,7 +301,7 @@ class StateApi():
   def get_config(self):
     return FileResponse(shared.cmd_opts.ui_settings_file)
 
-  def get_lightflow_config(self, onlyimg:bool = False):
+  def get_lightspeedflow_config(self, onlyimg:bool = False):
     global workflow_json
     temp_json = {}
     if(onlyimg):
@@ -350,15 +350,15 @@ class StateApi():
           if(cn_key == "starting/ending"):
             cn_key_split = cn_key.split("/")
             data = cn_info[cn_key].replace("(","").replace(")","").split(",")
-            temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
+            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
                = data[0].strip()
-            temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
+            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
                = data[1].strip()
           elif(cn_key == "pixel perfect"):
-            temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))]\
+            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))]\
                = (cn_info[cn_key].lower() == "true")
           else:
-            temp_json[PNGINFO_CN_2_LIGHTFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
+            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
 
       elif(key == "Model hash"):
         target_model = find_checkpoint_from_hash(geninfo[key])
@@ -367,13 +367,13 @@ class StateApi():
             target_model = find_checkpoint_from_name(geninfo["Model"])
           except:
             pass
-        temp_json[PNGINFO_2_LIGHTFLOW[key]] = target_model
+        temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = target_model
 
       elif(key == "Face restoration"):
-        temp_json[PNGINFO_2_LIGHTFLOW[key]] = True
+        temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = True
       else:
         try:
-          temp_json[PNGINFO_2_LIGHTFLOW[key]] = geninfo[key]
+          temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = geninfo[key]
         except KeyError as e:
           pass
           #print(e)
@@ -422,7 +422,7 @@ class StateApi():
         if(response.status_code == 200):
           parsed_url = urlparse(params.file_path)
           file_name = os.path.basename(parsed_url.path)
-          tempdir = os.path.join(tempfile.gettempdir(),"lightflow_temp")
+          tempdir = os.path.join(tempfile.gettempdir(),"lightspeedflow_temp")
           if(os.path.exists(tempdir)):
             shutil.rmtree(tempdir)
           if(not os.path.exists(tempdir)):
@@ -451,7 +451,7 @@ class Script(scripts.Script):
     super().__init__()
 
   def title(self):
-    return "lightflow plugin"
+    return "lightspeedflow plugin"
 
   def show(self, is_img2img):
     return scripts.AlwaysVisible
@@ -467,17 +467,17 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('Lightflow '+lightflow_version.lightflow_version, open=True, visible=True):
+    with gr.Accordion('LightspeedFlow '+lightspeedflow_version.lightspeedflow_version, open=True, visible=True):
       with gr.Row():
-        lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
-        State_Comps["import"].append(lightflow_file)
+        lightspeedflow_file = gr.File(label="LightSpeedFlow File",file_count="multiple", file_types=[".lightspeedflow"])
+        State_Comps["import"].append(lightspeedflow_file)
 
         # with gr.Column(scale=1):
         #     gr.HTML(label="",value='<a style ="text-decoration:underline;color:cornflowerblue;" href="https://www.lightflow.ai/">LightFlow开源社区</a>')
         State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
-        <p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p>
-        <p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p>
-        <p style=color:DodgerBlue;>Welcome to Lightflow!  \(^o^)/~</p>'''))
+        <p style=color:Tomato;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
+        <p style=color:MediumSeaGreen;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
+        <p style=color:DodgerBlue;>Welcome to LightSpeedFlow!  \(^o^)/~</p>'''))
         #print(State_Comps["import"])
 
       with gr.Row():
@@ -491,7 +491,7 @@ class Script(scripts.Script):
 
         State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
-        State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightflow_file',visible=False)
+        State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightspeedflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
 
         with gr.Row():

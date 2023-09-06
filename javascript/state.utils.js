@@ -191,7 +191,7 @@ state.utils = {
           console.warn('[state]: Error:', error);
         }
         
-        fetch(`/lightflow/local/imgs_callback`, data)
+        fetch(`/lightspeedflow/local/imgs_callback`, data)
       });
     }, 150);
   },
@@ -415,7 +415,7 @@ state.utils = {
     console.log(url)
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName + '.lightflow';
+    link.download = fileName + '.lightspeedflow';
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

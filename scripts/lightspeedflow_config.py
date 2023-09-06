@@ -1,7 +1,7 @@
 import json
 import modules.shared as shared
 
-PNGINFO_2_LIGHTFLOW = {
+PNGINFO_2_LIGHTSPEEDFLOW = {
   "Prompt": "state-txt2img_prompt",
   "Negative prompt": "state-txt2img_neg_prompt",
   "Steps": "state-txt2img_steps",
@@ -22,7 +22,7 @@ PNGINFO_2_LIGHTFLOW = {
   "ENSD": "setting_eta_noise_seed_delta"
 }
 
-PNGINFO_CN_2_LIGHTFLOW = {
+PNGINFO_CN_2_LIGHTSPEEDFLOW = {
   "preprocessor": "state-ext-control-net-txt2img_0-preprocessor",
   "model": "state-ext-control-net-txt2img_0-model",
   "weight": "state-ext-control-net-txt2img_0-control-weight",
