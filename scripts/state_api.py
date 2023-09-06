@@ -6,9 +6,11 @@ import gradio as gr
 import os, io, sys
 import json
 from PIL import Image
-import re,base64
-import copy
-import time
+import re,base64,copy
+import time,requests
+import shutil
+from urllib.parse import urlparse
+import tempfile
 
 from modules import localization, images
 import modules.shared as shared
@@ -35,11 +37,8 @@ Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
 Output_Log = ""
 
-# preload_file = "https://sdmodels-1300343106.cos.ap-guangzhou.myqcloud.com/sd-webui-example.lightflow?\
-# q-sign-algorithm=sha1&q-ak=AKIDBKXdgXM2nOuKWHtR1cCYegYCmBLHzVr9&\
-# q-sign-time=1693380740%3B1693384400&q-key-time=1693380740%3B1693384400\
-# &q-header-list=host&q-url-param-list=&q-signature=3729ac9b25e83a361467e28d743cd69420b658de"
-preload_file = r"A:\AIPainter\stable-diffusion-webui-git\extensions\sd-webui-lightflow\dev\sd-webui-example.lightflow"
+Need_Preload = False
+Preload_File = r""
 
 
 def test_func():
@@ -90,22 +89,10 @@ def find_checkpoint_from_hash(hash:str):
       pass
   return hash
 
-def should_preload():
-  return preload_file
+def set_lightflow_file():
+  global Preload_File
+  return Preload_File
 
-def preload_func():
-  global preload_file
-
-  # ctx = PyV8.JSContext()
-  # ctx.enter()
-
-  # code_2 = '''
-  # const button = gradioApp().getElementById("test_button");
-  # button.click();
-  # '''
-  # ctx.eval(code_2)
-
-  return preload_file
 
 '''
 python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
@@ -152,7 +139,11 @@ def on_after_component(component, **kwargs):
     
     State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
 
-    State_Comps["preload_button"].click(preload_func,inputs=[],outputs=State_Comps["import"][0])
+    input_component = State_Comps["import"][0]
+    print(input_component)
+    State_Comps["set_file_button"].click(set_lightflow_file,inputs=[],outputs=[input_component])
+    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightflow", inputs=[input_component],outputs=target_comps)
+    print(input_component)
 
     print(f"invisible_buttons: ")
     for key in invisible_buttons.keys():
@@ -206,24 +197,26 @@ def func_for_invisiblebutton():
 
 
 def fn_import_workflow(workflow_file):
+  print(workflow_file)
   global workflow_json, Output_Log
   global Webui_Comps_Cur_Val, temp_index, next_index
   temp_index = -1 # 重置索引
   next_index = -1
   
-  try:
-    config_file = workflow_file[0].name
-  except:
-    config_file = workflow_file.name
+  workflow_json = {}
+  if(workflow_file):
+    try:
+      config_file = workflow_file[0].name
+    except:
+      config_file = workflow_file.name
 
-  print("fn_import_workflow "+str(config_file))
-  
-  if (os.path.splitext(config_file)[-1] not in  [".lightflow", ".json"]):
-    workflow_json = {}
-  else:
-    with open(config_file, mode='r', encoding='UTF-8') as f:
-      json_str = f.read()
-      workflow_json = json.loads(json_str)
+    print("fn_import_workflow "+str(config_file))
+    if (os.path.splitext(config_file)[-1] in  [".lightflow", ".json"]):
+      with open(config_file, mode='r', encoding='UTF-8') as f:
+        json_str = f.read()
+        workflow_json = json.loads(json_str)
+    else:
+      print("invalid file!")
 
   Webui_Comps_Cur_Val = []
   for key in Image_Components_Key:
@@ -271,9 +264,12 @@ class imgs_callback_params(BaseModel):
 class png_info_params(BaseModel):
   img_path:str
 
+class file_params(BaseModel):
+  file_path:str
+
 class StateApi():
 
-  BASE_PATH = '/state'
+  BASE_PATH = '/lightflow'
 
   def get_path(self, path):
     return f"{self.BASE_PATH}{path}"
@@ -285,18 +281,22 @@ class StateApi():
     print("-----------------state_api start------------------")
     self.app = app 
     # 读取本地的config.json
-    self.add_api_route('/config.json', self.get_config, methods=['GET']) 
+    self.add_api_route('/local/config.json', self.get_config, methods=['GET']) 
     # python已经加载好的配置workflow_json  发送给 js
-    self.add_api_route('/lightflowconfig', self.get_lightflow_config, methods=['GET']) 
+    self.add_api_route('/local/lightflowconfig', self.get_lightflow_config, methods=['GET']) 
     # 获取图片的组件id 由js来设置onchange事件
-    self.add_api_route('/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
+    self.add_api_route('/local/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
     # 用户设置了新图片 触发回调保存到 workflow_json
-    self.add_api_route('/imgs_callback', self.imgs_callback, methods=['POST']) 
+    self.add_api_route('/local/imgs_callback', self.imgs_callback, methods=['POST']) 
     # 刷新页面之后触发
-    self.add_api_route('/refresh_ui', self.refresh_ui, methods=['GET']) 
-    self.add_api_route('/output_log', add_output_log, methods=['GET']) 
-    self.add_api_route('/png_info', self.png_info, methods=['POST']) # 
-    self.add_api_route('/should_preload', should_preload, methods=['GET'])
+    self.add_api_route('/local/refresh_ui', self.refresh_ui, methods=['GET']) 
+    self.add_api_route('/local/output_log', add_output_log, methods=['GET']) 
+    self.add_api_route('/local/png_info', self.png_info, methods=['POST']) # 
+    # 传入一个文件路径，返回文件内容
+    self.add_api_route('/local/read_file', self.read_file, methods=['POST']) 
+    self.add_api_route('/local/need_preload', self.need_preload, methods=['GET'])
+
+    self.add_api_route('/set_preload', self.set_preload, methods=['POST'])
 
   def get_config(self):
     return FileResponse(shared.cmd_opts.ui_settings_file)
@@ -386,6 +386,14 @@ class StateApi():
 
     return json.dumps(temp_json)
 
+  def read_file(self, params:file_params):
+
+    file_content = ""
+    with open(params.file_path, mode='r', encoding='UTF-8') as f:
+      file_content = f.read()
+      
+    return file_content
+
   def get_img_elem_key(self):
     keys_str = ",".join(Image_Components_Key)
     return keys_str
@@ -401,10 +409,44 @@ class StateApi():
     Output_Log = ""
     print("refresh_ui")
 
+  def set_preload(self, params:file_params):
+    global Need_Preload,Preload_File
+    print(params.file_path)
+    
+    if(params.file_path):
+      if(os.path.exists(params.file_path)):
+        Preload_File = params.file_path
+        Need_Preload = True
+      else:
+        response = requests.get(params.file_path)
+        if(response.status_code == 200):
+          parsed_url = urlparse(params.file_path)
+          file_name = os.path.basename(parsed_url.path)
+          tempdir = os.path.join(tempfile.gettempdir(),"lightflow_temp")
+          if(os.path.exists(tempdir)):
+            shutil.rmtree(tempdir)
+          if(not os.path.exists(tempdir)):
+            os.mkdir(tempdir)
+          temp_file = os.path.join(tempdir,file_name)
+          
+          with open(temp_file,"wb") as f:
+            f.write(response.content)
+          
+          print(temp_file)
+          Preload_File = temp_file
+          Need_Preload = True
+    return "OK"
+
+  def need_preload(self):
+    global Need_Preload,Preload_File
+    if(Need_Preload):
+      Need_Preload = False
+      return Preload_File
+    return ""
 
 
 class Script(scripts.Script):  
-  
+
   def __init__(self) -> None:
     super().__init__()
 
@@ -429,6 +471,9 @@ class Script(scripts.Script):
       with gr.Row():
         lightflow_file = gr.File(label="Lightflow File",file_count="multiple", file_types=[".lightflow"])
         State_Comps["import"].append(lightflow_file)
+
+        # with gr.Column(scale=1):
+        #     gr.HTML(label="",value='<a style ="text-decoration:underline;color:cornflowerblue;" href="https://www.lightflow.ai/">LightFlow开源社区</a>')
         State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
         <p style=color:Tomato;>Welcome to Lightflow!  \(^o^)/~</p>
         <p style=color:MediumSeaGreen;>Welcome to Lightflow!  \(^o^)/~</p>
@@ -446,7 +491,8 @@ class Script(scripts.Script):
 
         State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
-        State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=True)
+        State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightflow_file',visible=False)
+        State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
 
         with gr.Row():
           State_Comps["useless_Textbox"] = \

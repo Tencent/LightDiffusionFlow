@@ -191,7 +191,7 @@ state.utils = {
           console.warn('[state]: Error:', error);
         }
         
-        fetch(`/state/imgs_callback`, data)
+        fetch(`/lightflow/local/imgs_callback`, data)
       });
     }, 150);
   },

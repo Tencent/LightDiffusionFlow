@@ -1,6 +1,7 @@
 window.state = window.state || {};
 state = window.state;
 
+
 state.core = (function () {
 
   const TABS = ['txt2img', 'img2img'];
@@ -63,6 +64,7 @@ state.core = (function () {
   const Image_extensions = [".png", ".jpg"]
 
   let store = null;
+  let timer = null;
 
   function hasSetting(id, tab) {
     return true // 需要默认保存全部选项 不需要判断
@@ -70,28 +72,35 @@ state.core = (function () {
     return this[`state${suffix}`] && this[`state${suffix}`].indexOf(id) > -1;
   }
 
-  let preload_file = ""
   function fn_timer(){
-    fetch('/state/should_preload')
-      .then(response => response.json())
-      .then(data => {
-        if (preload_file != data){
-          preload_file = data
-          console.log("1111")
-          const btn = gradioApp().querySelector(`button#preload_button`);
-          state.utils.triggerMouseEvent(btn);
 
-        }
-      });
+    fetch('/lightflow/local/need_preload')
+    .then(response => response.json())
+    .then(data => {
+      console.log(`fn_timer ${data}`)
+      if (data != ""){
+        //state.core.actions.handleLightflow([{"name":data}]);
+        const btn1 = gradioApp().querySelector(`button#set_lightflow_file`);
+        state.utils.triggerMouseEvent(btn1);
+        setTimeout(() => {
+          const btn2 = gradioApp().querySelector(`button#preload_button`);
+          state.utils.triggerMouseEvent(btn2);
+        }, 1000);
+      }
+    }).catch(function(e) {
+      clearInterval(timer)
+      console.log("Oops, error");
+    });
+
   }
 
   let img_elem_keys=[];
   function init() {
     
     //console.log(window.localization)
-    fetch('/state/refresh_ui') // 刷新页面触发python重置图片数据
+    fetch('/lightflow/local/refresh_ui') // 刷新页面触发python重置图片数据
 
-    fetch('/state/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
+    fetch('/lightflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
       .then(response => response.json())
       .then(data => {
         img_elem_keys = data.split(",")
@@ -100,13 +109,14 @@ state.core = (function () {
         });
         
         // 等上面的组件ID同步过来后 再加载其他配置
-        fetch('/state/config.json?_=' + (+new Date()))
+        fetch('/lightflow/local/config.json?_=' + (+new Date()))
           .then(response => response.json())
           .then(config => {          
             try {
               store = new state.Store();
               store.clearAll();
               load(config);
+              timer = window.setInterval(fn_timer,1000); // 初始化页面完成后再启动timer读取文件
             } catch (error) {
               console.error('[state]: Error:', error);
             }
@@ -114,7 +124,6 @@ state.core = (function () {
           .catch(error => console.error('[state]: Error getting JSON file:', error));
       });
 
-    window.setInterval(fn_timer,1000);
 
   }
   
@@ -453,7 +462,7 @@ state.core = (function () {
     //   }
     // },
     applyState: function () {
-      fetch('/state/config.json?_=' + (+new Date()))
+      fetch('/lightflow/local/config.json?_=' + (+new Date()))
         .then(response => response.json())
         .then(config => {
           try {
@@ -509,7 +518,7 @@ state.core = (function () {
         store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
       }
 
-      fetch('/state/lightflowconfig?onlyimg=true')
+      fetch('/lightflow/local/lightflowconfig?onlyimg=true')
         .then(response => response.json())
         .then(config => {
           config = JSON.parse(config)
@@ -538,32 +547,35 @@ state.core = (function () {
         }).catch(error => console.error('[state]: Error getting JSON file:', error));
 
       //config = JSON.stringify(store.getAll(), null, 4);
-      //fetch(`/state/ExportLightflow?config=${config}`)
+      //fetch(`/lightflow/local/ExportLightflow?config=${config}`)
     },
 
     handleLightflow: function (fileInput){
       actions.output_log("Start parsing settings...")
       console.log(fileInput)
-      if ( ! fileInput[0]) {
+      let temp_fileInput = undefined
+      try{temp_fileInput = fileInput[0]} catch(error){}
+      if ( !temp_fileInput ) {temp_fileInput = fileInput}
+      if ( !temp_fileInput ) {
         //alert('Please select a JSON file!');
         actions.output_log("Please select a valid lightflow or image file!")
         return;
       }
-      console.log(fileInput)
-      let file_name = fileInput[0].name;
+
+      console.log(temp_fileInput)
+      let file_name = temp_fileInput.name;
       console.log(file_name)
       let extension = file_name.substring(file_name.lastIndexOf("."));
       console.log(extension)
       if( Image_extensions.indexOf(extension) != -1 ){
-        console.log("/state/png_info")
         let data = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             "img_path":file_name
           })
-        }        
-        fetch(`/state/png_info`, data)
+        }
+        fetch(`/lightflow/local/png_info`, data)
           .then(response => response.json())
           .then(data => {
             console.log(data)
@@ -571,18 +583,38 @@ state.core = (function () {
           });
       }
       else{
-        const file = fileInput[0].blob;
-        //console.log(file)
+        // const file = new Blob([fileInput[0].name]);
+        const file = temp_fileInput.blob;
+        console.log(file)
         const reader = new FileReader();
         reader.onload = function (event) {
+          console.log(event)
           actions.importLightflow(event.target.result)
         };
-        reader.readAsText(file);
+        try{ reader.readAsText(file); } catch (error) {
+          console.log("read from python")
+          if(temp_fileInput.name != ""){
+            let data = {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                "file_path":temp_fileInput.name
+              })
+            }
+            fetch(`/lightflow/local/read_file`, data)
+              .then(response => response.json())
+              .then(data => {
+                //console.log(data)
+                actions.importLightflow(data)
+              });
+          }
+
+        }
       }
       return fileInput
     },
     importLightflow: function (inputData){
-      
+
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         state.utils.clearImage(getElement(image_id));
       });
@@ -592,6 +624,7 @@ state.core = (function () {
         actions.output_log("Please select a valid lightflow or image file!")
         return;
       }
+      console.log(json_obj)
 
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         json_obj[image_id] = ""
@@ -637,13 +670,13 @@ state.core = (function () {
 
     },
     output_log: function (msg, style=""){
-      fetch(`/state/output_log?msg=${msg}&style=${style}`)
+      fetch(`/lightflow/local/output_log?msg=${msg}&style=${style}`)
     },
     output_warning: function (msg, style="color:Orange;"){
-      fetch(`/state/output_log?msg=${msg}&style=${style}`)
+      fetch(`/lightflow/local/output_log?msg=${msg}&style=${style}`)
     },
     output_error: function (msg, style="color:Tomato;"){
-      fetch(`/state/output_log?msg=${msg}&style=${style}`)
+      fetch(`/lightflow/local/output_log?msg=${msg}&style=${style}`)
     }
   };
 
