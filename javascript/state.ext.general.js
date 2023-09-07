@@ -228,7 +228,7 @@ function general_ext_main(tab){
     if(extensions_root.length > 0 && extensions_root[0].className.split(' ')[0] != "gr-group" && extensions_root[0].className.split(' ')[0] != "gradio-group"){
       extensions_root = extensions_root[0].children // webui v1.6.0 版本，UI结构有变更
     }
-    console.log(extensions_root)
+    //console.log(extensions_root)
     for (child of extensions_root){
       let root_container = child
       res = walks_element(child, 0)
@@ -241,15 +241,17 @@ function general_ext_main(tab){
         }
       }
       
-      if(title == undefined){continue}
+      if(title == undefined 
+        || title.toLowerCase() == "lightspeedflow" // 自己存自己就不用了
+      ){continue}
 
       let translations = state.utils.reverseTranslation(title)
       title = translations[0] // 标题翻译一般只会有一个？
-      if(title.toLowerCase() == 'script'){break}
-      console.log(title)
+      if(title.toLowerCase() == 'script'){break} // script后面的面板暂时不考虑
+      //console.log(title)
       
       reg = /(.+) v[0-9\.]+/
-      if(reg.test(title)){title = RegExp.$1}
+      if(reg.test(title)){title = RegExp.$1} // 匹配 xxx v0.0.0 格式的标题，把后半部分的版本号去掉
 
       if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
       

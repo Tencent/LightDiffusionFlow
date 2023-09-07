@@ -21,20 +21,17 @@ from modules.generation_parameters_copypaste import paste_fields, registered_par
 from modules.sd_models import checkpoints_list
 
 from scripts import lightspeedflow_version, lightspeedflow_config
-from scripts.lightspeedflow_config import PNGINFO_2_LIGHTSPEEDFLOW
-from scripts.lightspeedflow_config import PNGINFO_CN_2_LIGHTSPEEDFLOW
-from scripts.lightspeedflow_config import Image_Components_Key
+import scripts.lightspeedflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # print(current_path)
 # sys.path.append(os.path.join(current_path,"lib"))
 
-
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
 invisible_buttons = {}
 Webui_Comps = {} # webui上需要操作的图片组件
-Webui_Comps_Cur_Val = [] # 顺序与ReturnKey一致
+Webui_Comps_Cur_Val = [] # 顺序与Image_Components_Key一致
 Output_Log = ""
 
 Need_Preload = False
@@ -115,11 +112,6 @@ def on_after_component(component, **kwargs):
     print("开始绑定按钮")
 
     target_comps = []
-    # for key in Image_Components_Key:
-    #   try:
-    #     target_comps.append(Webui_Comps[key])
-    #   except:
-    #     print(f"elem_id {key} is doesn't exist")
 
     target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
     target_comps.append(State_Comps["outlog"][0])
@@ -181,14 +173,14 @@ def func_for_invisiblebutton():
   
   # try:
   #   print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
-  #   print(f"aaaaaaaaa {Image_Components_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+  #   print(f"aaaaaaaaa {lf_config.Image_Components_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
   # except:
   #   pass
   
   
   # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
   if(temp_index > 0):
-    add_output_log(f"import image: \'{Image_Components_Key[temp_index]}\' ") 
+    add_output_log(f"import image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
     
   if(next_index+1 == len(Webui_Comps_Cur_Val)):
     add_output_log(f"import completed!")
@@ -220,12 +212,12 @@ def fn_import_workflow(workflow_file):
       print("invalid file!")
 
   Webui_Comps_Cur_Val = []
-  for key in Image_Components_Key:
+  for key in lf_config.Image_Components_Key:
     image = None
     successed = 2
     tempkey = key
     while successed > 0:
-      #print(f"------{successed}-----{key}--")
+      print(f"------{successed}-----{key}--")
       try:
         image_data = workflow_json[key]
         matchObj = re.match("data:image/[a-zA-Z0-9]+;base64,",image_data)
@@ -280,6 +272,7 @@ class StateApi():
 
   def start(self, _: gr.Blocks, app: FastAPI):
     print("-----------------state_api start------------------")
+
     self.app = app 
     # 读取本地的config.json
     self.add_api_route('/local/config.json', self.get_config, methods=['GET']) 
@@ -306,14 +299,14 @@ class StateApi():
     global workflow_json
     temp_json = {}
     if(onlyimg):
-      for key in Image_Components_Key:
+      for key in lf_config.Image_Components_Key:
         try:
           temp_json[key] = workflow_json[key]
         except:
           pass
     else:
       temp_json = copy.deepcopy(workflow_json)
-      for key in Image_Components_Key:
+      for key in lf_config.Image_Components_Key:
         temp_json[key] = ""
 
     # print(f"temp_json = {temp_json}")
@@ -351,15 +344,15 @@ class StateApi():
           if(cn_key == "starting/ending"):
             cn_key_split = cn_key.split("/")
             data = cn_info[cn_key].replace("(","").replace(")","").split(",")
-            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
                = data[0].strip()
-            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
                = data[1].strip()
           elif(cn_key == "pixel perfect"):
-            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))]\
                = (cn_info[cn_key].lower() == "true")
           else:
-            temp_json[PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
 
       elif(key == "Model hash"):
         target_model = find_checkpoint_from_hash(geninfo[key])
@@ -368,13 +361,13 @@ class StateApi():
             target_model = find_checkpoint_from_name(geninfo["Model"])
           except:
             pass
-        temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = target_model
+        temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = target_model
 
       elif(key == "Face restoration"):
-        temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = True
+        temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = True
       else:
         try:
-          temp_json[PNGINFO_2_LIGHTSPEEDFLOW[key]] = geninfo[key]
+          temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = geninfo[key]
         except KeyError as e:
           pass
           #print(e)
@@ -396,7 +389,7 @@ class StateApi():
     return file_content
 
   def get_img_elem_key(self):
-    keys_str = ",".join(Image_Components_Key)
+    keys_str = ",".join(lf_config.Image_Components_Key)
     return keys_str
 
   def imgs_callback(self, img_data:imgs_callback_params):
@@ -501,7 +494,7 @@ class Script(scripts.Script):
           State_Comps["useless_Textbox"] = \
             gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
           
-          for key in Image_Components_Key:
+          for key in lf_config.Image_Components_Key:
             elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
             invisible_button = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
             invisible_buttons[elem_id] = invisible_button
@@ -509,7 +502,11 @@ class Script(scripts.Script):
             #invisible_button.click(func_for_invisiblebutton)
 
 
+def on_before_reload():
+  lightspeedflow_config.init()
+
 # add callbacks
 api = StateApi()
 script_callbacks.on_app_started(api.start)
 script_callbacks.on_after_component(on_after_component)
+script_callbacks.on_before_reload(on_before_reload)
