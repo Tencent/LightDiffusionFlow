@@ -223,7 +223,13 @@ function general_ext_main(tab){
     console.log(`------------${cur_tab_name}----init-------`)
 
     let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
-    for (child of container.children){
+
+    let extensions_root = container.children
+    if(extensions_root.length > 0 && extensions_root[0].className.split(' ')[0] != "gr-group"){
+      extensions_root = extensions_root[0].children // webui v1.6.0 版本，UI结构有变更
+    }
+
+    for (child of extensions_root){
       let root_container = child
       res = walks_element(child, 0)
       let min_gen = 99

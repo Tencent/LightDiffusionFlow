@@ -54,16 +54,22 @@ state.utils = {
 
     switch_to_txt2img()
 
-    let elem = undefined //gradioApp().getElementById('txt2img_controlnet').children[0].children[1]
-    for (child of gradioApp().getElementById('txt2img_controlnet').children){
-      if(child.id == "controlnet"){
-        elem = child.children[1]
-        break;
+    let elem = undefined
+    elem = gradioApp().getElementById('txt2img_controlnet')
+    elem = elem.querySelector("#controlnet")
+
+    try{
+      if(elem.className.split(' ').pop() != "open"){
+        console.log("open")
+        state.utils.triggerMouseEvent(elem, 'click')
       }
-    }
-    if(elem.className.split(' ').pop() != "open"){
-      state.utils.triggerMouseEvent(elem, 'click')
-    }
+      for(e of elem.children){
+        if(e.className.split(' ').pop() != "open"){
+          console.log("open")
+          state.utils.triggerMouseEvent(e, 'click')
+        }
+      }
+    } catch(error){console.log(error)}
 
     try{
       gradioApp().getElementById('txt2img_controlnet_tabs').querySelectorAll('button')[Number(unit)].click()
@@ -76,15 +82,22 @@ state.utils = {
     switch_to_img2img()
     
     let elem = undefined //gradioApp().getElementById('txt2img_controlnet').children[0].children[1]
-    for (child of gradioApp().getElementById('img2img_controlnet').children){
-      if(child.id == "controlnet"){
-        elem = child.children[1]
-        break;
+    elem = gradioApp().getElementById('img2img_controlnet')
+    elem = elem.querySelector("#controlnet")
+    
+    try{
+      if(elem.className.split(' ').pop() != "open"){
+        console.log("open")
+        state.utils.triggerMouseEvent(elem, 'click')
       }
-    }
-    if(elem.className.split(' ').pop() != "open"){
-      state.utils.triggerMouseEvent(elem, 'click')
-    }
+      for(e of elem.children){
+        if(e.className.split(' ').pop() != "open"){
+          console.log("open")
+          state.utils.triggerMouseEvent(e, 'click')
+        }
+      }
+    } catch(error){console.log(error)}
+
     try{
       gradioApp().getElementById('img2img_controlnet_tabs').querySelectorAll('button')[Number(unit)].click()
     } catch (error) {
