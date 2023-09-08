@@ -5,6 +5,8 @@ state = window.state;
 state.core = (function () {
 
   const TABS = ['txt2img', 'img2img'];
+
+  // settingId, element
   const ELEMENTS = {
     'prompt': 'prompt',
     'negative_prompt': 'neg_prompt',
@@ -24,8 +26,14 @@ state.core = (function () {
     'cfg_scale': 'cfg_scale',
     'denoising_strength': 'denoising_strength',
     'seed': 'seed',
-    'sampling': 'sampling'
+    'sampling': 'sampling',
+    'switch_at': 'switch_at'
   };
+
+  const ACCORDION = {
+    "hires_fix": "hr",
+    "refiner": "enable"
+  }
 
   const ELEMENTS_WITHOUT_PREFIX = {
     'resize_mode': 'resize_mode',
@@ -39,6 +47,7 @@ state.core = (function () {
     'sampling': 'sampling',
     'hires_upscaler': 'hr_upscaler',
     'script': '#script_list',
+    'checkpoint': 'checkpoint',
   };
 
   const SELECTS_WITHOUT_PREFIX = {
@@ -77,7 +86,7 @@ state.core = (function () {
     fetch('/lightspeedflow/local/need_preload')
       .then(response => response.json())
       .then(data => {
-        console.log(`fn_timer ${data}`)
+        //console.log(`fn_timer ${data}`)
         if (data != ""){
           //state.core.actions.handleLightSpeedFlow([{"name":data}]);
           const btn1 = gradioApp().querySelector(`button#set_lightspeedflow_file`);
@@ -158,6 +167,10 @@ state.core = (function () {
     config.hasSetting = hasSetting
 
     //loadUI(); // 往页面上添加按钮
+
+    forEachElement(ACCORDION, config, (element, tab) => {
+      handleSavedAccordion(`${tab}_${element}`);
+    });
 
     forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
       handleSavedSelects(element);
@@ -346,11 +359,9 @@ state.core = (function () {
     });
 
     let value = store.get(id);
-
     if (! value) {
       return;
     }
-
     forEach(function (event) {
       state.utils.setValue(this, value, event);
     });
@@ -358,6 +369,10 @@ state.core = (function () {
 
   function handleSavedSelects(id) {
     state.utils.handleSelect(getElement(id), id, store, force=false);
+  }
+
+  function handleSavedAccordion(id) {
+    state.utils.handleAccordion(getElement(id), id, store);
   }
 
   function handleSavedMultiSelects(id) {

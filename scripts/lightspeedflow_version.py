@@ -1,1 +1,1 @@
-lightspeedflow_version = "v2.0.1"
+lightspeedflow_version = "v2.0.2"

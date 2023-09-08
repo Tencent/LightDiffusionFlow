@@ -1,3 +1,13 @@
+## 2.0.2
+
+### Bug Fixes:
+ * 修复了ControlNet max_models_num设置导致的错误。
+ * 修复了一些已知的问题。
+
+### Features:
+ * 支持到最新的WebUI v1.6.
+ * 设置模型时，支持单独匹配Hash或者文件名，满足其中一项就能设置成功。
+
 ## 2.0.1
 
 ### Bug Fixes:

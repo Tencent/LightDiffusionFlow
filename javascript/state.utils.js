@@ -5,8 +5,11 @@ state.utils = {
 
   testFunction: function testFunction() {
     
-    console.log(state.extensions)
-
+    //console.log(state.extensions)
+    let str = "chilloutmix_Ni.safetensors [7234b76e42]"
+    let res = str.search(/\[[0-9A-Fa-f]{10}\]/)
+    res = str.substring(res,res+12)
+    console.log(res)
   },
 
   getTranslation: function getTranslation(key){
@@ -60,12 +63,10 @@ state.utils = {
 
     try{
       if(elem.className.split(' ').pop() != "open"){
-        console.log("open")
         state.utils.triggerMouseEvent(elem, 'click')
       }
       for(e of elem.children){
         if(e.className.split(' ').pop() != "open"){
-          console.log("open")
           state.utils.triggerMouseEvent(e, 'click')
         }
       }
@@ -87,12 +88,10 @@ state.utils = {
     
     try{
       if(elem.className.split(' ').pop() != "open"){
-        console.log("open")
         state.utils.triggerMouseEvent(elem, 'click')
       }
       for(e of elem.children){
         if(e.className.split(' ').pop() != "open"){
-          console.log("open")
           state.utils.triggerMouseEvent(e, 'click')
         }
       }
@@ -278,12 +277,34 @@ state.utils = {
       }
     }
   },
+  handleAccordion: function handleAccordion(accordion, id, store){
+    try{
+      let value = store.get(id);
+      let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
+      if (value) {
+        //for(child of children){
+        if(child.className.split(' ').pop() != "open"){
+          state.utils.triggerMouseEvent(child, 'click')
+        }
+        //}
+      }
 
+      setTimeout(() => {
+        state.utils.onContentChange(child, function (el) {
+          store.set(id, el.className.split(' ').pop() == "open");
+        });
+      }, 150);
+
+    } catch (error) {
+      console.error(`accordion:${accordion}, id:${id}`)
+      console.error('[state]: Error:', error);
+    }
+
+  },
   handleSelect: function handleSelect(select, id, store, force=false) {
     try {
       let value = store.get(id);
-      if (value) {
-        
+      if (value ) { //&& value != 'None'
         let input = select.querySelector('input');
         state.utils.triggerMouseEvent(input, 'focus');
         
@@ -300,13 +321,30 @@ state.utils = {
             }
           }
 
-          if(!successed && localized_value.search(/\[[0-9A-Fa-f]{10}\]/) != -1){ //找不到对应选项 并且选项里有10位哈希值
-            for (li of items){ // 考虑模型同名但是不同hash的情况
-              localized_value = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"")
-              child_text = li.lastChild.wholeText.trim().replace(/\[[0-9A-Fa-f]{10}\]/, "")
-              if (localized_value === child_text) {
-                state.utils.triggerMouseEvent(li, 'mousedown');
+          let hash_pos = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
+          if(!successed && hash_pos != -1){ //找不到对应选项 并且选项里有10位哈希值
+            for (li of items){
+
+              // 去掉Hash比较
+              let text = li.lastChild.wholeText.trim()
+              let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"") 
+              let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "")
+              if (localized_value_no_hash === text_no_hash) {
                 successed = true
+              }
+              
+              // 只比较Hash
+              if(!successed){
+                let hash_str = localized_value.substring(hash_pos,hash_pos+12) 
+                let text_hash_pos = text.search(/\[[0-9A-Fa-f]{10}\]/)
+                let text_hash = text.substring(text_hash_pos, text_hash_pos+12)
+                if (hash_str === text_hash) {
+                  successed = true
+                }
+              }
+
+              if(successed){
+                state.utils.triggerMouseEvent(li, 'mousedown');
                 state.core.actions.output_warning(`The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
                 break
               }
@@ -471,7 +509,6 @@ state.utils.html = {
     if (props) {
       for (let key in props) {
         if (props.hasOwnProperty(key)) {
-          //console.log(`=================== has own property ${key} ${props[key]}`)
           element[key] = props[key];
         }
       }

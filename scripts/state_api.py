@@ -109,7 +109,7 @@ def on_after_component(component, **kwargs):
     #print(e)
 
   if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
-    print("开始绑定按钮")
+    print("LightSpeedFlow绑定按钮")
 
     target_comps = []
 
@@ -132,13 +132,11 @@ def on_after_component(component, **kwargs):
     State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
 
     input_component = State_Comps["import"][0]
-    print(input_component)
     State_Comps["set_file_button"].click(set_lightspeedflow_file,inputs=[],outputs=[input_component])
     State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", 
       inputs=[input_component],outputs=target_comps)
-    print(input_component)
 
-    print(f"invisible_buttons: ")
+    #print(f"invisible_buttons: ")
     for key in invisible_buttons.keys():
       segs = key.split("_")
       comp_name = "_".join(segs[2:])
@@ -180,7 +178,7 @@ def func_for_invisiblebutton():
   
   # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
   if(temp_index > 0):
-    add_output_log(f"import image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
+    add_output_log(f"importing image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
     
   if(next_index+1 == len(Webui_Comps_Cur_Val)):
     add_output_log(f"import completed!")
@@ -217,7 +215,7 @@ def fn_import_workflow(workflow_file):
     successed = 2
     tempkey = key
     while successed > 0:
-      print(f"------{successed}-----{key}--")
+      #print(f"------{successed}-----{key}--")
       try:
         image_data = workflow_json[key]
         matchObj = re.match("data:image/[a-zA-Z0-9]+;base64,",image_data)
@@ -406,11 +404,12 @@ class StateApi():
   def set_preload(self, params:file_params):
     global Need_Preload,Preload_File
     print(params.file_path)
-    
+    res = "OK"
     if(params.file_path):
       if(os.path.exists(params.file_path)):
         Preload_File = params.file_path
         Need_Preload = True
+        res = "OK,Local File!"
       else:
         response = requests.get(params.file_path)
         if(response.status_code == 200):
@@ -429,7 +428,11 @@ class StateApi():
           print(temp_file)
           Preload_File = temp_file
           Need_Preload = True
-    return "OK"
+          res = "OK,Network File!"
+        else:
+          res = "Invalid File!"
+
+    return res
 
   def need_preload(self):
     global Need_Preload,Preload_File

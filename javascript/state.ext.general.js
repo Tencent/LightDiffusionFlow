@@ -14,18 +14,20 @@ function general_ext(tab_name, extension_name, root_container) {
   function handleToggle() {
     let value = store.get('toggled');
     let toggleBtn = container.querySelector('div.cursor-pointer, .label-wrap');
-
-    if (value && value === 'true') {
-      state.utils.triggerEvent(toggleBtn, 'click');
-      load();
-    }
-    if(toggleBtn){
+    //for(let toggleBtn of toggleBtns){
+    //if(!toggleBtn){continue}
+    if(toggleBtn && toggleBtn.className.split(' ').pop() != "open"){
+      if (value && value === 'true') {
+        state.utils.triggerEvent(toggleBtn, 'click');
+        //load();
+      }
       toggleBtn.addEventListener('click', function () {
         let span = this.querySelector('.transition, .icon');
         store.set('toggled', span.style.transform !== 'rotate(90deg)');
-        load();
+        //load();
       });
     }
+    //}
   }
 
   function bindTabEvents() {
@@ -84,6 +86,7 @@ function general_ext(tab_name, extension_name, root_container) {
   }
 
   function handleSelects() {
+    
     cnTabs.forEach(({ container, store }) => {
       container.querySelectorAll('.gradio-dropdown').forEach(select => {
         let translations = state.utils.reverseTranslation(select.querySelector('label').firstChild.textContent)
@@ -93,7 +96,9 @@ function general_ext(tab_name, extension_name, root_container) {
           if (value) {break}
         }
         //id = state.utils.txtToId(translations[0]);
+        //if (value) { //前面不需要判断是否有值，因为需要执行handleSelect绑定onchange事件
         state.utils.handleSelect(select, id, store, force=true);
+        //}
         if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
           state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
         }
