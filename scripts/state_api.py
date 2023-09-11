@@ -131,7 +131,7 @@ def on_after_component(component, **kwargs):
     
     State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
 
-    input_component = State_Comps["import"][0]
+    input_component = State_Comps["background_import"] #State_Comps["import"][0]
     State_Comps["set_file_button"].click(set_lightspeedflow_file,inputs=[],outputs=[input_component])
     State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", 
       inputs=[input_component],outputs=target_comps)
@@ -466,8 +466,9 @@ class Script(scripts.Script):
 
     with gr.Accordion('LightspeedFlow '+lightspeedflow_version.lightspeedflow_version, open=True, visible=True):
       with gr.Row():
-        lightspeedflow_file = gr.File(label="LightSpeedFlow File",file_count="multiple", file_types=[".lightspeedflow"])
+        lightspeedflow_file = gr.File(label="LightSpeedFlow File",file_count="single", file_types=[".lightspeedflow"])
         State_Comps["import"].append(lightspeedflow_file)
+        
 
         # with gr.Column(scale=1):
         #   gr.HTML(label="",value='''
@@ -484,6 +485,8 @@ class Script(scripts.Script):
         State_Comps["export"].append(export_config)
 
       if(not is_img2img):
+        
+        State_Comps["background_import"] = gr.File(label="LightSpeedFlow File",file_count="single", file_types=[".lightspeedflow"],visible=False)
 
         json2js = gr.Textbox(label="json2js",visible=False)
         State_Comps["json2js"] = json2js
