@@ -314,7 +314,7 @@ state.utils = {
           let successed = false
           for (li of items){
             // li.lastChild.wholeText.trim() === value
-            if (localized_value === li.lastChild.wholeText.trim()) {
+            if (localized_value.replace(/^\s+|\s+$/g,"") === li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")) {
               state.utils.triggerMouseEvent(li, 'mousedown');
               successed = true
               break
@@ -322,22 +322,23 @@ state.utils = {
           }
 
           let hash_pos = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
-          if(!successed && hash_pos != -1){ //找不到对应选项 并且选项里有10位哈希值
+          if(!successed){ // && hash_pos != -1 找不到对应选项 并且选项里有10位哈希值
             for (li of items){
-
+              
               // 去掉Hash比较
               let text = li.lastChild.wholeText.trim()
-              let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"") 
-              let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "")
+              let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"").replace(/^\s+|\s+$/g,"")
+              let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "").replace(/^\s+|\s+$/g,"")
+              
               if (localized_value_no_hash === text_no_hash) {
                 successed = true
               }
               
               // 只比较Hash
               if(!successed){
-                let hash_str = localized_value.substring(hash_pos,hash_pos+12) 
+                let hash_str = localized_value.substring(hash_pos,hash_pos+12).replace(/^\s+|\s+$/g,"")
                 let text_hash_pos = text.search(/\[[0-9A-Fa-f]{10}\]/)
-                let text_hash = text.substring(text_hash_pos, text_hash_pos+12)
+                let text_hash = text.substring(text_hash_pos, text_hash_pos+12).replace(/^\s+|\s+$/g,"")
                 if (hash_str === text_hash) {
                   successed = true
                 }
