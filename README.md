@@ -15,7 +15,7 @@ This extension is for AUTOMATIC1111's [Stable Diffusion web UI](https://github.c
 * Support parsing png info from image and restoring parameters back to the web UI.
 * It can be extended to preserve basically everything in the UI.
 * Supported extensions:
-    - Control Net
+    - In theory, it can support any plugin.
 
 ### Usage
 
