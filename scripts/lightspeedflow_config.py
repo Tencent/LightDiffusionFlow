@@ -8,6 +8,8 @@ Image_Components_Key = {}
 # 改成函数调用，修改配置之后能及时刷新
 def init():
   global PNGINFO_2_LIGHTSPEEDFLOW,PNGINFO_CN_2_LIGHTSPEEDFLOW,Image_Components_Key
+  # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
+  #print(parameters_copypaste.paste_fields) 
   PNGINFO_2_LIGHTSPEEDFLOW = {
     "Prompt": "state-txt2img_prompt",
     "Negative prompt": "state-txt2img_neg_prompt",

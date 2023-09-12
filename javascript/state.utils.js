@@ -12,6 +12,31 @@ state.utils = {
     console.log(res)
   },
 
+  searchCheckPointByHash: async function searchCheckPointByHash(hash){
+    let downloadUrl = undefined
+    hash_str = hash.replace("[","").replace("]","").replace(/^\s+|\s+$/g,"")
+    await fetch("https://civitai.com/api/v1/model-versions/by-hash/"+hash_str)
+    .then(response => response.json())
+    .then(data => {
+      //try{
+        //console.log(data["files"])
+        for (file of data["files"]){
+          for (key of Object.keys(file["hashes"])){
+            if(file["hashes"][key].toLowerCase() === hash_str.toLowerCase())
+            {
+              downloadUrl = file["downloadUrl"]
+              console.log(downloadUrl)
+              break
+            }
+          }
+        }
+        if(downloadUrl == undefined){downloadUrl = data["files"][0]["downloadUrl"]}
+      //} catch (error) {}
+    });
+
+    return downloadUrl
+  },
+
   getTranslation: function getTranslation(key){
     new_key = key
     try{
@@ -346,7 +371,8 @@ state.utils = {
 
               if(successed){
                 state.utils.triggerMouseEvent(li, 'mousedown');
-                state.core.actions.output_warning(`The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
+                state.core.actions.output_warning(
+                  `The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
                 break
               }
             }
@@ -354,8 +380,16 @@ state.utils = {
 
           if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
           {
-            state.core.actions.output_error(`\'${store.prefix + id}\' import failed!`)
-            state.core.actions.output_error(`The option \'${value}\' was not found!`)
+            state.core.actions.output_error(`\'${store.prefix + id}\' import failed! The option \'${value}\' was not found!`)
+            if(hash_pos != -1){
+              let hash_str = localized_value.substring(hash_pos,hash_pos+12)
+              state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
+                if(downloadUrl != undefined){
+                  state.core.actions.output_warning(`click to download \
+                  <a style ="text-decoration:underline;color:cornflowerblue;", href="${downloadUrl}"> ${value} </a>`)
+                }
+              });
+            }
           }
 
           state.utils.triggerMouseEvent(input, 'blur');

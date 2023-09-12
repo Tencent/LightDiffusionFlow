@@ -20,6 +20,7 @@ import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
 
+
 from scripts import lightspeedflow_version, lightspeedflow_config
 import scripts.lightspeedflow_config as lf_config
 
@@ -40,6 +41,8 @@ Preload_File = r""
 
 def test_func():
   print("test_func")
+  # print(parameters_copypaste.paste_fields)
+
   # with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
   #   json_str = f.read()
   #   config_json = json.loads(json_str)
@@ -469,7 +472,6 @@ class Script(scripts.Script):
         lightspeedflow_file = gr.File(label="LightSpeedFlow File",file_count="single", file_types=[".lightspeedflow"])
         State_Comps["import"].append(lightspeedflow_file)
         
-
         # with gr.Column(scale=1):
         #   gr.HTML(label="",value='''
         # <a style ="text-decoration:underline;color:cornflowerblue;",
@@ -486,10 +488,10 @@ class Script(scripts.Script):
 
       if(not is_img2img):
         
-        State_Comps["background_import"] = gr.File(label="LightSpeedFlow File",file_count="single", file_types=[".lightspeedflow"],visible=False)
+        State_Comps["background_import"] = gr.File(label="LightSpeedFlow File",file_count="single",
+           file_types=[".lightspeedflow"],visible=False)
 
-        json2js = gr.Textbox(label="json2js",visible=False)
-        State_Comps["json2js"] = json2js
+        State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
 
         State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
@@ -502,10 +504,7 @@ class Script(scripts.Script):
           
           for key in lf_config.Image_Components_Key:
             elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
-            invisible_button = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
-            invisible_buttons[elem_id] = invisible_button
-            #invisible_buttons.append(invisible_button)
-            #invisible_button.click(func_for_invisiblebutton)
+            invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
 
 
 def on_before_reload():
