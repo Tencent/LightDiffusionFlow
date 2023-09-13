@@ -380,7 +380,14 @@ state.utils = {
 
           if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
           {
-            state.core.actions.output_error(`\'${store.prefix + id}\' import failed! The option \'${value}\' was not found!`)
+            let option_name = store.prefix + id
+            if(option_name === "state-setting_sd_model_checkpoint"){
+              // 大模型找不到就只用warning提示，因为不影响运行
+              state.core.actions.output_warning(`The option \'${value}\' was not found!`)
+            }
+            else{
+              state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
+            }
             if(hash_pos != -1){
               let hash_str = localized_value.substring(hash_pos,hash_pos+12)
               state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
