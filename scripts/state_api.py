@@ -25,7 +25,6 @@ from scripts import lightspeedflow_version, lightspeedflow_config
 import scripts.lightspeedflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
-# print(current_path)
 # sys.path.append(os.path.join(current_path,"lib"))
 
 workflow_json = {}
@@ -43,20 +42,6 @@ def test_func():
   print("test_func")
   # print(parameters_copypaste.paste_fields)
 
-  # with open(shared.cmd_opts.ui_settings_file, mode='r', encoding='UTF-8') as f:
-  #   json_str = f.read()
-  #   config_json = json.loads(json_str)
-  #   print(config_json['localization'])
-  #   print(localization.localizations[config_json['localization']])
-
-  # data = "preprocessor: depth_midas, model: control_v11f1p_sd15_depth [cfd03158], \
-  # weight: 0.95, starting/ending: (0.07, 0.93), resize mode: Just Resize, pixel perfect: True, \
-  # control mode: My prompt is more important, preprocessor params: (512, 100, 200)"
-  # res = re.findall(r"([^:]+:[^:]{1,})(,|$)",data)
-  # print(res)
-  #find_checkpoint_from_name("hanfuDreambooth_v12")
-  #print(checkpoints_list)
-
 def add_output_log(msg:str, style:str=""):
   global Output_Log
   print(f"Output_Log: {msg}")
@@ -69,7 +54,6 @@ def find_checkpoint_from_name(name:str):
     #print(checkpoint)
     #print(res.group(1))
     try:
-      #print(res.group(1))
       if(res.group(1) == name):
         return checkpoint
     except:
@@ -80,9 +64,7 @@ def find_checkpoint_from_hash(hash:str):
 
   for checkpoint in checkpoints_list.keys():
     res = re.search(r"\[([0-9a-fA-F]{10})\]", checkpoint)
-    #print(checkpoint)
     try:
-      #print(res.group(1))
       if(res.group(1) == hash):
         return checkpoint
     except:
@@ -102,9 +84,6 @@ python触发导入事件，按正常触发逻辑先执行js代码，把除图片
 def on_after_component(component, **kwargs):
 
   try:
-    if(kwargs["elem_id"] == "img2img_image"):
-      print(kwargs)
-
     if(Webui_Comps.get(kwargs["elem_id"], None) == None):
       Webui_Comps[kwargs["elem_id"]] = component
   except BaseException as e:
@@ -119,7 +98,6 @@ def on_after_component(component, **kwargs):
     target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
     target_comps.append(State_Comps["outlog"][0])
     target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
-    # print(target_comps)
 
     for btn in State_Comps["export"]:
       btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
@@ -173,8 +151,8 @@ def func_for_invisiblebutton():
     pass
   
   # try:
-  #   print(f"aaaaaaaaa {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
-  #   print(f"aaaaaaaaa {lf_config.Image_Components_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
+  #   print(f"func_for_invisiblebutton {temp_index} {next_index} {len(Webui_Comps_Cur_Val)}")
+  #   print(f"func_for_invisiblebutton {lf_config.Image_Components_Key[temp_index]} {Webui_Comps_Cur_Val[temp_index]} ")
   # except:
   #   pass
   
@@ -191,7 +169,6 @@ def func_for_invisiblebutton():
 
 
 def fn_import_workflow(workflow_file):
-  print(workflow_file)
   global workflow_json, Output_Log
   global Webui_Comps_Cur_Val, temp_index, next_index
   temp_index = -1 # 重置索引
@@ -218,7 +195,6 @@ def fn_import_workflow(workflow_file):
     successed = 2
     tempkey = key
     while successed > 0:
-      #print(f"------{successed}-----{key}--")
       try:
         image_data = workflow_json[key]
         matchObj = re.match("data:image/[a-zA-Z0-9]+;base64,",image_data)
@@ -242,9 +218,6 @@ def fn_import_workflow(workflow_file):
           successed = 0
       successed-=1
     
-    # if(key == "img2img_image"):
-    #   test_component = image
-
     Webui_Comps_Cur_Val.append(image)
 
   # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
@@ -310,7 +283,6 @@ class StateApi():
       for key in lf_config.Image_Components_Key:
         temp_json[key] = ""
 
-    # print(f"temp_json = {temp_json}")
     return json.dumps(temp_json)
 
   def str_2_json(self, str_data:str):
@@ -325,8 +297,7 @@ class StateApi():
     return out_json
 
   def png_info(self, img_data:png_info_params):
-    #print(img_data.img_path)
-    
+
     geninfo, items = images.read_info_from_image(Image.open(img_data.img_path))
     geninfo = parse_generation_parameters(geninfo)
 
@@ -335,9 +306,7 @@ class StateApi():
       
       matchObj = re.match("ControlNet ([0-9])", key)
       if(matchObj != None): # controlnet
-        # print(matchObj.group(1))
         cn_info = self.str_2_json(geninfo[key])
-        #print(cn_info)
         if(len(cn_info.keys()) > 0):
           temp_json["state-ext-control-net-txt2img_0-enable".replace("0",matchObj.group(1))] = True
 
@@ -376,7 +345,6 @@ class StateApi():
       if(key in ["Hires upscale","Hires steps","Hires upscaler","Hires resize-1","Hires resize-2"]):
         temp_json["state-txt2img_enable_hr"] = True
 
-    #print("----------------")
     print(temp_json)
 
     return json.dumps(temp_json)
@@ -395,7 +363,6 @@ class StateApi():
 
   def imgs_callback(self, img_data:imgs_callback_params):
     global workflow_json
-    #print(f"imgs_callback = {id}  {img}")
     workflow_json[img_data.id] = img_data.img
 
   def refresh_ui(self):
@@ -457,7 +424,6 @@ class Script(scripts.Script):
     return scripts.AlwaysVisible
 
   def ui(self, is_img2img):
-    #print("state plugin ui")
     try:
       State_Comps["import"]
       State_Comps["export"]
@@ -480,7 +446,6 @@ class Script(scripts.Script):
         <p style=color:Tomato;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
         <p style=color:MediumSeaGreen;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
         <p style=color:DodgerBlue;>Welcome to LightSpeedFlow!  \(^o^)/~</p>'''))
-        #print(State_Comps["import"])
 
       with gr.Row():
         export_config = gr.Button(value='Export')
