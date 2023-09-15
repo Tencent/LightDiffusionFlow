@@ -21,8 +21,8 @@ from modules.generation_parameters_copypaste import paste_fields, registered_par
 from modules.sd_models import checkpoints_list
 
 
-from scripts import lightspeedflow_version, lightspeedflow_config
-import scripts.lightspeedflow_config as lf_config
+from scripts import lightdiffusionflow_version, lightdiffusionflow_config
+import scripts.lightdiffusionflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # sys.path.append(os.path.join(current_path,"lib"))
@@ -42,10 +42,13 @@ def test_func():
   print("test_func")
   # print(parameters_copypaste.paste_fields)
 
-def add_output_log(msg:str, style:str=""):
+def add_output_log(msg:str="", style:str=""):
   global Output_Log
-  print(f"Output_Log: {msg}")
-  Output_Log += f'<p style="{style}">{msg}</p>'
+  if(msg != ""):
+    #print(f"Output_Log: {msg}")
+    Output_Log += f'<p style="{style}">{msg}</p>'
+
+  return Output_Log, Output_Log
 
 def find_checkpoint_from_name(name:str):
 
@@ -71,7 +74,7 @@ def find_checkpoint_from_hash(hash:str):
       pass
   return hash
 
-def set_lightspeedflow_file():
+def set_lightdiffusionflow_file():
   global Preload_File
   return Preload_File
 
@@ -88,40 +91,40 @@ def on_after_component(component, **kwargs):
       Webui_Comps[kwargs["elem_id"]] = component
   except BaseException as e:
     pass
-    #print(e)
 
   if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
-    print("LightSpeedFlow绑定按钮")
+    #print("LightDiffusionFlow绑定按钮")
 
     target_comps = []
 
     target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
-    target_comps.append(State_Comps["outlog"][0])
-    target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+    #target_comps.append(State_Comps["outlog"][0])
+    #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
 
     for btn in State_Comps["export"]:
       btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
 
     for btn in State_Comps["import"]:
       # js里加载除图片以外的参数 python加载图片
-      btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow",
+      btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
         inputs=[btn],outputs=target_comps)
 
     State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
       inputs=[State_Comps["json2js"]])
     
-    State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
+    #State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
+
+    State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=State_Comps["outlog"])
 
     input_component = State_Comps["background_import"] #State_Comps["import"][0]
-    State_Comps["set_file_button"].click(set_lightspeedflow_file,inputs=[],outputs=[input_component])
-    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightSpeedFlow", 
+    State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
+    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow", 
       inputs=[input_component],outputs=target_comps)
 
-    #print(f"invisible_buttons: ")
     for key in invisible_buttons.keys():
       segs = key.split("_")
       comp_name = "_".join(segs[2:])
-      print(comp_name)
+      #print(comp_name)
       try:
         invisible_buttons[key].click(func_for_invisiblebutton,
           inputs=[], 
@@ -182,7 +185,7 @@ def fn_import_workflow(workflow_file):
       config_file = workflow_file.name
 
     print("fn_import_workflow "+str(config_file))
-    if (os.path.splitext(config_file)[-1] in  [".lightspeedflow", ".lightflow", ".json"]):
+    if (os.path.splitext(config_file)[-1] in  [".lightdiffusionflow", ".lightflow", ".json"]):
       with open(config_file, mode='r', encoding='UTF-8') as f:
         json_str = f.read()
         workflow_json = json.loads(json_str)
@@ -222,7 +225,7 @@ def fn_import_workflow(workflow_file):
 
   # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
   # return tuple(return_vals)
-  return str(temp_index), Output_Log, Output_Log
+  return str(temp_index)#, Output_Log, Output_Log
 
 class imgs_callback_params(BaseModel):
   id:str
@@ -236,7 +239,7 @@ class file_params(BaseModel):
 
 class StateApi():
 
-  BASE_PATH = '/lightspeedflow'
+  BASE_PATH = '/lightdiffusionflow'
 
   def get_path(self, path):
     return f"{self.BASE_PATH}{path}"
@@ -251,7 +254,7 @@ class StateApi():
     # 读取本地的config.json
     self.add_api_route('/local/config.json', self.get_config, methods=['GET']) 
     # python已经加载好的配置workflow_json  发送给 js
-    self.add_api_route('/local/lightspeedflow_config', self.get_lightspeedflow_config, methods=['GET']) 
+    self.add_api_route('/local/lightdiffusionflow_config', self.get_lightdiffusionflow_config, methods=['GET']) 
     # 获取图片的组件id 由js来设置onchange事件
     self.add_api_route('/local/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
     # 用户设置了新图片 触发回调保存到 workflow_json
@@ -269,7 +272,7 @@ class StateApi():
   def get_config(self):
     return FileResponse(shared.cmd_opts.ui_settings_file)
 
-  def get_lightspeedflow_config(self, onlyimg:bool = False):
+  def get_lightdiffusionflow_config(self, onlyimg:bool = False):
     global workflow_json
     temp_json = {}
     if(onlyimg):
@@ -300,7 +303,6 @@ class StateApi():
 
     geninfo, items = images.read_info_from_image(Image.open(img_data.img_path))
     geninfo = parse_generation_parameters(geninfo)
-
     temp_json = {}
     for key in geninfo.keys():
       
@@ -314,15 +316,18 @@ class StateApi():
           if(cn_key == "starting/ending"):
             cn_key_split = cn_key.split("/")
             data = cn_info[cn_key].replace("(","").replace(")","").split(",")
-            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTDIFFUSIONFLOW[cn_key_split[0]].replace("0",matchObj.group(1))]\
                = data[0].strip()
-            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTDIFFUSIONFLOW[cn_key_split[1]].replace("0",matchObj.group(1))]\
                = data[1].strip()
           elif(cn_key == "pixel perfect"):
-            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))]\
+            temp_json[lf_config.PNGINFO_CN_2_LIGHTDIFFUSIONFLOW[cn_key].replace("0",matchObj.group(1))]\
                = (cn_info[cn_key].lower() == "true")
           else:
-            temp_json[lf_config.PNGINFO_CN_2_LIGHTSPEEDFLOW[cn_key].replace("0",matchObj.group(1))] = cn_info[cn_key]
+            try:
+              temp_json[lf_config.PNGINFO_CN_2_LIGHTDIFFUSIONFLOW[cn_key.lower()].replace("0",matchObj.group(1))] = cn_info[cn_key]
+            except KeyError as e:
+              print(f"ControlNet option '{cn_key}' parsing failed.")
 
       elif(key == "Model hash"):
         target_model = find_checkpoint_from_hash(geninfo[key])
@@ -331,21 +336,19 @@ class StateApi():
             target_model = find_checkpoint_from_name(geninfo["Model"])
           except:
             pass
-        temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = target_model
+        temp_json[lf_config.PNGINFO_2_LIGHTDIFFUSIONFLOW[key]] = target_model
 
       elif(key == "Face restoration"):
-        temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = True
+        temp_json[lf_config.PNGINFO_2_LIGHTDIFFUSIONFLOW[key]] = True
       else:
         try:
-          temp_json[lf_config.PNGINFO_2_LIGHTSPEEDFLOW[key]] = geninfo[key]
+          temp_json[lf_config.PNGINFO_2_LIGHTDIFFUSIONFLOW[key]] = geninfo[key]
         except KeyError as e:
           pass
           #print(e)
       
       if(key in ["Hires upscale","Hires steps","Hires upscaler","Hires resize-1","Hires resize-2"]):
         temp_json["state-txt2img_enable_hr"] = True
-
-    print(temp_json)
 
     return json.dumps(temp_json)
 
@@ -385,7 +388,7 @@ class StateApi():
         if(response.status_code == 200):
           parsed_url = urlparse(params.file_path)
           file_name = os.path.basename(parsed_url.path)
-          tempdir = os.path.join(tempfile.gettempdir(),"lightspeedflow_temp")
+          tempdir = os.path.join(tempfile.gettempdir(),"lightdiffusionflow_temp")
           if(os.path.exists(tempdir)):
             shutil.rmtree(tempdir)
           if(not os.path.exists(tempdir)):
@@ -418,7 +421,7 @@ class Script(scripts.Script):
     super().__init__()
 
   def title(self):
-    return "lightspeedflow plugin"
+    return "lightdiffusionflow plugin"
 
   def show(self, is_img2img):
     return scripts.AlwaysVisible
@@ -433,19 +436,19 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('LightspeedFlow '+lightspeedflow_version.lightspeedflow_version, open=True, visible=True):
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
       with gr.Row():
-        lightspeedflow_file = gr.File(label="LightSpeedFlow File",file_count="single", file_types=[".lightspeedflow"])
-        State_Comps["import"].append(lightspeedflow_file)
+        lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[".lightdiffusionflow"])
+        State_Comps["import"].append(lightdiffusionflow_file)
         
         # with gr.Column(scale=1):
         #   gr.HTML(label="",value='''
         # <a style ="text-decoration:underline;color:cornflowerblue;",
         # href="https://www.lightflow.ai/">LightFlow开源社区</a>''')
         State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
-        <p style=color:Tomato;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
-        <p style=color:MediumSeaGreen;>Welcome to LightSpeedFlow!  \(^o^)/~</p>
-        <p style=color:DodgerBlue;>Welcome to LightSpeedFlow!  \(^o^)/~</p>'''))
+        <p style=color:Tomato;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
+        <p style=color:MediumSeaGreen;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
+        <p style=color:DodgerBlue;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>'''))
 
       with gr.Row():
         export_config = gr.Button(value='Export')
@@ -453,14 +456,16 @@ class Script(scripts.Script):
 
       if(not is_img2img):
         
-        State_Comps["background_import"] = gr.File(label="LightSpeedFlow File",file_count="single",
-           file_types=[".lightspeedflow"],visible=False)
+        State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
+           file_types=[".lightdiffusionflow"],visible=False)
 
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
 
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
+        #State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
-        State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightspeedflow_file',visible=False)
+        State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='txt2img_invisible_refresh_log',visible=False)
+
+        State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightdiffusionflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
 
         with gr.Row():
@@ -473,7 +478,7 @@ class Script(scripts.Script):
 
 
 def on_before_reload():
-  lightspeedflow_config.init()
+  lightdiffusionflow_config.init()
 
 # add callbacks
 api = StateApi()

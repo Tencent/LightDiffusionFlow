@@ -83,13 +83,13 @@ state.core = (function () {
 
   function fn_timer(){
 
-    fetch('/lightspeedflow/local/need_preload')
+    fetch('/lightdiffusionflow/local/need_preload')
       .then(response => response.json())
       .then(data => {
         //console.log(`fn_timer ${data}`)
         if (data != ""){
-          //state.core.actions.handleLightSpeedFlow([{"name":data}]);
-          const btn1 = gradioApp().querySelector(`button#set_lightspeedflow_file`);
+          //state.core.actions.handleLightDiffusionFlow([{"name":data}]);
+          const btn1 = gradioApp().querySelector(`button#set_lightdiffusionflow_file`);
           state.utils.triggerMouseEvent(btn1);
           setTimeout(() => {
             const btn2 = gradioApp().querySelector(`button#preload_button`);
@@ -107,9 +107,9 @@ state.core = (function () {
   function init() {
     
     //console.log(window.localization)
-    fetch('/lightspeedflow/local/refresh_ui') // 刷新页面触发python重置图片数据
+    fetch('/lightdiffusionflow/local/refresh_ui') // 刷新页面触发python重置图片数据
 
-    fetch('/lightspeedflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
+    fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
       .then(response => response.json())
       .then(data => {
         img_elem_keys = data.split(",")
@@ -118,7 +118,7 @@ state.core = (function () {
         });
         
         // 等上面的组件ID同步过来后 再加载其他配置
-        fetch('/lightspeedflow/local/config.json?_=' + (+new Date()))
+        fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
           .then(response => response.json())
           .then(config => {          
             try {
@@ -477,7 +477,7 @@ state.core = (function () {
     //   }
     // },
     applyState: function () {
-      fetch('/lightspeedflow/local/config.json?_=' + (+new Date()))
+      fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
         .then(response => response.json())
         .then(config => {
           try {
@@ -533,7 +533,7 @@ state.core = (function () {
         store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
       }
 
-      fetch('/lightspeedflow/local/lightspeedflow_config?onlyimg=true')
+      fetch('/lightdiffusionflow/local/lightdiffusionflow_config?onlyimg=true')
         .then(response => response.json())
         .then(config => {
           config = JSON.parse(config)
@@ -562,10 +562,10 @@ state.core = (function () {
         }).catch(error => console.error('[state]: Error getting JSON file:', error));
 
       //config = JSON.stringify(store.getAll(), null, 4);
-      //fetch(`/lightspeedflow/local/ExportLightSpeedFlow?config=${config}`)
+      //fetch(`/lightdiffusionflow/local/ExportLightDiffusionFlow?config=${config}`)
     },
 
-    handleLightSpeedFlow: function (fileInput){
+    handleLightDiffusionFlow: function (fileInput){
       actions.output_log("Start parsing settings...")
       console.log(fileInput)
       let temp_fileInput = undefined
@@ -573,7 +573,7 @@ state.core = (function () {
       if ( !temp_fileInput ) {temp_fileInput = fileInput}
       if ( !temp_fileInput ) {
         //alert('Please select a JSON file!');
-        actions.output_log("Please select a valid lightspeedflow or image file!")
+        actions.output_log("Please select a valid lightdiffusionflow or image file!")
         return;
       }
 
@@ -590,11 +590,11 @@ state.core = (function () {
             "img_path":file_name
           })
         }
-        fetch(`/lightspeedflow/local/png_info`, data)
+        fetch(`/lightdiffusionflow/local/png_info`, data)
           .then(response => response.json())
           .then(data => {
             console.log(data)
-            actions.importLightSpeedFlow(data)
+            actions.importLightDiffusionFlow(data)
           });
       }
       else{
@@ -604,7 +604,7 @@ state.core = (function () {
         const reader = new FileReader();
         reader.onload = function (event) {
           console.log(event)
-          actions.importLightSpeedFlow(event.target.result)
+          actions.importLightDiffusionFlow(event.target.result)
         };
         try{ reader.readAsText(file); } catch (error) {
           console.log("read from python")
@@ -616,11 +616,11 @@ state.core = (function () {
                 "file_path":temp_fileInput.name
               })
             }
-            fetch(`/lightspeedflow/local/read_file`, data)
+            fetch(`/lightdiffusionflow/local/read_file`, data)
               .then(response => response.json())
               .then(data => {
                 //console.log(data)
-                actions.importLightSpeedFlow(data)
+                actions.importLightDiffusionFlow(data)
               });
           }
 
@@ -628,7 +628,7 @@ state.core = (function () {
       }
       return fileInput
     },
-    importLightSpeedFlow: function (inputData){
+    importLightDiffusionFlow: function (inputData){
 
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         state.utils.clearImage(getElement(image_id));
@@ -636,7 +636,7 @@ state.core = (function () {
       
       let json_obj = {}
       try { json_obj = JSON.parse(inputData) } catch (error) {
-        actions.output_log("Please select a valid lightspeedflow or image file!")
+        actions.output_log("Please select a valid lightdiffusionflow or image file!")
         return;
       }
       console.log(json_obj)
@@ -685,13 +685,15 @@ state.core = (function () {
 
     },
     output_log: function (msg, style=""){
-      fetch(`/lightspeedflow/local/output_log?msg=${msg}&style=${style}`)
+      fetch(`/lightdiffusionflow/local/output_log?msg=${msg}&style=${style}`).then(() => {
+        gradioApp().getElementById("txt2img_invisible_refresh_log").click();
+      });
     },
     output_warning: function (msg, style="color:Orange;"){
-      fetch(`/lightspeedflow/local/output_log?msg=${msg}&style=${style}`)
+      actions.output_log(msg,style)
     },
     output_error: function (msg, style="color:Tomato;"){
-      fetch(`/lightspeedflow/local/output_log?msg=${msg}&style=${style}`)
+      actions.output_log(msg,style)
     }
   };
 

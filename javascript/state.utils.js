@@ -4,12 +4,7 @@ state = window.state;
 state.utils = {
 
   testFunction: function testFunction() {
-    
     //console.log(state.extensions)
-    let str = "chilloutmix_Ni.safetensors [7234b76e42]"
-    let res = str.search(/\[[0-9A-Fa-f]{10}\]/)
-    res = str.substring(res,res+12)
-    console.log(res)
   },
 
   searchCheckPointByHash: async function searchCheckPointByHash(hash){
@@ -228,7 +223,7 @@ state.utils = {
           console.warn('[state]: Error:', error);
         }
         
-        fetch(`/lightspeedflow/local/imgs_callback`, data)
+        fetch(`/lightdiffusionflow/local/imgs_callback`, data)
       });
     }, 150);
   },
@@ -389,11 +384,13 @@ state.utils = {
               state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
             }
             if(hash_pos != -1){
+              let model_name = value
               let hash_str = localized_value.substring(hash_pos,hash_pos+12)
               state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
                 if(downloadUrl != undefined){
-                  state.core.actions.output_warning(`click to download \
-                  <a style ="text-decoration:underline;color:cornflowerblue;", href="${downloadUrl}"> ${value} </a>`)
+                  let warning_str = encodeURIComponent(`click to download \
+                  <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
+                  state.core.actions.output_warning(warning_str)
                 }
               });
             }
@@ -508,7 +505,7 @@ state.utils = {
     console.log(url)
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName + '.lightspeedflow';
+    link.download = fileName + '.lightdiffusionflow';
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

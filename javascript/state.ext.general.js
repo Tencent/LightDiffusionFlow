@@ -247,7 +247,7 @@ function general_ext_main(tab){
       }
       
       if(title == undefined 
-        || title.toLowerCase() == "lightspeedflow" // 自己存自己就不用了
+        || title.toLowerCase() == "lightdiffusionflow" // 自己存自己就不用了
       ){continue}
 
       let translations = state.utils.reverseTranslation(title)

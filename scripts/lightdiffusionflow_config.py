@@ -1,16 +1,16 @@
 import json
 import modules.shared as shared
 
-PNGINFO_2_LIGHTSPEEDFLOW = {}
-PNGINFO_CN_2_LIGHTSPEEDFLOW = {}
+PNGINFO_2_LIGHTDIFFUSIONFLOW = {}
+PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
 Image_Components_Key = {}
 
 # 改成函数调用，修改配置之后能及时刷新
 def init():
-  global PNGINFO_2_LIGHTSPEEDFLOW,PNGINFO_CN_2_LIGHTSPEEDFLOW,Image_Components_Key
+  global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW,Image_Components_Key
   # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
   #print(parameters_copypaste.paste_fields) 
-  PNGINFO_2_LIGHTSPEEDFLOW = {
+  PNGINFO_2_LIGHTDIFFUSIONFLOW = {
     "Prompt": "state-txt2img_prompt",
     "Negative prompt": "state-txt2img_neg_prompt",
     "Steps": "state-txt2img_steps",
@@ -31,12 +31,15 @@ def init():
     "ENSD": "setting_eta_noise_seed_delta"
   }
 
-  PNGINFO_CN_2_LIGHTSPEEDFLOW = {
+  PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {
+    "Module": "state-ext-control-net-txt2img_0-preprocessor",
     "preprocessor": "state-ext-control-net-txt2img_0-preprocessor",
     "model": "state-ext-control-net-txt2img_0-model",
     "weight": "state-ext-control-net-txt2img_0-control-weight",
     "starting": "state-ext-control-net-txt2img_0-starting-control-step",
     "ending": "state-ext-control-net-txt2img_0-guidance-end-(t)",
+    "guidance start": "state-ext-control-net-txt2img_0-starting-control-step",
+    "guidance end": "state-ext-control-net-txt2img_0-ending-control-step",
     "resize mode": "state-ext-control-net-txt2img_0-resize-mode",
     "pixel perfect": "state-ext-control-net-txt2img_0-pixel-perfect",
     "control mode": "state-ext-control-net-txt2img_0-control-mode",
