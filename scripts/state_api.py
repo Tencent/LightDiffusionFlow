@@ -36,7 +36,7 @@ Output_Log = ""
 
 Need_Preload = False
 Preload_File = r""
-
+File_extension = ".flow"
 
 def test_func():
   print("test_func")
@@ -185,7 +185,7 @@ def fn_import_workflow(workflow_file):
       config_file = workflow_file.name
 
     print("fn_import_workflow "+str(config_file))
-    if (os.path.splitext(config_file)[-1] in  [".lightdiffusionflow", ".lightflow", ".json"]):
+    if (os.path.splitext(config_file)[-1] in  [File_extension, ".lightflow", ".json"]): # 兼容部分旧版本文件
       with open(config_file, mode='r', encoding='UTF-8') as f:
         json_str = f.read()
         workflow_json = json.loads(json_str)
@@ -427,6 +427,8 @@ class Script(scripts.Script):
     return scripts.AlwaysVisible
 
   def ui(self, is_img2img):
+    global File_extension
+
     try:
       State_Comps["import"]
       State_Comps["export"]
@@ -438,17 +440,17 @@ class Script(scripts.Script):
 
     with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
       with gr.Row():
-        lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[".lightdiffusionflow"])
+        lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension])
         State_Comps["import"].append(lightdiffusionflow_file)
         
-        # with gr.Column(scale=1):
-        #   gr.HTML(label="",value='''
-        # <a style ="text-decoration:underline;color:cornflowerblue;",
-        # href="https://www.lightflow.ai/">LightFlow开源社区</a>''')
-        State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
-        <p style=color:Tomato;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
-        <p style=color:MediumSeaGreen;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
-        <p style=color:DodgerBlue;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>'''))
+        with gr.Column(scale=1):
+          gr.HTML(label="",value='''
+          <a style ="text-decoration:underline;color:cornflowerblue;",
+          href="https://www.lightflow.ai/">开源社区</a>''')
+          State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
+          <p style=color:Tomato;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
+          <p style=color:MediumSeaGreen;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
+          <p style=color:DodgerBlue;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>'''))
 
       with gr.Row():
         export_config = gr.Button(value='Export')
@@ -457,7 +459,7 @@ class Script(scripts.Script):
       if(not is_img2img):
         
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
-           file_types=[".lightdiffusionflow"],visible=False)
+           file_types=[File_extension],visible=False)
 
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
 

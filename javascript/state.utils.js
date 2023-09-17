@@ -505,7 +505,7 @@ state.utils = {
     console.log(url)
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName + '.lightdiffusionflow';
+    link.download = fileName + '.flow';
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

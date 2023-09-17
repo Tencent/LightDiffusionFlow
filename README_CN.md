@@ -3,23 +3,22 @@
     <img alt="" src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue" />
 </p>
 
-# stable-diffusion-lightdiffusionflow
+# sd-webui-lightdiffusionflow
 
 [**English**](./README.md) | [**中文**](./README_CN.md)
 
-这是为[Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 开发的一款保存配置选项的插件
+这是为[Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 开发的一款导入/导出参数选项的插件。  
+Stable Diffusion Web UI 以下简称 SD Web UI。  
+[**插件效果演示和其他说明**](https://fvkij7wuqx9.feishu.cn/docx/HgZndihraotmmzxFni7cFZISnvb)  
+[**我们的开源社区**](https://www.lightflow.ai/)
 
 ### 功能
 
-* 实现单个文件导入/导出web UI参数选项。
-* 支持解析图片的png info，并自动将参数恢复到web UI面板上，包括部分插件参数。
-* 理论上这个插件可以拓展支持所有的参数选项。
+* 实现单个文件导入/导出SD Web UI参数选项。
+* 支持解析图片的PNG Info，并自动将参数恢复到SD Web UI面板上，包括部分插件参数。
 * 目前支持的插件：
-    - 理论上来说，目前可以支持所有插件。
-
-### 用法
-
-*待补充*
+    - 理论上来说，目前可以支持所有插件。  
+    部分插件的图片参数除外，因为必须要有对应的elem_id。
 
 ### 安装
 
@@ -29,9 +28,22 @@
 
 无
 
+### 用法
+
+* 导出配置：
+    - 在SD Web UI上设置好合适的选项，点击Export按钮即可导出记录了当前设置的flow文件。
+* 导入配置：
+    - 在SD Web UI上，点击文件框选择对应的flow文件，即可导入文件中的设置。
+    - 也可以直接把flow文件拖入文件框内完成导入。
+
+### 注意事项
+
+* 每次导入新的flow文件之前，最好刷新一下SD Web UI页面，因为插件只会修改已保存的参数选项。
+* 插件当前版本不支持秋叶启动器的"云端汉化选项"，使用本插件时建议关闭。
+
 ### 插件共建
 
-欢迎随时发起PR!
+如果你对我们的项目有意见、建议或者使用中遇到问题，欢迎通过 issue 给我们提出，也欢迎随时发起PR!
 
 ### 感谢
 
@@ -39,6 +51,6 @@
 
 - stable-diffusion-webui-state - https://github.com/ilian6806/stable-diffusion-webui-state
 
-*我们团队急需一个能快速分享stable diffusion Web UI 设置的解决方案，Ilian Iliev 的项目为我们提供了很大的帮助，感谢 Ilian Iliev！*
+    *我们团队急需一个能快速分享 SD Web UI 设置的解决方案，Ilian Iliev 的 stable-diffusion-webui-state 项目为我们提供了很大的帮助，感谢 Ilian Iliev！*
 
-- 感谢 Joshua Yu 和 Hali 为本项目提供的灵感和建议。
+- 非常感谢 [Hali](https://github.com/ThisHaliHali) 为本项目提供的灵感、建议以及在开发期间的各种支持！
