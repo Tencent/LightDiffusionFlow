@@ -1,5 +1,6 @@
 window.state = window.state || {};
 state = window.state;
+let selectingQueue = 0; // 默认都延时一下再开始触发
 
 state.utils = {
 
@@ -325,79 +326,87 @@ state.utils = {
     try {
       let value = store.get(id);
       if (value ) { //&& value != 'None'
-        let input = select.querySelector('input');
-        state.utils.triggerMouseEvent(input, 'focus');
-        
+
+        selectingQueue += 1;
         setTimeout(() => {
-          let items = Array.from(select.querySelectorAll('ul li'));
-          let localized_value = this.getTranslation(value)
-          let successed = false
-          for (li of items){
-            // li.lastChild.wholeText.trim() === value
-            if (localized_value.replace(/^\s+|\s+$/g,"") === li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")) {
-              state.utils.triggerMouseEvent(li, 'mousedown');
-              successed = true
-              break
-            }
-          }
 
-          let hash_pos = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
-          if(!successed){ // && hash_pos != -1 找不到对应选项 并且选项里有10位哈希值
+          let input = select.querySelector('input');
+          state.utils.triggerMouseEvent(input, 'focus');
+          
+          setTimeout(() => {
+            let items = Array.from(select.querySelectorAll('ul li'));
+            let localized_value = this.getTranslation(value)
+            let successed = false
             for (li of items){
-              
-              // 去掉Hash比较
-              let text = li.lastChild.wholeText.trim()
-              let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"").replace(/^\s+|\s+$/g,"")
-              let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "").replace(/^\s+|\s+$/g,"")
-              
-              if (localized_value_no_hash === text_no_hash) {
-                successed = true
-              }
-              
-              // 只比较Hash
-              if(!successed){
-                let hash_str = localized_value.substring(hash_pos,hash_pos+12).replace(/^\s+|\s+$/g,"")
-                let text_hash_pos = text.search(/\[[0-9A-Fa-f]{10}\]/)
-                let text_hash = text.substring(text_hash_pos, text_hash_pos+12).replace(/^\s+|\s+$/g,"")
-                if (hash_str === text_hash) {
-                  successed = true
-                }
-              }
-
-              if(successed){
+              // li.lastChild.wholeText.trim() === value
+              if (localized_value.replace(/^\s+|\s+$/g,"") === li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")) {
                 state.utils.triggerMouseEvent(li, 'mousedown');
-                state.core.actions.output_warning(
-                  `The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
+                successed = true
                 break
               }
             }
-          }
 
-          if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
-          {
-            let option_name = store.prefix + id
-            if(option_name === "state-setting_sd_model_checkpoint"){
-              // 大模型找不到就只用warning提示，因为不影响运行
-              state.core.actions.output_warning(`The option \'${value}\' was not found!`)
-            }
-            else{
-              state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
-            }
-            if(hash_pos != -1){
-              let model_name = value
-              let hash_str = localized_value.substring(hash_pos,hash_pos+12)
-              state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
-                if(downloadUrl != undefined){
-                  let warning_str = encodeURIComponent(`click to download \
-                  <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
-                  state.core.actions.output_warning(warning_str)
+            let hash_pos = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
+            if(!successed){ // && hash_pos != -1 找不到对应选项 并且选项里有10位哈希值
+              for (li of items){
+                
+                // 去掉Hash比较
+                let text = li.lastChild.wholeText.trim()
+                let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"").replace(/^\s+|\s+$/g,"")
+                let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "").replace(/^\s+|\s+$/g,"")
+                
+                if (localized_value_no_hash === text_no_hash) {
+                  successed = true
                 }
-              });
-            }
-          }
+                
+                // 只比较Hash
+                if(!successed){
+                  let hash_str = localized_value.substring(hash_pos,hash_pos+12).replace(/^\s+|\s+$/g,"")
+                  let text_hash_pos = text.search(/\[[0-9A-Fa-f]{10}\]/)
+                  let text_hash = text.substring(text_hash_pos, text_hash_pos+12).replace(/^\s+|\s+$/g,"")
+                  if (hash_str === text_hash) {
+                    successed = true
+                  }
+                }
 
-          state.utils.triggerMouseEvent(input, 'blur');
-        }, 100);
+                if(successed){
+                  state.utils.triggerMouseEvent(li, 'mousedown');
+                  state.core.actions.output_warning(
+                    `The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
+                  break
+                }
+              }
+            }
+
+            if(!successed && items.length > 0) // 下拉框一个选项都没找到说明就没有这个下拉框，可能是界面设置把下拉框替换成了radio button
+            {
+              let option_name = store.prefix + id
+              if(option_name === "state-setting_sd_model_checkpoint"){
+                // 大模型找不到就只用warning提示，因为不影响运行
+                state.core.actions.output_warning(`The option \'${value}\' was not found!`)
+              }
+              else{
+                state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
+              }
+              if(hash_pos != -1){
+                let model_name = value
+                let hash_str = localized_value.substring(hash_pos,hash_pos+12)
+                state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
+                  if(downloadUrl != undefined){
+                    let warning_str = encodeURIComponent(`click to download \
+                    <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
+                    state.core.actions.output_warning(warning_str)
+                  }
+                });
+              }
+            }
+
+            state.utils.triggerMouseEvent(input, 'blur');
+            selectingQueue -= 1;
+            console.log(`selectingQueue = ${selectingQueue}`)
+          }, 100);
+
+        }, selectingQueue * 200)
       }
 
       setTimeout(() => {

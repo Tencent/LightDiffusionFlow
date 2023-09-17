@@ -70,7 +70,7 @@ state.core = (function () {
     'setting_sd_model_checkpoint': 'setting_sd_model_checkpoint',
   };
 
-  const Image_extensions = [".png", ".jpg"]
+  const Image_extensions = [".png", ".jpg", ".jpeg"]
 
   let store = null;
   let timer = null;
