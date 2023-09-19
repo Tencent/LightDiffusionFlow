@@ -114,7 +114,7 @@ def on_after_component(component, **kwargs):
     
     #State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
 
-    State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=State_Comps["outlog"])
+    State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=[State_Comps["outlog"][0], State_Comps["outlog"][1]])
 
     input_component = State_Comps["background_import"] #State_Comps["import"][0]
     State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])

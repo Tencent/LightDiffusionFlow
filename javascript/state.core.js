@@ -104,6 +104,11 @@ state.core = (function () {
   }
 
   let img_elem_keys=[];
+
+  function get_imgs_elem_key(){
+    return img_elem_keys;
+  }
+
   function init() {
     
     //console.log(window.localization)
@@ -697,5 +702,5 @@ state.core = (function () {
     }
   };
 
-  return { init,actions };
+  return { init, actions };
 }());

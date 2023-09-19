@@ -243,7 +243,7 @@ state.utils = {
         
       }
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   // handleSelect: function handleSelect(select, id, store) {
@@ -282,7 +282,7 @@ state.utils = {
   //       });
   //     }, 150);
   //   } catch (error) {
-  //     console.error('[state]: Error:', error);
+  //     console.warn('[state]: Error:', error);
   //   }
   // },
 
@@ -317,13 +317,14 @@ state.utils = {
       }, 150);
 
     } catch (error) {
-      console.error(`accordion:${accordion}, id:${id}`)
-      console.error('[state]: Error:', error);
+      console.warn(`accordion:${accordion}, id:${id}`)
+      console.warn('[state]: Error:', error);
     }
 
   },
   handleSelect: function handleSelect(select, id, store, force=false) {
     try {
+
       let value = store.get(id);
       if (value ) { //&& value != 'None'
 
@@ -442,7 +443,7 @@ state.utils = {
         });
       }, 150);
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   handleMultipleSelect: function handleMultipleSelect(select, id, store) {
@@ -492,7 +493,7 @@ state.utils = {
         store.set(id, selected);
       });
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   txtToId: function txtToId(txt) {

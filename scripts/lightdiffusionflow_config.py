@@ -61,7 +61,10 @@ def init():
       json_str = f.read()
       webui_settings = json.loads(json_str)
     
-    Multi_ControlNet  = webui_settings["control_net_max_models_num"]
+    Multi_ControlNet = webui_settings.get("control_net_unit_count", None) # controlnet数量，新版名字
+    if(Multi_ControlNet == None):
+      Multi_ControlNet = webui_settings.get("control_net_max_models_num", 0)
+    print(f"Multi_ControlNet = {Multi_ControlNet}")
     if(Multi_ControlNet == 1):
       Image_Components_Key.append(f"txt2img_controlnet_ControlNet_input_image")
       Image_Components_Key.append(f"img2img_controlnet_ControlNet_input_image")
@@ -69,6 +72,7 @@ def init():
       for i in range(Multi_ControlNet):
         Image_Components_Key.append(f"txt2img_controlnet_ControlNet-{i}_input_image")
         Image_Components_Key.append(f"img2img_controlnet_ControlNet-{i}_input_image")
+        
   except:
     pass
 

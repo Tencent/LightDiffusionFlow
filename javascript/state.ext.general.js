@@ -170,7 +170,7 @@ function general_ext(tab_name, extension_name, root_container) {
     }
   }
   function handleSelects() {
-
+    
     let root_selects = root_not_tabs.container.querySelectorAll('.gradio-dropdown');
     root_selects.forEach(function (root_select) {
       if(cnTabs.length == 0){
@@ -184,7 +184,7 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleCheckbox(root_select, root_not_tabs.store)}
+        if(needsHandle){handleSelect(root_select, root_not_tabs.store)}
       } // else
     });
 
