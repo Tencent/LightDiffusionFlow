@@ -653,6 +653,9 @@ state.core = (function () {
       store.clear();
       store.load(json_obj);
       actions.applyState();
+
+      const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
+      button.click();
       
       return;
     },

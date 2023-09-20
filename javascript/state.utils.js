@@ -6,6 +6,8 @@ state.utils = {
 
   testFunction: function testFunction() {
     //console.log(state.extensions)
+    // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
+    // button.click();
   },
 
   searchCheckPointByHash: async function searchCheckPointByHash(hash){
@@ -326,14 +328,13 @@ state.utils = {
     try {
 
       let value = store.get(id);
-      if (value ) { //&& value != 'None'
+      if ( value ) { //&& value != 'None'
 
         selectingQueue += 1;
         setTimeout(() => {
 
           let input = select.querySelector('input');
           state.utils.triggerMouseEvent(input, 'focus');
-          
           setTimeout(() => {
             let items = Array.from(select.querySelectorAll('ul li'));
             let localized_value = this.getTranslation(value)

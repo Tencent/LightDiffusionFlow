@@ -154,27 +154,46 @@ function general_ext(tab_name, extension_name, root_container) {
 
   }
 
-  function handleSelect(select, store) {
+  function handleSelect(select, index, store) {
     let translations = state.utils.reverseTranslation(select.querySelector('label').firstChild.textContent)
-    for (var text of translations){
-      var id = state.utils.txtToId(text);
-      var value = store.get(id);
-      if (value) {break}
-    }
+    // for (var text of translations){
+    //   var id = state.utils.txtToId(text);
+    //   var value = store.get(id);
+    //   if (value) {break}
+    // }
     //id = state.utils.txtToId(translations[0]);
     //if (value) { //前面不需要判断是否有值，因为需要执行handleSelect绑定onchange事件
-    state.utils.handleSelect(select, id, store, force=true);
+    //state.utils.handleSelect(select, id, store, force=true);
     //}
+
+    let id = state.constants.LS_PREFIX+LS_PREFIX+"dropdown_"+index
+    state.utils.onContentChange(select, function (el) {
+      console.log(`onContentChange ${id}`)
+      let selected = el.querySelector('span.single-select');
+      if (selected) {
+        store.setWithNoPrefix(id, selected.textContent);
+      } else {
+        // new gradio version...
+        let input = el.querySelector('input');
+        if (input) {
+          store.setWithNoPrefix(id, input.value);
+        }
+      }
+
+    });
+
     if (id === 'preprocessor' && value && value.toLowerCase() !== 'none') {
       state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
     }
   }
   function handleSelects() {
-    
+    //let select_index = 0
     let root_selects = root_not_tabs.container.querySelectorAll('.gradio-dropdown');
     root_selects.forEach(function (root_select) {
       if(cnTabs.length == 0){
-        handleSelect(root_select, root_not_tabs.store)
+        handleSelect(root_select, global_dropdown_index[ext_name], root_not_tabs.store)
+        global_dropdown_index[ext_name] += 1
+        console.log(`global_dropdown_index = ${global_dropdown_index[ext_name]}`)
       }
       else{
         let needsHandle = true
@@ -184,13 +203,19 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleSelect(root_select, root_not_tabs.store)}
+        if(needsHandle){
+          handleSelect(root_select, global_dropdown_index[ext_name], root_not_tabs.store)
+          global_dropdown_index[ext_name] += 1
+          console.log(`global_dropdown_index = ${global_dropdown_index[ext_name]}`)
+        }
       } // else
     });
 
     cnTabs.forEach(({ container, store }) => {
       container.querySelectorAll('.gradio-dropdown').forEach(select => {
-        handleSelect(select, store)
+        handleSelect(select, global_dropdown_index[ext_name], store)
+        global_dropdown_index[ext_name] += 1
+        console.log(`global_dropdown_index = ${global_dropdown_index[ext_name]}`)
       });
     });
 
@@ -302,7 +327,7 @@ function general_ext(tab_name, extension_name, root_container) {
       handleTabs();
       handleCheckboxes();
       handleTextAreas();
-      handleSelects();
+      //handleSelects();
       handleSliders();
       handleRadioButtons();
     }, 500);
@@ -393,16 +418,22 @@ function general_ext_main(tab){
       reg = /(.+) v[0-9\.]+/
       if(reg.test(title)){title = RegExp.$1} // 匹配 xxx v0.0.0 格式的标题，把后半部分的版本号去掉
 
-      if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
+      //if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
       
       let ext_name = title.replace(" ","-").toLowerCase()
       console.log(ext_name)
+      
+      if(!global_dropdown_index[ext_name]){
+        global_dropdown_index[ext_name] = 0
+      }
       general_ext(cur_tab_name, ext_name, root_container).init();
     }
     
   }
   return {init}
 }
+
+global_dropdown_index = {} // py里是不分txt2img和img2img的，但是这里是需要区分的。。
 
 const TABS = ['txt2img', 'img2img'];
 for (tab of TABS){
