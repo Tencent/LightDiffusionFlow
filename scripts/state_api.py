@@ -86,11 +86,44 @@ python触发导入事件，按正常触发逻辑先执行js代码，把除图片
 '''
 def on_after_component(component, **kwargs):
 
+  #当前模式
+  teb_mode="img2img" if self.is_img2img else "txt2img"
+  #空id补全方法
+  def in_zone(dom,id=""):
+    if dom:
+      if dom.elem_id:
+        id+="-"+dom.elem_id
+        return in_zone(dom.parent,id)
+      elif dom.elem_classes and dom.elem_classes[0]!='gradio-blocks':
+        if dom.elem_classes[0]=='gradio-accordion':
+          id+='-'+dom.label+"?"
+        return in_zone(dom.parent,id)
+    if re.search('2img_(textual|hypernetworks|checkpoints|lora)_',id):
+      return False
+    else:
+      id=re.sub(r'\?[^\?]+$|[ \?]','',id)
+      if id in self.new_ids:
+        self.new_ids[id]+=1
+      else:
+        self.new_ids[id]=1
+      return id+'-'+str(self.new_ids[id])
+
+  #记录组件
   try:
-    if(Webui_Comps.get(kwargs["elem_id"], None) == None):
-      Webui_Comps[kwargs["elem_id"]] = component
+    #拉取id
+    id=component.elem_id
+    #若没有就重构
+    if id==None:
+      component.elem_id=kwargs["elem_id"]=in_zone(component.parent,teb_mode)
+    Webui_Comps[kwargs["elem_id"]] = component
   except BaseException as e:
     pass
+  
+  #try:
+    #if(Webui_Comps.get(kwargs["elem_id"], None) == None):
+      #Webui_Comps[kwargs["elem_id"]] = component
+  #except BaseException as e:
+    #pass
 
   if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
     #print("LightDiffusionFlow绑定按钮")
