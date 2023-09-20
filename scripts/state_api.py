@@ -419,12 +419,48 @@ class Script(scripts.Script):
 
   def __init__(self) -> None:
     super().__init__()
+    #记录无id元素的id
+    self.new_ids={}
 
   def title(self):
     return "lightdiffusionflow plugin"
 
   def show(self, is_img2img):
     return scripts.AlwaysVisible
+
+  def after_component(self, component, **kwargs):
+    #当前模式
+    teb_mode="img2img" if self.is_img2img else "txt2img"
+    #空id补全方法
+    def in_zone(dom,id=""):
+      if dom:
+        if dom.elem_id:
+          id+="-"+dom.elem_id
+          return in_zone(dom.parent,id)
+        elif dom.elem_classes and dom.elem_classes[0]!='gradio-blocks':
+          if dom.elem_classes[0]=='gradio-accordion':
+            id+='-'+dom.label+"?"
+          return in_zone(dom.parent,id)
+      if re.search('2img_(textual|hypernetworks|checkpoints|lora)_',id):
+        return False
+      else:
+        id=re.sub(r'\?[^\?]+$|[ \?]','',id)
+        if id in self.new_ids:
+          self.new_ids[id]+=1
+        else:
+          self.new_ids[id]=1
+        return id+'-'+str(self.new_ids[id])
+  
+    #记录组件
+    try:
+      #拉取id
+      id=component.elem_id
+      #若没有就重构
+      if id==None:
+        id=component.elem_id==in_zone(component.parent,teb_mode)
+      Webui_Comps[id] = component
+    except BaseException as e:
+      pass
 
   def ui(self, is_img2img):
     global File_extension
