@@ -6,6 +6,8 @@ state.utils = {
 
   testFunction: function testFunction() {
     //console.log(state.extensions)
+    // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
+    // button.click();
   },
 
   searchCheckPointByHash: async function searchCheckPointByHash(hash){
@@ -243,7 +245,7 @@ state.utils = {
         
       }
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   // handleSelect: function handleSelect(select, id, store) {
@@ -282,7 +284,7 @@ state.utils = {
   //       });
   //     }, 150);
   //   } catch (error) {
-  //     console.error('[state]: Error:', error);
+  //     console.warn('[state]: Error:', error);
   //   }
   // },
 
@@ -304,7 +306,9 @@ state.utils = {
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
       if (value) {
         //for(child of children){
-        if(child.className.split(' ').pop() != "open"){
+        let span = child.querySelector('.transition, .icon');
+        if(span.style.transform !== 'rotate(90deg)'){
+        //if(child.className.split(' ').pop() != "open"){
           state.utils.triggerMouseEvent(child, 'click')
         }
         //}
@@ -312,27 +316,30 @@ state.utils = {
 
       setTimeout(() => {
         state.utils.onContentChange(child, function (el) {
-          store.set(id, el.className.split(' ').pop() == "open");
+          //store.set(id, el.className.split(' ').pop() == "open");
+          //console.log(`accordion on change ${id}`)
+          let span = el.querySelector('.transition, .icon');
+          store.set(id, span.style.transform !== 'rotate(90deg)');
         });
       }, 150);
 
     } catch (error) {
-      console.error(`accordion:${accordion}, id:${id}`)
-      console.error('[state]: Error:', error);
+      console.warn(`accordion:${accordion}, id:${id}`)
+      console.warn('[state]: Error:', error);
     }
 
   },
   handleSelect: function handleSelect(select, id, store, force=false) {
     try {
+
       let value = store.get(id);
-      if (value ) { //&& value != 'None'
+      if ( value ) { //&& value != 'None'
 
         selectingQueue += 1;
         setTimeout(() => {
 
           let input = select.querySelector('input');
           state.utils.triggerMouseEvent(input, 'focus');
-          
           setTimeout(() => {
             let items = Array.from(select.querySelectorAll('ul li'));
             let localized_value = this.getTranslation(value)
@@ -403,7 +410,7 @@ state.utils = {
 
             state.utils.triggerMouseEvent(input, 'blur');
             selectingQueue -= 1;
-            console.log(`selectingQueue = ${selectingQueue}`)
+            //console.log(`selectingQueue = ${selectingQueue}`)
           }, 100);
 
         }, selectingQueue * 200)
@@ -442,7 +449,7 @@ state.utils = {
         });
       }, 150);
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   handleMultipleSelect: function handleMultipleSelect(select, id, store) {
@@ -492,7 +499,7 @@ state.utils = {
         store.set(id, selected);
       });
     } catch (error) {
-      console.error('[state]: Error:', error);
+      console.warn('[state]: Error:', error);
     }
   },
   txtToId: function txtToId(txt) {

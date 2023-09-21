@@ -34,12 +34,21 @@ Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与Image_Components_Key一致
 Output_Log = ""
 
+conponents_originlist = []
+extensions_conponents = {}
+extensions_id_conponents = {}
+extensions_id_conponents_value = {}
+txt2img_script_container = None
+img2img_script_container = None
+
 Need_Preload = False
 Preload_File = r""
 File_extension = ".flow"
 
 def test_func():
+  global extensions_conponents
   print("test_func")
+
   # print(parameters_copypaste.paste_fields)
 
 def add_output_log(msg:str="", style:str=""):
@@ -54,8 +63,6 @@ def find_checkpoint_from_name(name:str):
 
   for checkpoint in checkpoints_list.keys():
     res = re.search(r"(.+)\.(.+)", checkpoint)
-    #print(checkpoint)
-    #print(res.group(1))
     try:
       if(res.group(1) == name):
         return checkpoint
@@ -79,63 +86,286 @@ def set_lightdiffusionflow_file():
   return Preload_File
 
 
-'''
-python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
-然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，
-再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
-'''
-def on_after_component(component, **kwargs):
+def on_dropdown_changed(*component):
+  global extensions_id_conponents, extensions_id_conponents_value
 
-  try:
-    if(Webui_Comps.get(kwargs["elem_id"], None) == None):
-      Webui_Comps[kwargs["elem_id"]] = component
-  except BaseException as e:
-    pass
+  extensions_id_conponents_value = {"dropdown":{}}
+  i = 0
+  for id in extensions_id_conponents["dropdown"].keys():
+    extensions_id_conponents_value["dropdown"][id] = component[i]
+    i+=1
 
-  if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
-    #print("LightDiffusionFlow绑定按钮")
+def set_dropdowns():
+  global extensions_id_conponents, workflow_json
+  global temp_index,next_index
+  global Webui_Comps_Cur_Val, Output_Log
 
-    target_comps = []
+  temp_index = len(Webui_Comps_Cur_Val)
+  next_index = temp_index
+  
+  return_vals = []
+  for comp_id in extensions_id_conponents["dropdown"].keys():
+    value = None
+    try:
+      value = workflow_json.get(comp_id, None)
+      # 判断hash
+      if(value == None):
+        value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
+    except KeyError as e:
+      pass
+    return_vals.append(value)
 
-    target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
-    #target_comps.append(State_Comps["outlog"][0])
-    #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+  return_vals.append(temp_index) # 给json2js
+  return tuple(return_vals)
 
-    for btn in State_Comps["export"]:
-      btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
+def set_js_params():
+  global temp_index,next_index
+  temp_index = next_index+1
+  next_index = temp_index
+  print("set_js_params")
+  return temp_index
 
-    for btn in State_Comps["import"]:
-      # js里加载除图片以外的参数 python加载图片
-      btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
-        inputs=[btn],outputs=target_comps)
+def params_create_ids():
+  global extensions_id_conponents, extensions_conponents
+  extensions_id_conponents = {"dropdown":{}}
+  for tab_name in extensions_conponents.keys(): # plugin name
+    for ext_name in extensions_conponents[tab_name].keys(): # plugin name
+      comp_index = 0
+      for sub_tab in extensions_conponents[tab_name][ext_name].keys(): # sub_tab 如果没有默认就是base
+        for comp in extensions_conponents[tab_name][ext_name][sub_tab]: # component
+          try:
+            # 先只考虑有label的组件
+            if(isinstance(comp, gr.Dropdown)):
+              try:
+                comp_name = comp.get_config()['label'].replace(" ", "-").lower()
+                temp_sub_tab = ("_"+sub_tab) if sub_tab != "base" else ""
+                comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + tab_name + temp_sub_tab + "-" + comp_name
+              except:
+                pass
+              # comp_name = comp.get_config()['name'] + "_" + str(comp_index)
+              # comp_index += 1
+              # comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + comp_name
+              extensions_id_conponents["dropdown"][comp_id] = comp
+          except BaseException as e:
+            pass
+  #print(extensions_id_conponents)
 
-    State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
-      inputs=[State_Comps["json2js"]])
+
+def get_extname_from_label(label):
+  ext_name = label
+  res = re.search(r"(.+) v[0-9\.]+", ext_name)
+  if(res != None):
+    ext_name = res.group(1)
+  #兼容旧命名
+  if(ext_name == "ControlNet"):
+    ext_name = "Control-Net"
+  return ext_name
+
+
+def get_script_container(component):
+  global txt2img_script_container, img2img_script_container
+  if(txt2img_script_container == None):
+    temp = component
+    #i = 10
+    while temp:
+      if(temp.elem_id == "txt2img_script_container"):
+        txt2img_script_container = temp
+        break
+      else:
+        temp = temp.parent
+        #i-=1
+  
+  if(img2img_script_container == None):
+    temp = component
+    i = 10
+    while temp and i>0:
+      if(temp.elem_id == "img2img_script_container"):
+        img2img_script_container = temp
+        break
+      else:
+        temp = temp.parent
+        i-=1
+
+def searching_extensions_title():
+  global txt2img_script_container, img2img_script_container, extensions_conponents
+  for group in txt2img_script_container.children: # 遍历读取所有的插件名称
+
+    label = ""
+    try:
+      label = get_extname_from_label(group.children[0].label)
+    except BaseException as e:
+      pass
     
-    #State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
-
-    State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=State_Comps["outlog"])
-
-    input_component = State_Comps["background_import"] #State_Comps["import"][0]
-    State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
-    State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow", 
-      inputs=[input_component],outputs=target_comps)
-
-    for key in invisible_buttons.keys():
-      segs = key.split("_")
-      comp_name = "_".join(segs[2:])
-      #print(comp_name)
+    if(label == ""):
       try:
-        invisible_buttons[key].click(func_for_invisiblebutton,
-          inputs=[], 
-          outputs=[
-            Webui_Comps[comp_name], 
-            State_Comps["json2js"], 
-            State_Comps["outlog"][0], 
-            State_Comps["outlog"][1]
-          ])
-      except KeyError:
-        print(f"No such component: {comp_name}")
+        label = get_extname_from_label(group.children[0].children[0].label)
+      except BaseException as e:
+        pass
+
+    if(label != ""):
+      try:
+        extensions_conponents["txt2img"]
+      except:
+        extensions_conponents["txt2img"] = {}
+        extensions_conponents["img2img"] = {}
+      extensions_conponents["txt2img"][label] = {"base":[]}
+      extensions_conponents["img2img"][label] = {"base":[]}     
+      #extensions_conponents[label] = []
+
+
+# '''
+# ---------不使用------------
+# python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
+# 然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，
+# 再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
+# '''
+# def on_after_component(component, **kwargs):
+#   global txt2img_script_container,img2img_script_container,extensions_id_conponents
+#   conponents_originlist.append(component)
+
+#   try:
+#     if(Webui_Comps.get(kwargs["elem_id"], None) == None):
+#       Webui_Comps[kwargs["elem_id"]] = component
+#   except BaseException as e:
+#     pass
+
+
+
+#   if(txt2img_script_container == None):
+#     temp = component
+#     i = 10
+#     while temp and i>0:
+#       if(temp.elem_id == "txt2img_script_container"):
+#         txt2img_script_container = temp
+#         break
+#       else:
+#         temp = temp.parent
+#         i-=1
+  
+#   if(img2img_script_container == None):
+#     temp = component
+#     i = 10
+#     while temp and i>0:
+#       if(temp.elem_id == "img2img_script_container"):
+#         img2img_script_container = temp
+#         break
+#       else:
+#         temp = temp.parent
+#         i-=1
+
+
+#   if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
+#     for group in txt2img_script_container.children: # 遍历读取所有的插件名称
+#       label = ""
+#       try:
+#         label = get_extname_from_label(group.children[0].label)
+#       except BaseException as e:
+#         pass
+      
+#       if(label == ""):
+#         try:
+#           label = get_extname_from_label(group.children[0].children[0].label)
+#         except BaseException as e:
+#           pass
+
+#       #print(label)
+#       if(label != ""):
+#         # extensions_conponents["txt2img"] = {}
+#         # extensions_conponents["img2img"] = {}
+#         # extensions_conponents["txt2img"][label] = {"base":[]}
+#         # extensions_conponents["img2img"][label] = {"base":[]}     
+#         extensions_conponents[label] = []
+
+#     for comp in conponents_originlist:
+#       temp_parent  = comp.parent
+#       # tab 也存在多层tab嵌套的结构，下次
+#       tab = None
+#       tabs = None
+
+#       while temp_parent:
+#         try:
+#           ext_name = get_extname_from_label(temp_parent.label)
+#           if(extensions_conponents.get(ext_name, None) != None):
+#             extensions_conponents[ext_name].append(comp)
+
+#           # if(isinstance(temp_parent,gr.Tab)):
+#           #   tab = temp_parent
+#           # if(isinstance(temp_parent,gr.Tabs)):
+#           #   tabs = temp_parent
+
+#           # ext_name = get_extname_from_label(temp_parent.label)
+#           # if(extensions_conponents.get(ext_name, None) != None):
+#           #   if(tabs):
+#           #     tab_index = 0
+#           #     for temp_tab in tabs.children:
+#           #       if (tab == temp_tab):
+#           #         break
+#           #       tab_index+=1
+#           #     if(extensions_conponents[ext_name].get(str(tab_index), None) != None):
+#           #       extensions_conponents[ext_name][str(tab_index)].append(comp)
+#           #     else:
+#           #       extensions_conponents[ext_name][str(tab_index)]= [comp]
+#           #   else:
+#           #     extensions_conponents[ext_name]["base"].append(comp)
+#           #   break
+#         except BaseException as e:
+#           pass
+#         temp_parent = temp_parent.parent
+#     #print(extensions_conponents) # 整理好的第三方插件用到的组件
+    
+#     params_create_ids()
+
+#     #print("LightDiffusionFlow绑定按钮")
+
+#     on_change_inputs = list(extensions_id_conponents["dropdown"].values())
+#     #print(on_change_inputs)
+#     for comp_to_bind in extensions_id_conponents["dropdown"].keys():
+#       extensions_id_conponents["dropdown"][comp_to_bind].change(on_dropdown_changed,inputs=on_change_inputs,outputs=[])
+
+#     target_comps = []
+
+#     target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
+#     #target_comps.append(State_Comps["outlog"][0])
+#     #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+
+#     for btn in State_Comps["export"]:
+#       btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
+
+#     for btn in State_Comps["import"]:
+#       # js里加载除图片以外的参数 python加载图片
+#       btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
+#         inputs=[btn],outputs=target_comps)
+
+#     State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
+#       inputs=[State_Comps["json2js"]])
+    
+#     State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
+
+#     State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=[State_Comps["outlog"][0], State_Comps["outlog"][1]])
+
+#     temp_outputs = list(extensions_id_conponents["dropdown"].values())
+#     State_Comps["set_elements"].click(set_elements,inputs=[],outputs=temp_outputs)
+
+#     input_component = State_Comps["background_import"] #State_Comps["import"][0]
+#     State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
+#     State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow", 
+#       inputs=[input_component],outputs=target_comps)
+
+#     for key in invisible_buttons.keys():
+#       segs = key.split("_")
+#       comp_name = "_".join(segs[2:])
+#       #print(comp_name)
+#       try:
+#         invisible_buttons[key].click(func_for_invisiblebutton,
+#           inputs=[], 
+#           outputs=[
+#             Webui_Comps[comp_name], 
+#             State_Comps["json2js"], 
+#             State_Comps["outlog"][0], 
+#             State_Comps["outlog"][1]
+#           ])
+#       except KeyError:
+#         print(f"No such component: {comp_name}")
 
 
 temp_index = -1
@@ -223,6 +453,7 @@ def fn_import_workflow(workflow_file):
     
     Webui_Comps_Cur_Val.append(image)
 
+  #set_elements()
   # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
   # return tuple(return_vals)
   return str(temp_index)#, Output_Log, Output_Log
@@ -273,7 +504,7 @@ class StateApi():
     return FileResponse(shared.cmd_opts.ui_settings_file)
 
   def get_lightdiffusionflow_config(self, onlyimg:bool = False):
-    global workflow_json
+    global workflow_json, extensions_id_conponents_value
     temp_json = {}
     if(onlyimg):
       for key in lf_config.Image_Components_Key:
@@ -281,6 +512,15 @@ class StateApi():
           temp_json[key] = workflow_json[key]
         except:
           pass
+          
+      # 导出时调用，这里把py负责的其他组件一起读进来
+      for comp_type in extensions_id_conponents_value.keys():
+        for comp_id in extensions_id_conponents_value[comp_type].keys():
+          try:
+            temp_json[comp_id] = extensions_id_conponents_value[comp_type][comp_id]
+          except KeyError as e:
+            pass
+      #print(temp_json)
     else:
       temp_json = copy.deepcopy(workflow_json)
       for key in lf_config.Image_Components_Key:
@@ -353,7 +593,7 @@ class StateApi():
     return json.dumps(temp_json)
 
   def read_file(self, params:file_params):
-
+    print("read_file")
     file_content = ""
     with open(params.file_path, mode='r', encoding='UTF-8') as f:
       file_content = f.read()
@@ -419,6 +659,8 @@ class Script(scripts.Script):
 
   def __init__(self) -> None:
     super().__init__()
+    #记录无id元素的id
+    self.new_ids={}
 
   def title(self):
     return "lightdiffusionflow plugin"
@@ -426,9 +668,167 @@ class Script(scripts.Script):
   def show(self, is_img2img):
     return scripts.AlwaysVisible
 
+  def after_component(self, component, **kwargs):
+    '''
+    python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
+    然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，
+    再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
+    代码从on_after_component 移到script里的after_component:
+      txt2img和img2img面板以外的组件回调不再有效
+      但是可以读取self.is_img2img确定当前组件存在的面板
+    '''
+    # #当前模式
+    # teb_mode="img2img" if self.is_img2img else "txt2img"
+    # #空id补全方法
+    # def in_zone(dom,id=""):
+    #   if dom:
+    #     if dom.elem_id:
+    #       id+="-"+dom.elem_id
+    #       return in_zone(dom.parent,id)
+    #     elif dom.elem_classes and dom.elem_classes[0]!='gradio-blocks':
+    #       if dom.elem_classes[0]=='gradio-accordion':
+    #         id+='-'+dom.label+"?"
+    #       return in_zone(dom.parent,id)
+    #   if re.search('2img_(textual|hypernetworks|checkpoints|lora)_',id):
+    #     return False
+    #   else:
+    #     id=re.sub(r'\?[^\?]+$|[ \?]','',id)
+    #     if id in self.new_ids:
+    #       self.new_ids[id]+=1
+    #     else:
+    #       self.new_ids[id]=1
+    #     return id+'-'+str(self.new_ids[id])
+  
+    # #记录组件
+    # try:
+    #   #拉取id
+    #   id=component.elem_id
+    #   #若没有就重构
+    #   if id==None:
+    #     id=component.elem_id==in_zone(component.parent,teb_mode)
+    #   Webui_Comps[id] = component
+    # except BaseException as e:
+    #   pass
+
+    global txt2img_script_container, img2img_script_container, extensions_id_conponents, extensions_conponents
+    
+    conponents_originlist.append((component, 'img2img' if self.is_img2img else 'txt2img'))
+    #print(f"after_component {component} {kwargs.get('elem_id', None)} {'img2img' if self.is_img2img else 'txt2img'} ")
+    try:
+      if(Webui_Comps.get(kwargs["elem_id"], None) == None):
+        Webui_Comps[kwargs["elem_id"]] = component  
+    except BaseException as e:
+      pass
+
+    get_script_container(component)
+
+    if (isinstance(component, gr.Textbox) and kwargs["elem_id"] == "img2img_preview_filename"): # 加载到最后一个组件了
+      searching_extensions_title()
+      #print(extensions_conponents)
+
+      for comp_tuple in conponents_originlist:
+        comp = comp_tuple[0]
+        temp_parent  = comp.parent
+        mode_tab = comp_tuple[1]
+        tab = None
+        tabs = None
+        ext_name = ""
+
+        # --------------------------------------组件分类--------------------------------------------------
+        while temp_parent:
+          try:
+
+            # tab 如果有多层只存最上层
+            if(isinstance(temp_parent,gr.Tab)):
+              tab = temp_parent
+            if(isinstance(temp_parent,gr.Tabs)):
+              tabs = temp_parent
+
+            temp_ext_name = get_extname_from_label(temp_parent.label)
+            if(extensions_conponents[mode_tab].get(temp_ext_name, None) != None):
+              ext_name = temp_ext_name
+              break
+          except BaseException as e:
+            pass
+          temp_parent = temp_parent.parent
+
+        try:
+          if(tabs):
+            tab_index = 0
+            for temp_tab in tabs.children:
+              if (tab == temp_tab):
+                break
+              tab_index+=1
+            if(extensions_conponents[mode_tab][ext_name].get(str(tab_index), None) != None):
+              extensions_conponents[mode_tab][ext_name][str(tab_index)].append(comp)
+            else:
+              extensions_conponents[mode_tab][ext_name][str(tab_index)] = [comp]
+          else:
+            extensions_conponents[mode_tab][ext_name]["base"].append(comp)
+        except KeyError as e:
+          pass
+      #print(extensions_conponents) # 整理好的第三方插件用到的组件
+      # --------------------------------------组件分类--------------------------------------------------
+      
+      params_create_ids()
+
+      #print("绑定按钮")
+
+      target_comps = []
+
+      target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
+      #target_comps.append(State_Comps["outlog"][0])
+      #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+
+      for btn in State_Comps["export"]:
+        btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
+
+      for btn in State_Comps["import"]:
+        # js里加载除图片以外的参数 python加载图片
+        btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
+          inputs=[btn],outputs=target_comps)
+
+      State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
+        inputs=[State_Comps["json2js"]])
+      
+      State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
+
+      State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=[State_Comps["outlog"][0], State_Comps["outlog"][1]])
+
+      on_dropdown_change_inputs = list(extensions_id_conponents["dropdown"].values())
+      for comp_to_bind in extensions_id_conponents["dropdown"].keys():
+        extensions_id_conponents["dropdown"][comp_to_bind].change(on_dropdown_changed,inputs=on_dropdown_change_inputs,outputs=[])
+
+      temp_dropdown_outputs = list(extensions_id_conponents["dropdown"].values())
+      temp_dropdown_outputs.append(State_Comps["json2js"]) # json2js触发完成事件
+      State_Comps["set_dropdowns"].click(set_dropdowns,inputs=[],outputs=temp_dropdown_outputs)
+
+      State_Comps["set_js_params"].click(set_js_params,inputs=[],outputs=State_Comps["json2js"])
+
+      input_component = State_Comps["background_import"] #State_Comps["import"][0]
+      State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
+      State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow", 
+        inputs=[input_component],outputs=target_comps)
+
+      for key in invisible_buttons.keys():
+        segs = key.split("_")
+        comp_name = "_".join(segs[2:])
+        #print(comp_name)
+        try:
+          invisible_buttons[key].click(func_for_invisiblebutton,
+            inputs=[], 
+            outputs=[
+              Webui_Comps[comp_name], 
+              State_Comps["json2js"], 
+              State_Comps["outlog"][0], 
+              State_Comps["outlog"][1]
+            ])
+        except KeyError:
+          print(f"No such component: {comp_name}")
+
+
   def ui(self, is_img2img):
     global File_extension
-
     try:
       State_Comps["import"]
       State_Comps["export"]
@@ -438,7 +838,7 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=False, visible=True):
       with gr.Row():
         lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension])
         State_Comps["import"].append(lightdiffusionflow_file)
@@ -463,9 +863,13 @@ class Script(scripts.Script):
 
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
 
-        #State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='txt2img_invisible_refresh_log',visible=False)
+
+        State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
+
+        State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
 
         State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightdiffusionflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
@@ -485,5 +889,5 @@ def on_before_reload():
 # add callbacks
 api = StateApi()
 script_callbacks.on_app_started(api.start)
-script_callbacks.on_after_component(on_after_component)
+#script_callbacks.on_after_component(on_after_component)
 script_callbacks.on_before_reload(on_before_reload)
