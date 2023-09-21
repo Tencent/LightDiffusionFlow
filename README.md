@@ -28,7 +28,12 @@ Use **Install from URL** option with this repo url.
 *None at all.*
 
 ### Usage
-*  I don't think I need to explain it in detail, right? :)
+ * Export Parameters:  
+In the SD Web UI, configure the desired options, and click the "Export" button to export a flow file that records the current parameters.
+
+ * Import Parameters:  
+In the SD Web UI, click the "FileBox", select the corresponding flow file, and import the parameters from the file.
+You can also directly drag and drop the flow file into the "FileBox" for importing.
 
 ### Contributing
 
