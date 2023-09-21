@@ -653,14 +653,13 @@ state.core = (function () {
       store.clear();
       store.load(json_obj);
       actions.applyState();
-
-      const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
-      button.click();
       
       return;
     },
     startImportImage: function (index){
 
+      console.log(`---------${img_elem_keys}---------------`)
+      console.log(`---------${index}-----${img_elem_keys.length}-----------`)
       switch_tab_dict = {
         "txt2img_invisible_img2img_image": "switch_to_img2img()",
         "txt2img_invisible_img2img_sketch": "switch_to_sketch()",
@@ -678,7 +677,6 @@ state.core = (function () {
       }
 
       state.utils.sleep(300).then(() => {
-
         try{
           key = "txt2img_invisible_"+img_elem_keys[Number(index)+1]
           //console.log(key)
@@ -688,8 +686,13 @@ state.core = (function () {
         } catch (error) {
           console.warn('[startImportImage]: Error:', error);
         }
-
       });
+
+      if(Number(index)+1 >= img_elem_keys.length){ // 图片导入完成
+        console.log(lightdiffusionflow_set_dropdowns)
+        const button = gradioApp().getElementById("lightdiffusionflow_set_dropdowns");
+        button.click();
+      }
 
     },
     output_log: function (msg, style=""){
