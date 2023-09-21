@@ -46,8 +46,11 @@ Preload_File = r""
 File_extension = ".flow"
 
 def test_func():
-  global extensions_conponents
+  global extensions_conponents, extensions_id_conponents
   print("test_func")
+  res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", "control_v11p_sd15_scribble [d4ba51aafd]")
+  print(res)
+  #print(extensions_id_conponents["dropdown"]["state-ext-control-net-txt2img_0-model"].get_config())
 
   # print(parameters_copypaste.paste_fields)
 
@@ -56,8 +59,14 @@ def add_output_log(msg:str="", style:str=""):
   if(msg != ""):
     #print(f"Output_Log: {msg}")
     Output_Log += f'<p style="{style}">{msg}</p>'
-
   return Output_Log, Output_Log
+
+def add_output_warning(msg:str=""):
+    add_output_log(msg, style="color:Orange;")
+
+def add_output_error(msg:str=""):
+    add_output_log(msg, style="color:Tomato;")
+
 
 def find_checkpoint_from_name(name:str):
 
@@ -73,7 +82,7 @@ def find_checkpoint_from_name(name:str):
 def find_checkpoint_from_hash(hash:str):
 
   for checkpoint in checkpoints_list.keys():
-    res = re.search(r"\[([0-9a-fA-F]{10})\]", checkpoint)
+    res = re.search(r"\[([0-9a-fA-F]{8,10})\]", checkpoint)
     try:
       if(res.group(1) == hash):
         return checkpoint
@@ -106,16 +115,73 @@ def set_dropdowns():
   return_vals = []
   for comp_id in extensions_id_conponents["dropdown"].keys():
     value = None
+    new_value = None
     try:
       value = workflow_json.get(comp_id, None)
-      # 判断hash
       if(value == None):
-        value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
+        new_value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
+      else:
+        new_value = value
+        matching_successed = False
+        options = extensions_id_conponents["dropdown"][comp_id].get_config()["choices"]
+        for option in options:
+          if(option == new_value):
+            matching_successed = True
+            break
+        
+        # 没有完全匹配
+        if(not matching_successed):
+          # 寻找哈希值
+          value_hash_val = None
+          value_no_hash = None
+          res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", new_value)
+          if(res != None):
+            value_hash_val = res.group(1)
+            value_no_hash = new_value.replace(value_hash_val,"").rstrip()
+              
+          for option in options:
+            option_hash_val = None
+            option_no_hash = None
+            res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", option)
+            if(res != None): # 选项有哈希
+              option_hash_val = res.group(1)
+              option_no_hash = option.replace(option_hash_val,"").rstrip()
+              if(value_hash_val == None): # 值没有哈希
+                if(new_value.rstrip() == option_no_hash):
+                  new_value = option
+                  matching_successed = True
+                  break
+              else: # 值有哈希
+                if(value_hash_val == option_hash_val or option_no_hash == value_no_hash):
+                  new_value = option
+                  matching_successed = True
+                  break
+            else: # 选项没有哈希
+              if(value_hash_val == None): # 值没有哈希
+                if(new_value.rstrip() == option.rstrip()):
+                  new_value = option
+                  matching_successed = True
+                  break
+              else: # 值有哈希
+                if(value_no_hash == option.rstrip()):
+                  new_value = option
+                  matching_successed = True
+                  break
+
+          if(matching_successed):
+            add_output_warning(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
+          else:
+            add_output_error(f"'{comp_id}' import failed! The option '{value}' was not found!")
+            new_value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
+
+
     except KeyError as e:
       pass
-    return_vals.append(value)
+    return_vals.append(new_value)
 
   return_vals.append(temp_index) # 给json2js
+  return_vals.append(Output_Log)
+  return_vals.append(Output_Log)
   return tuple(return_vals)
 
 def set_js_params():
@@ -715,8 +781,13 @@ class Script(scripts.Script):
     conponents_originlist.append((component, 'img2img' if self.is_img2img else 'txt2img'))
     #print(f"after_component {component} {kwargs.get('elem_id', None)} {'img2img' if self.is_img2img else 'txt2img'} ")
     try:
+
+      if kwargs["elem_id"] == "txt2img_generation_info_button" or kwargs["elem_id"] == "img2img_generation_info_button":
+        self.custom_ui()
+
       if(Webui_Comps.get(kwargs["elem_id"], None) == None):
         Webui_Comps[kwargs["elem_id"]] = component  
+
     except BaseException as e:
       pass
 
@@ -801,6 +872,8 @@ class Script(scripts.Script):
 
       temp_dropdown_outputs = list(extensions_id_conponents["dropdown"].values())
       temp_dropdown_outputs.append(State_Comps["json2js"]) # json2js触发完成事件
+      temp_dropdown_outputs.append(State_Comps["outlog"][0]) # 输出日志
+      temp_dropdown_outputs.append(State_Comps["outlog"][1]) # 输出日志
       State_Comps["set_dropdowns"].click(set_dropdowns,inputs=[],outputs=temp_dropdown_outputs)
 
       State_Comps["set_js_params"].click(set_js_params,inputs=[],outputs=State_Comps["json2js"])
@@ -826,8 +899,10 @@ class Script(scripts.Script):
         except KeyError:
           print(f"No such component: {comp_name}")
 
-
   def ui(self, is_img2img):
+    pass
+
+  def custom_ui(self):
     global File_extension
     try:
       State_Comps["import"]
@@ -838,7 +913,7 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=False, visible=True):
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
       with gr.Row():
         lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension])
         State_Comps["import"].append(lightdiffusionflow_file)
@@ -856,21 +931,15 @@ class Script(scripts.Script):
         export_config = gr.Button(value='Export')
         State_Comps["export"].append(export_config)
 
-      if(not is_img2img):
+      if(not self.is_img2img):
         
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
-
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
-
         State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
-
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='txt2img_invisible_refresh_log',visible=False)
-
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
-
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
-
         State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightdiffusionflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
 
@@ -879,7 +948,7 @@ class Script(scripts.Script):
             gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
           
           for key in lf_config.Image_Components_Key:
-            elem_id = ("img2img_" if is_img2img else "txt2img_") + "invisible_" + key
+            elem_id = ("img2img_" if self.is_img2img else "txt2img_") + "invisible_" + key
             invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
 
 
