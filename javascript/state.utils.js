@@ -306,7 +306,9 @@ state.utils = {
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
       if (value) {
         //for(child of children){
-        if(child.className.split(' ').pop() != "open"){
+        let span = child.querySelector('.transition, .icon');
+        if(span.style.transform !== 'rotate(90deg)'){
+        //if(child.className.split(' ').pop() != "open"){
           state.utils.triggerMouseEvent(child, 'click')
         }
         //}
@@ -314,7 +316,10 @@ state.utils = {
 
       setTimeout(() => {
         state.utils.onContentChange(child, function (el) {
-          store.set(id, el.className.split(' ').pop() == "open");
+          //store.set(id, el.className.split(' ').pop() == "open");
+          //console.log(`accordion on change ${id}`)
+          let span = el.querySelector('.transition, .icon');
+          store.set(id, span.style.transform !== 'rotate(90deg)');
         });
       }, 150);
 
@@ -405,7 +410,7 @@ state.utils = {
 
             state.utils.triggerMouseEvent(input, 'blur');
             selectingQueue -= 1;
-            console.log(`selectingQueue = ${selectingQueue}`)
+            //console.log(`selectingQueue = ${selectingQueue}`)
           }, 100);
 
         }, selectingQueue * 200)

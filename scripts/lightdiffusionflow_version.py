@@ -1,1 +1,1 @@
-lightdiffusionflow_version = "v2.0.4"
+lightdiffusionflow_version = "v2.1.0"

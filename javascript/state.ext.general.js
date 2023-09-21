@@ -116,7 +116,7 @@ function general_ext(tab_name, extension_name, root_container) {
     textarea.addEventListener('change', function () {
       let text = this.value;
       store.set(id, text);
-      console.log(`id = ${id}  value = ${text}`)
+      //console.log(`id = ${id}  value = ${text}`)
     });
   }
   function handleTextAreas() {
@@ -418,7 +418,7 @@ function general_ext_main(tab){
       reg = /(.+) v[0-9\.]+/
       if(reg.test(title)){title = RegExp.$1} // 匹配 xxx v0.0.0 格式的标题，把后半部分的版本号去掉
 
-      //if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
+      if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
       
       let ext_name = title.replace(" ","-").toLowerCase()
       console.log(ext_name)

@@ -49,12 +49,6 @@ def test_func():
   global extensions_conponents
   print("test_func")
 
-  # print(extensions_conponents["ADetailer"][3])
-  # print(dir(extensions_conponents["ADetailer"][3]))
-  # print(extensions_conponents["ADetailer"][3].get_config())
-  # print(extensions_conponents["ADetailer"][3].value)
-  # print(extensions_conponents["ADetailer"][3].__dict__)
-
   # print(parameters_copypaste.paste_fields)
 
 def add_output_log(msg:str="", style:str=""):
@@ -69,8 +63,6 @@ def find_checkpoint_from_name(name:str):
 
   for checkpoint in checkpoints_list.keys():
     res = re.search(r"(.+)\.(.+)", checkpoint)
-    #print(checkpoint)
-    #print(res.group(1))
     try:
       if(res.group(1) == name):
         return checkpoint
@@ -96,13 +88,42 @@ def set_lightdiffusionflow_file():
 
 def on_dropdown_changed(*component):
   global extensions_id_conponents, extensions_id_conponents_value
-  #print(component)
+
   extensions_id_conponents_value = {"dropdown":{}}
   i = 0
   for id in extensions_id_conponents["dropdown"].keys():
     extensions_id_conponents_value["dropdown"][id] = component[i]
     i+=1
-  #print(extensions_id_conponents_value)
+
+def set_dropdowns():
+  global extensions_id_conponents, workflow_json
+  global temp_index,next_index
+  global Webui_Comps_Cur_Val, Output_Log
+
+  temp_index = len(Webui_Comps_Cur_Val)
+  next_index = temp_index
+  
+  return_vals = []
+  for comp_id in extensions_id_conponents["dropdown"].keys():
+    value = None
+    try:
+      value = workflow_json.get(comp_id, None)
+      # 判断hash
+      if(value == None):
+        value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
+    except KeyError as e:
+      pass
+    return_vals.append(value)
+
+  return_vals.append(temp_index) # 给json2js
+  return tuple(return_vals)
+
+def set_js_params():
+  global temp_index,next_index
+  temp_index = next_index+1
+  next_index = temp_index
+  print("set_js_params")
+  return temp_index
 
 def params_create_ids():
   global extensions_id_conponents, extensions_conponents
@@ -127,24 +148,7 @@ def params_create_ids():
               extensions_id_conponents["dropdown"][comp_id] = comp
           except BaseException as e:
             pass
-  print(extensions_id_conponents)
-
-
-def set_dropdowns():
-  global extensions_id_conponents, workflow_json
-  return_vals = []
-  for comp_id in extensions_id_conponents["dropdown"].keys():
-    value = None
-    try:
-      value = workflow_json.get(comp_id, None)
-      if(value == None):
-        value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
-    except KeyError as e:
-      pass
-    return_vals.append(value)
-
-  #print(return_vals)
-  return tuple(return_vals)
+  #print(extensions_id_conponents)
 
 
 def get_extname_from_label(label):
@@ -152,6 +156,9 @@ def get_extname_from_label(label):
   res = re.search(r"(.+) v[0-9\.]+", ext_name)
   if(res != None):
     ext_name = res.group(1)
+  #兼容旧命名
+  if(ext_name == "ControlNet"):
+    ext_name = "Control-Net"
   return ext_name
 
 
@@ -513,7 +520,7 @@ class StateApi():
             temp_json[comp_id] = extensions_id_conponents_value[comp_type][comp_id]
           except KeyError as e:
             pass
-      print(temp_json)
+      #print(temp_json)
     else:
       temp_json = copy.deepcopy(workflow_json)
       for key in lf_config.Image_Components_Key:
@@ -586,7 +593,7 @@ class StateApi():
     return json.dumps(temp_json)
 
   def read_file(self, params:file_params):
-
+    print("read_file")
     file_content = ""
     with open(params.file_path, mode='r', encoding='UTF-8') as f:
       file_content = f.read()
@@ -730,9 +737,6 @@ class Script(scripts.Script):
         # --------------------------------------组件分类--------------------------------------------------
         while temp_parent:
           try:
-            # ext_name = get_extname_from_label(temp_parent.label) # label去掉后面的版本号
-            # if(extensions_conponents.get(ext_name, None) != None):
-            #   extensions_conponents[ext_name].append(comp)
 
             # tab 如果有多层只存最上层
             if(isinstance(temp_parent,gr.Tab)):
@@ -768,7 +772,7 @@ class Script(scripts.Script):
       
       params_create_ids()
 
-      #print("LightDiffusionFlow绑定按钮")
+      #print("绑定按钮")
 
       target_comps = []
 
@@ -796,7 +800,10 @@ class Script(scripts.Script):
         extensions_id_conponents["dropdown"][comp_to_bind].change(on_dropdown_changed,inputs=on_dropdown_change_inputs,outputs=[])
 
       temp_dropdown_outputs = list(extensions_id_conponents["dropdown"].values())
+      temp_dropdown_outputs.append(State_Comps["json2js"]) # json2js触发完成事件
       State_Comps["set_dropdowns"].click(set_dropdowns,inputs=[],outputs=temp_dropdown_outputs)
+
+      State_Comps["set_js_params"].click(set_js_params,inputs=[],outputs=State_Comps["json2js"])
 
       input_component = State_Comps["background_import"] #State_Comps["import"][0]
       State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
@@ -822,7 +829,6 @@ class Script(scripts.Script):
 
   def ui(self, is_img2img):
     global File_extension
-    print("----------------------ui---------------------------")
     try:
       State_Comps["import"]
       State_Comps["export"]
@@ -832,7 +838,7 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=False, visible=True):
       with gr.Row():
         lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension])
         State_Comps["import"].append(lightdiffusionflow_file)
@@ -857,11 +863,13 @@ class Script(scripts.Script):
 
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
 
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=True)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
 
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='txt2img_invisible_refresh_log',visible=False)
 
-        State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=True)
+        State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
+
+        State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
 
         State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightdiffusionflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)

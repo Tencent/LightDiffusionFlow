@@ -86,7 +86,7 @@ state.core = (function () {
     fetch('/lightdiffusionflow/local/need_preload')
       .then(response => response.json())
       .then(data => {
-        //console.log(`fn_timer ${data}`)
+        //console.log(`fn_timer`)
         if (data != ""){
           //state.core.actions.handleLightDiffusionFlow([{"name":data}]);
           const btn1 = gradioApp().querySelector(`button#set_lightdiffusionflow_file`);
@@ -168,7 +168,6 @@ state.core = (function () {
   }
 
   function load(config) {
-
     config.hasSetting = hasSetting
 
     //loadUI(); // 往页面上添加按钮
@@ -481,8 +480,9 @@ state.core = (function () {
     //     alert('All state values deleted!');
     //   }
     // },
-    applyState: function () {
-      fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
+    applyState: async function () {
+      console.log("applyState")
+      await fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
         .then(response => response.json())
         .then(config => {
           try {
@@ -644,7 +644,6 @@ state.core = (function () {
         actions.output_log("Please select a valid lightdiffusionflow or image file!")
         return;
       }
-      console.log(json_obj)
 
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         json_obj[image_id] = ""
@@ -653,58 +652,84 @@ state.core = (function () {
       store.clear();
       store.load(json_obj);
       actions.applyState();
-      
       return;
     },
     startImportImage: function (index){
+      index = Number(index)
 
-      console.log(`---------${img_elem_keys}---------------`)
-      console.log(`---------${index}-----${img_elem_keys.length}-----------`)
-      switch_tab_dict = {
-        "txt2img_invisible_img2img_image": "switch_to_img2img()",
-        "txt2img_invisible_img2img_sketch": "switch_to_sketch()",
-        "txt2img_invisible_img2maskimg": "switch_to_inpaint()",
-        "txt2img_invisible_inpaint_sketch": "switch_to_inpaint_sketch()",
-        "txt2img_invisible_img_inpaint_base": "state.utils.switch_to_img_inpaint()",
-        "txt2img_invisible_img_inpaint_mask": "state.utils.switch_to_img_inpaint()",
-        "txt2img_invisible_txt2img_controlnet_ControlNet_input_image": "state.utils.switch_to_txt2img_ControlNet(0)",
-        "txt2img_invisible_img2img_controlnet_ControlNet_input_image": "state.utils.switch_to_img2img_ControlNet(0)"
-      }
-      
-      for (let i = 0; i < 10; i++) {
-        switch_tab_dict[`txt2img_invisible_txt2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_txt2img_ControlNet(${i})`
-        switch_tab_dict[`txt2img_invisible_img2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_img2img_ControlNet(${i})`
-      }
-
-      state.utils.sleep(300).then(() => {
-        try{
-          key = "txt2img_invisible_"+img_elem_keys[Number(index)+1]
-          //console.log(key)
-          eval( switch_tab_dict[key] ) // 跳转界面
-          const button = gradioApp().getElementById(key);
-          button.click();
-        } catch (error) {
-          console.warn('[startImportImage]: Error:', error);
+      if(index+1 < img_elem_keys.length){
+        //console.log(`---------${img_elem_keys}---------------`)
+        //console.log(`---------${index}-----${img_elem_keys.length}-----------`)
+        switch_tab_dict = {
+          "txt2img_invisible_img2img_image": "switch_to_img2img()",
+          "txt2img_invisible_img2img_sketch": "switch_to_sketch()",
+          "txt2img_invisible_img2maskimg": "switch_to_inpaint()",
+          "txt2img_invisible_inpaint_sketch": "switch_to_inpaint_sketch()",
+          "txt2img_invisible_img_inpaint_base": "state.utils.switch_to_img_inpaint()",
+          "txt2img_invisible_img_inpaint_mask": "state.utils.switch_to_img_inpaint()",
+          "txt2img_invisible_txt2img_controlnet_ControlNet_input_image": "state.utils.switch_to_txt2img_ControlNet(0)",
+          "txt2img_invisible_img2img_controlnet_ControlNet_input_image": "state.utils.switch_to_img2img_ControlNet(0)"
         }
-      });
+        
+        for (let i = 0; i < 10; i++) {
+          switch_tab_dict[`txt2img_invisible_txt2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_txt2img_ControlNet(${i})`
+          switch_tab_dict[`txt2img_invisible_img2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_img2img_ControlNet(${i})`
+        }
 
-      if(Number(index)+1 >= img_elem_keys.length){ // 图片导入完成
-        console.log(lightdiffusionflow_set_dropdowns)
-        const button = gradioApp().getElementById("lightdiffusionflow_set_dropdowns");
-        button.click();
+        state.utils.sleep(300).then(() => {
+          try{
+            key = "txt2img_invisible_"+img_elem_keys[index+1]
+            eval( switch_tab_dict[key] ) // 跳转界面
+            const button = gradioApp().getElementById(key);
+            button.click();
+          } catch (error) {
+            console.warn('[startImportImage]: Error:', error);
+            if(index+1 < img_elem_keys.length){
+              // 图片组件设置出错了，但是需要继续后续的流程
+              
+              index = img_elem_keys.length-1
+            }
+          }
+        });
+      }
+
+      switch(index+1 - img_elem_keys.length){
+        case 0:// 图片导入完成，开始导入Dropdown
+          state.utils.sleep(500).then(() => {
+            try{
+              const button = gradioApp().getElementById("lightdiffusionflow_set_dropdowns");
+              button.click();
+            } catch (error) {
+              console.warn('[set_dropdowns]: Error:', error);
+            }
+          });
+          break
+        // case 1:// 触发了导入Dropdown，现在导入其他参数会卡死，触发导入按钮，等下一轮正式开始导入
+        //   state.utils.sleep(500).then(() => {
+        //     const button = gradioApp().getElementById("lightdiffusionflow_set_js_params");
+        //     console.log("lightdiffusionflow_set_js_params")
+        //     button.click();
+        //   });
+        //   break
+        // case 2:// 导入其他参数
+        //   state.utils.sleep(500).then(() => {
+        //     console.log("导入其他参数")
+        //     actions.applyState();
+        //   });
+        //   break
       }
 
     },
-    output_log: function (msg, style=""){
-      fetch(`/lightdiffusionflow/local/output_log?msg=${msg}&style=${style}`).then(() => {
+    output_log: function (msg, msg_style=""){
+      fetch(`/lightdiffusionflow/local/output_log?msg=${msg}&style=${msg_style}`).then(() => {
         gradioApp().getElementById("txt2img_invisible_refresh_log").click();
       });
     },
-    output_warning: function (msg, style="color:Orange;"){
-      actions.output_log(msg,style)
+    output_warning: function (msg, msg_style="color:Orange;"){
+      actions.output_log(msg,msg_style)
     },
-    output_error: function (msg, style="color:Tomato;"){
-      actions.output_log(msg,style)
+    output_error: function (msg, msg_style="color:Tomato;"){
+      actions.output_log(msg,msg_style)
     }
   };
 
