@@ -20,6 +20,8 @@ Stable Diffusion Web UI 以下简称 SD Web UI。
     - 理论上来说，目前可以支持所有插件。  
     部分插件的图片参数除外，因为必须要有对应的elem_id。
 
+![lightflow_CN](https://github.com/Tencent/LightDiffusionFlow/assets/20501414/492f7408-7729-4370-b0f9-c17a80211029)
+
 ### 安装
 
 粘贴本项目链接到 **Install from URL** 选项里，点击安装按钮即可。
