@@ -19,6 +19,8 @@ This extension is developed for AUTOMATIC1111's [Stable Diffusion web UI](https:
 * Supported extensions:
     - In theory, it can support any plugin. (Except for certain plugin images, as they require the corresponding elem_id to be provided.)
 
+![lightflow_en](https://github.com/Tencent/LightDiffusionFlow/assets/20501414/e03cc556-9962-41a3-8738-606ee9e38a04)
+
 ### Install
 
 Use **Install from URL** option with this repo url. 
