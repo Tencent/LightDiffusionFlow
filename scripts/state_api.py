@@ -170,13 +170,14 @@ def set_dropdowns():
 
           if(matching_successed):
             add_output_warning(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
+            print(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
           else:
             add_output_error(f"'{comp_id}' import failed! The option '{value}' was not found!")
+            print(f"'{comp_id}' import failed! The option '{value}' was not found!")
             new_value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
 
-
     except KeyError as e:
-      pass
+      print(e)
     return_vals.append(new_value)
 
   return_vals.append(temp_index) # 给json2js
