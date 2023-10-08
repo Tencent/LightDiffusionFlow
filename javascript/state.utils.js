@@ -550,7 +550,7 @@ state.utils = {
     console.log(url)
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName + '.flow';
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

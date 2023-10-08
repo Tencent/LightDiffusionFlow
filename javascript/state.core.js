@@ -567,9 +567,18 @@ state.core = (function () {
           let m = String(checkTime(nowdate.getMinutes()))
           let s = String(checkTime(nowdate.getSeconds()))
           let time_str = year+month+day+h+m+s
-          state.utils.saveFile('flow-'+time_str, stored_config);
 
-        }).catch(error => console.error('[state]: Error getting JSON file:', error));
+          filename = 'flow-'+time_str+'.flow'
+          filename = prompt("Export workflow as:", filename);
+          if (!filename) return;
+          if (!filename.toLowerCase().endsWith(".flow")) {
+            filename += ".flow";
+          }
+          if(filename != ".flow"){
+            state.utils.saveFile(filename, stored_config);
+          }
+
+        }).catch(error => console.error('[state]: Error getting Flow file:', error));
 
       //config = JSON.stringify(store.getAll(), null, 4);
       //fetch(`/lightdiffusionflow/local/ExportLightDiffusionFlow?config=${config}`)
