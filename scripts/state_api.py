@@ -19,7 +19,7 @@ import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
-
+import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
 import scripts.lightdiffusionflow_config as lf_config
@@ -170,18 +170,20 @@ def set_dropdowns():
 
           if(matching_successed):
             add_output_warning(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
+            print(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
           else:
             add_output_error(f"'{comp_id}' import failed! The option '{value}' was not found!")
+            print(f"'{comp_id}' import failed! The option '{value}' was not found!")
             new_value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
 
-
     except KeyError as e:
-      pass
+      print(e)
     return_vals.append(new_value)
 
   return_vals.append(temp_index) # 给json2js
   return_vals.append(Output_Log)
   return_vals.append(Output_Log)
+  #print(return_vals)
   return tuple(return_vals)
 
 def set_js_params():
@@ -277,6 +279,7 @@ def searching_extensions_title():
       extensions_conponents["txt2img"][label] = {"base":[]}
       extensions_conponents["img2img"][label] = {"base":[]}     
       #extensions_conponents[label] = []
+
 
 
 # '''
@@ -678,7 +681,9 @@ class StateApi():
     global workflow_json, Output_Log
     workflow_json = {}
     Output_Log = ""
-    print("refresh_ui")
+    print("refresh_ui")  
+    tag = launch.git_tag()
+    return tag
 
   def set_preload(self, params:file_params):
     global Need_Preload,Preload_File
@@ -786,14 +791,16 @@ class Script(scripts.Script):
         self.custom_ui()
 
       if(Webui_Comps.get(kwargs["elem_id"], None) == None):
-        Webui_Comps[kwargs["elem_id"]] = component  
+        Webui_Comps[kwargs["elem_id"]] = component
+        #print(kwargs["elem_id"])
 
     except BaseException as e:
       pass
 
     get_script_container(component)
 
-    if (isinstance(component, gr.Textbox) and kwargs["elem_id"] == "img2img_preview_filename"): # 加载到最后一个组件了
+    if (isinstance(component, gr.Button) and kwargs["elem_id"] == "img2img_generation_info_button"): # 加载到最后一个组件了。   兼容旧版，暂时不使用“img2img_preview_filename”
+      
       searching_extensions_title()
       #print(extensions_conponents)
 
@@ -808,7 +815,6 @@ class Script(scripts.Script):
         # --------------------------------------组件分类--------------------------------------------------
         while temp_parent:
           try:
-
             # tab 如果有多层只存最上层
             if(isinstance(temp_parent,gr.Tab)):
               tab = temp_parent
@@ -838,15 +844,13 @@ class Script(scripts.Script):
             extensions_conponents[mode_tab][ext_name]["base"].append(comp)
         except KeyError as e:
           pass
+
       #print(extensions_conponents) # 整理好的第三方插件用到的组件
       # --------------------------------------组件分类--------------------------------------------------
       
       params_create_ids()
 
-      #print("绑定按钮")
-
       target_comps = []
-
       target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
       #target_comps.append(State_Comps["outlog"][0])
       #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
@@ -898,6 +902,8 @@ class Script(scripts.Script):
             ])
         except KeyError:
           print(f"No such component: {comp_name}")
+      
+      print("LightDiffusionFlow 绑定完成")
 
   def ui(self, is_img2img):
     pass

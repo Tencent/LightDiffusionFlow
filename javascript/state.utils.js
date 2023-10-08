@@ -10,6 +10,33 @@ state.utils = {
     // button.click();
   },
 
+  target_is_newer_version: function(cur_version, target_version){
+
+    let cur = cur_version.replace("v","")
+    cur = cur.split(".")
+
+    let target = target_version.replace("v","")
+    target = target.split(".")
+    let version_len = Math.min(cur.length, target.length)
+
+    // 逐个版本号比较  v1.2.3 和 v1.2比较时，只比较前面两个数字
+    for (let i=0; i < version_len; i++){
+      if(Number(cur[i]) > Number(target[i])){
+        return false
+      }
+      else if(Number(cur[i]) < Number(target[i])){
+        return true
+      }
+    }
+
+    // 前面的版本号一样，再看谁的版本号更长
+    if(cur.length >= target.length){
+      return false
+    }
+
+    return true
+  },
+
   searchCheckPointByHash: async function searchCheckPointByHash(hash){
     let downloadUrl = undefined
     hash_str = hash.replace("[","").replace("]","").replace(/^\s+|\s+$/g,"")
@@ -353,26 +380,28 @@ state.utils = {
               }
             }
 
-            let hash_pos = localized_value.search(/\[[0-9A-Fa-f]{10}\]/)
+            let hash_res = localized_value.match(/\[[0-9A-Fa-f]{8,10}\]/)
             if(!successed){ // && hash_pos != -1 找不到对应选项 并且选项里有10位哈希值
               for (li of items){
                 
                 // 去掉Hash比较
                 let text = li.lastChild.wholeText.trim()
-                let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{10}\]/,"").replace(/^\s+|\s+$/g,"")
-                let text_no_hash = text.replace(/\[[0-9A-Fa-f]{10}\]/, "").replace(/^\s+|\s+$/g,"")
+                let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{8,10}\]/,"").replace(/^\s+|\s+$/g,"")
+                let text_no_hash = text.replace(/\[[0-9A-Fa-f]{8,10}\]/, "").replace(/^\s+|\s+$/g,"")
                 
                 if (localized_value_no_hash === text_no_hash) {
                   successed = true
                 }
                 
                 // 只比较Hash
-                if(!successed){
-                  let hash_str = localized_value.substring(hash_pos,hash_pos+12).replace(/^\s+|\s+$/g,"")
-                  let text_hash_pos = text.search(/\[[0-9A-Fa-f]{10}\]/)
-                  let text_hash = text.substring(text_hash_pos, text_hash_pos+12).replace(/^\s+|\s+$/g,"")
-                  if (hash_str === text_hash) {
-                    successed = true
+                if(!successed && hash_res != null){
+                  let hash_str = hash_res[0].replace(/^\s+|\s+$/g,"")
+                  let text_hash_res = text.match(/\[[0-9A-Fa-f]{8,10}\]/)
+                  if(text_hash_res != null){
+                    let text_hash = text_hash_res[0].replace(/^\s+|\s+$/g,"")
+                    if (hash_str === text_hash) {
+                      successed = true
+                    }
                   }
                 }
 
@@ -395,9 +424,9 @@ state.utils = {
               else{
                 state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
               }
-              if(hash_pos != -1){
+              if(hash_res != null){
                 let model_name = value
-                let hash_str = localized_value.substring(hash_pos,hash_pos+12)
+                let hash_str = hash_res[0]
                 state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
                   if(downloadUrl != undefined){
                     let warning_str = encodeURIComponent(`click to download \

@@ -74,6 +74,7 @@ state.core = (function () {
 
   let store = null;
   let timer = null;
+  let sd_versions = "0.0.0"
 
   function hasSetting(id, tab) {
     return true // 需要默认保存全部选项 不需要判断
@@ -113,6 +114,10 @@ state.core = (function () {
     
     //console.log(window.localization)
     fetch('/lightdiffusionflow/local/refresh_ui') // 刷新页面触发python重置图片数据
+    .then(response => response.json())
+    .then(data => {
+      sd_versions = data
+    });
 
     fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
       .then(response => response.json())
@@ -730,6 +735,9 @@ state.core = (function () {
     },
     output_error: function (msg, msg_style="color:Tomato;"){
       actions.output_log(msg,msg_style)
+    },
+    get_sd_version: function (){
+      return sd_versions
     }
   };
 
