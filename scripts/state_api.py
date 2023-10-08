@@ -19,7 +19,7 @@ import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
-
+import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
 import scripts.lightdiffusionflow_config as lf_config
@@ -681,7 +681,9 @@ class StateApi():
     global workflow_json, Output_Log
     workflow_json = {}
     Output_Log = ""
-    print("refresh_ui")
+    print("refresh_ui")  
+    tag = launch.git_tag()
+    return tag
 
   def set_preload(self, params:file_params):
     global Need_Preload,Preload_File
@@ -799,7 +801,6 @@ class Script(scripts.Script):
 
     if (isinstance(component, gr.Button) and kwargs["elem_id"] == "img2img_generation_info_button"): # 加载到最后一个组件了。   兼容旧版，暂时不使用“img2img_preview_filename”
       
-
       searching_extensions_title()
       #print(extensions_conponents)
 
