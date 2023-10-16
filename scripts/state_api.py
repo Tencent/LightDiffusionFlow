@@ -919,26 +919,26 @@ class Script(scripts.Script):
       State_Comps["export"] = []
       State_Comps["outlog"] = []
 
-    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True):
+    cur_mode = "img2img" if self.is_img2img else "txt2img"
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
       with gr.Row():
-        lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension])
+        lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension], elem_id=cur_mode+'_ldf_import')
         State_Comps["import"].append(lightdiffusionflow_file)
         
         with gr.Column(scale=1):
           gr.HTML(label="",value='''
           <a style ="text-decoration:underline;color:cornflowerblue;",
           href="https://www.lightflow.ai/">开源社区</a>''')
-          State_Comps["outlog"].append(gr.HTML(label="Output Log",value='''
+          State_Comps["outlog"].append(gr.HTML(label="Output Log",elem_id=cur_mode+'_ldf_outlog',value='''
           <p style=color:Tomato;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
           <p style=color:MediumSeaGreen;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
           <p style=color:DodgerBlue;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>'''))
 
       with gr.Row():
-        export_config = gr.Button(value='Export')
+        export_config = gr.Button(value='Export',elem_id=cur_mode+'_ldf_export')
         State_Comps["export"].append(export_config)
 
       if(not self.is_img2img):
-        
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
