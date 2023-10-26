@@ -1,3 +1,16 @@
+## 2.1.2
+
+### Features:
+ * UI组件增加elem_id。
+ * flow文件导出时，支持自定义名称。
+
+### Bug Fixes:
+ * 图片组件保存功能优化，支持所有带elem_id的图片组件。  
+ 因为gradio组件bug影响，目前暂时不支持不带elem_id的组件保存功能。目前新版本似乎已经修复，但秋叶启动器的gradio版本似乎还是旧版？  
+ issue链接: https://github.com/gradio-app/gradio/issues/5548
+ * refiner参数保存bug修复。
+ * 插件含tab的组件保存编号错误bug修复。
+
 ## 2.1.1
 
 ### Bug Fixes:

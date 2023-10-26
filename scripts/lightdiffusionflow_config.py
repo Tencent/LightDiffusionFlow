@@ -54,29 +54,29 @@ def init():
     ] # 只保存图片组件id，其他参数js里搞定
 
 
-  # init number of controlnet
-  try:
-    webui_settings = {}
-    with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
-      json_str = f.read()
-      webui_settings = json.loads(json_str)
+  # # init number of controlnet
+  # try:
+  #   webui_settings = {}
+  #   with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
+  #     json_str = f.read()
+  #     webui_settings = json.loads(json_str)
     
-    Multi_ControlNet = webui_settings.get("control_net_unit_count", None) # controlnet数量，新版名字
-    if(Multi_ControlNet == None):
-      Multi_ControlNet = webui_settings.get("control_net_max_models_num", 0)
-    print(f"Multi_ControlNet = {Multi_ControlNet}")
-    if(Multi_ControlNet == 1):
-      Image_Components_Key.append(f"txt2img_controlnet_ControlNet_input_image")
-      Image_Components_Key.append(f"img2img_controlnet_ControlNet_input_image")
-    else:
-      for i in range(Multi_ControlNet):
-        Image_Components_Key.append(f"txt2img_controlnet_ControlNet-{i}_input_image")
-        Image_Components_Key.append(f"img2img_controlnet_ControlNet-{i}_input_image")
+  #   Multi_ControlNet = webui_settings.get("control_net_unit_count", None) # controlnet数量，新版名字
+  #   if(Multi_ControlNet == None):
+  #     Multi_ControlNet = webui_settings.get("control_net_max_models_num", 0)
+  #   print(f"Multi_ControlNet = {Multi_ControlNet}")
+  #   if(Multi_ControlNet == 1):
+  #     Image_Components_Key.append(f"txt2img_controlnet_ControlNet_input_image")
+  #     Image_Components_Key.append(f"img2img_controlnet_ControlNet_input_image")
+  #   else:
+  #     for i in range(Multi_ControlNet):
+  #       Image_Components_Key.append(f"txt2img_controlnet_ControlNet-{i}_input_image")
+  #       Image_Components_Key.append(f"img2img_controlnet_ControlNet-{i}_input_image")
         
-  except:
-    pass
+  # except:
+  #   pass
 
-  # Segment Anything images
-  Image_Components_Key.extend(["txt2img_sam_input_image","img2img_sam_input_image"])
+  # # Segment Anything images
+  # Image_Components_Key.extend(["txt2img_sam_input_image","img2img_sam_input_image"])
 
 init()

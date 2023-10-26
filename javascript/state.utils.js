@@ -211,6 +211,21 @@ state.utils = {
     }
   },
 
+  onAccordionChange: function onAccordionChange(targetNode, func) {
+    if(targetNode) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' ) {
+            func(targetNode);
+          }
+        }
+      });
+      observer.observe(targetNode, {
+        attributes: true,
+      });
+    }
+  },
+
   getCurSeed: function getCurSeed(tab) {
     const elements = gradioApp().getElementById(`html_info_${tab}`).querySelectorAll(`#html_info_${tab}`);
     if (! elements || ! elements.length || !elements[0].innerText) {
@@ -252,7 +267,7 @@ state.utils = {
         } catch (error) {
           console.warn('[state]: Error:', error);
         }
-        
+        console.log(`image changed ${id}`)
         fetch(`/lightdiffusionflow/local/imgs_callback`, data)
       });
     }, 150);
@@ -333,20 +348,20 @@ state.utils = {
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
       if (value) {
         //for(child of children){
-        let span = child.querySelector('.transition, .icon');
-        if(span.style.transform !== 'rotate(90deg)'){
-        //if(child.className.split(' ').pop() != "open"){
+        //let span = child.querySelector('.transition, .icon');
+        //if(span.style.transform !== 'rotate(90deg)'){
+        if(child.className.split(' ').pop() != "open"){
           state.utils.triggerMouseEvent(child, 'click')
         }
         //}
       }
 
       setTimeout(() => {
-        state.utils.onContentChange(child, function (el) {
-          //store.set(id, el.className.split(' ').pop() == "open");
+        state.utils.onAccordionChange(child, function (el) {
+          store.set(id, el.className.split(' ').pop() == "open");
           //console.log(`accordion on change ${id}`)
-          let span = el.querySelector('.transition, .icon');
-          store.set(id, span.style.transform !== 'rotate(90deg)');
+          //let span = el.querySelector('.transition, .icon');
+          //store.set(id, span.style.transform !== 'rotate(90deg)');
         });
       }, 150);
 
@@ -551,6 +566,14 @@ state.utils = {
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
+
+    // // 创建一个<input type="file">元素，并设置其webkitdirectory属性为下载路径
+    // var fileInput = document.createElement('input');
+    // fileInput.type = 'file';
+    // fileInput.style.display = 'none';
+    // fileInput.webkitdirectory = path;
+
+    // document.body.appendChild(fileInput);
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

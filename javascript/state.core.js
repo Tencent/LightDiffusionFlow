@@ -74,6 +74,7 @@ state.core = (function () {
 
   let store = null;
   let timer = null;
+  let inited = false
   let sd_versions = "0.0.0"
 
   function hasSetting(id, tab) {
@@ -84,7 +85,8 @@ state.core = (function () {
 
   function fn_timer(){
 
-    fetch('/lightdiffusionflow/local/need_preload')
+    // if(inited){ 
+      fetch('/lightdiffusionflow/local/need_preload')
       .then(response => response.json())
       .then(data => {
         //console.log(`fn_timer`)
@@ -101,13 +103,81 @@ state.core = (function () {
         clearInterval(timer)
         console.log("Oops, error");
       });
+    // }
+    // else{
 
+    //   fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
+    //   .then(response => response.json())
+    //   .then(data => {
+    //     console.log('-----------------------------')
+    //     console.log(data)
+    //     console.log('-----------------------------')
+    //     if(data != ""){
+
+    //       img_elem_keys = data.split(",")
+    //       img_elem_keys.forEach(key => {
+    //         IMAGES_WITHOUT_PREFIX[key] = key
+    //       });
+          
+    //       // 等上面的组件ID同步过来后 再加载其他配置
+    //       fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
+    //       .then(response => response.json())
+    //       .then(config => {          
+    //         try {
+    //           store = new state.Store();
+    //           store.clearAll();
+    //           load(config);
+    //           inited = true
+    //         } catch (error) {
+    //           console.error('[state]: Error:', error);
+    //         }
+    //       })
+    //       .catch(error => console.error('[state]: Error getting JSON file:', error));
+    //     }
+    //   });
+        
+
+    // }
+      
   }
 
   let img_elem_keys=[];
 
   function get_imgs_elem_key(){
-    return img_elem_keys;
+
+    fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
+      .then(response => response.json())
+      .then(data => {
+        console.log(data)
+        if(data == ''){
+          console.log('-----------------------------')
+          setTimeout(() => {
+            get_imgs_elem_key()
+          }, 500);
+        }
+        else{
+          img_elem_keys = data.split(",")
+          img_elem_keys.forEach(key => {
+            IMAGES_WITHOUT_PREFIX[key] = key
+          });
+          
+          // 等上面的组件ID同步过来后 再加载其他配置
+          fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
+            .then(response => response.json())
+            .then(config => {          
+              try {
+                store = new state.Store();
+                store.clearAll();
+                load(config);
+                timer = window.setInterval(fn_timer,1000); // 初始化页面完成后再启动timer读取文件
+              } catch (error) {
+                console.error('[state]: Error:', error);
+              }
+            })
+            .catch(error => console.error('[state]: Error getting JSON file:', error));
+        }
+      });
+
   }
 
   function init() {
@@ -119,30 +189,7 @@ state.core = (function () {
       sd_versions = data
     });
 
-    fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
-      .then(response => response.json())
-      .then(data => {
-        img_elem_keys = data.split(",")
-        img_elem_keys.forEach(key => {
-          IMAGES_WITHOUT_PREFIX[key] = key
-        });
-        
-        // 等上面的组件ID同步过来后 再加载其他配置
-        fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
-          .then(response => response.json())
-          .then(config => {          
-            try {
-              store = new state.Store();
-              store.clearAll();
-              load(config);
-              timer = window.setInterval(fn_timer,1000); // 初始化页面完成后再启动timer读取文件
-            } catch (error) {
-              console.error('[state]: Error:', error);
-            }
-          })
-          .catch(error => console.error('[state]: Error getting JSON file:', error));
-      });
-
+    get_imgs_elem_key()
 
   }
   
@@ -671,28 +718,29 @@ state.core = (function () {
     startImportImage: function (index){
       index = Number(index)
 
+      console.log(`-------startImportImage--'${index}'---------------`)
       if(index+1 < img_elem_keys.length){
         //console.log(`---------${img_elem_keys}---------------`)
-        //console.log(`---------${index}-----${img_elem_keys.length}-----------`)
+        console.log(`---------'${index}'-----'${img_elem_keys.length}'-----------`)
         switch_tab_dict = {
-          "txt2img_invisible_img2img_image": "switch_to_img2img()",
-          "txt2img_invisible_img2img_sketch": "switch_to_sketch()",
-          "txt2img_invisible_img2maskimg": "switch_to_inpaint()",
-          "txt2img_invisible_inpaint_sketch": "switch_to_inpaint_sketch()",
-          "txt2img_invisible_img_inpaint_base": "state.utils.switch_to_img_inpaint()",
-          "txt2img_invisible_img_inpaint_mask": "state.utils.switch_to_img_inpaint()",
-          "txt2img_invisible_txt2img_controlnet_ControlNet_input_image": "state.utils.switch_to_txt2img_ControlNet(0)",
-          "txt2img_invisible_img2img_controlnet_ControlNet_input_image": "state.utils.switch_to_img2img_ControlNet(0)"
+          "img2img_invisible_img2img_image": "switch_to_img2img()",
+          "img2img_invisible_img2img_sketch": "switch_to_sketch()",
+          "img2img_invisible_img2maskimg": "switch_to_inpaint()",
+          "img2img_invisible_inpaint_sketch": "switch_to_inpaint_sketch()",
+          "img2img_invisible_img_inpaint_base": "state.utils.switch_to_img_inpaint()",
+          "img2img_invisible_img_inpaint_mask": "state.utils.switch_to_img_inpaint()",
+          "img2img_invisible_txt2img_controlnet_ControlNet_input_image": "state.utils.switch_to_txt2img_ControlNet(0)",
+          "img2img_invisible_img2img_controlnet_ControlNet_input_image": "state.utils.switch_to_img2img_ControlNet(0)"
         }
         
         for (let i = 0; i < 10; i++) {
-          switch_tab_dict[`txt2img_invisible_txt2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_txt2img_ControlNet(${i})`
-          switch_tab_dict[`txt2img_invisible_img2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_img2img_ControlNet(${i})`
+          switch_tab_dict[`img2img_invisible_txt2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_txt2img_ControlNet(${i})`
+          switch_tab_dict[`img2img_invisible_img2img_controlnet_ControlNet-${i}_input_image`] = `state.utils.switch_to_img2img_ControlNet(${i})`
         }
 
         state.utils.sleep(300).then(() => {
           try{
-            key = "txt2img_invisible_"+img_elem_keys[index+1]
+            key = "img2img_invisible_"+img_elem_keys[index+1]
             eval( switch_tab_dict[key] ) // 跳转界面
             const button = gradioApp().getElementById(key);
             button.click();
@@ -700,7 +748,6 @@ state.core = (function () {
             console.warn('[startImportImage]: Error:', error);
             if(index+1 < img_elem_keys.length){
               // 图片组件设置出错了，但是需要继续后续的流程
-              
               index = img_elem_keys.length-1
             }
           }
@@ -736,7 +783,7 @@ state.core = (function () {
     },
     output_log: function (msg, msg_style=""){
       fetch(`/lightdiffusionflow/local/output_log?msg=${msg}&style=${msg_style}`).then(() => {
-        gradioApp().getElementById("txt2img_invisible_refresh_log").click();
+        gradioApp().getElementById("img2img_invisible_refresh_log").click();
       });
     },
     output_warning: function (msg, msg_style="color:Orange;"){

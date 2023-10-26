@@ -94,11 +94,10 @@ def set_lightdiffusionflow_file():
   global Preload_File
   return Preload_File
 
-
 def on_dropdown_changed(*component):
   global extensions_id_conponents, extensions_id_conponents_value
 
-  extensions_id_conponents_value = {"dropdown":{}}
+  extensions_id_conponents_value["dropdown"] = {}
   i = 0
   for id in extensions_id_conponents["dropdown"].keys():
     extensions_id_conponents_value["dropdown"][id] = component[i]
@@ -169,8 +168,8 @@ def set_dropdowns():
                   break
 
           if(matching_successed):
-            add_output_warning(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
-            print(f"The option '{value}' was not found, and has been replaced with '{new_value}'!")
+            add_output_warning(f"Note: [{value}] not found. An approximate match [{new_value}] has been automatically selected as replacement.")
+            print(f"Note: [{value}] not found. An approximate match [{new_value}] has been automatically selected as replacement.")
           else:
             add_output_error(f"'{comp_id}' import failed! The option '{value}' was not found!")
             print(f"'{comp_id}' import failed! The option '{value}' was not found!")
@@ -193,10 +192,36 @@ def set_js_params():
   print("set_js_params")
   return temp_index
 
+# use_elem_id 是为了兼容旧版的图片组件直接使用elem_id作为组件名称的情况
+def comp_create_id(component, tab_name, ext_name, sub_tab, use_elem_id = False): 
+  comp_id = None
+  if(use_elem_id):
+    try:
+      comp_id = component.elem_id
+    except:
+      pass
+  
+  if(comp_id == None):
+    #try:
+    comp_name = component.get_config()['label'].replace(" ", "-").lower()
+    temp_sub_tab = ("_"+sub_tab) if sub_tab != "base" else ""
+    comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + tab_name + temp_sub_tab + "-" + comp_name
+    #except:
+    #  pass
+
+  return comp_id
+
 def params_create_ids():
   global extensions_id_conponents, extensions_conponents
-  extensions_id_conponents = {"dropdown":{}}
-  for tab_name in extensions_conponents.keys(): # plugin name
+  extensions_id_conponents = {"dropdown":{}, "image":{}}
+
+  for key in lf_config.Image_Components_Key:
+    if(key == "useless_Textbox"):
+      extensions_id_conponents["image"]["useless_Textbox"] = State_Comps["useless_Textbox"]
+    else:
+      extensions_id_conponents["image"][key] = Webui_Comps[key]
+
+  for tab_name in extensions_conponents.keys(): # tab name
     for ext_name in extensions_conponents[tab_name].keys(): # plugin name
       comp_index = 0
       for sub_tab in extensions_conponents[tab_name][ext_name].keys(): # sub_tab 如果没有默认就是base
@@ -204,16 +229,25 @@ def params_create_ids():
           try:
             # 先只考虑有label的组件
             if(isinstance(comp, gr.Dropdown)):
-              try:
-                comp_name = comp.get_config()['label'].replace(" ", "-").lower()
-                temp_sub_tab = ("_"+sub_tab) if sub_tab != "base" else ""
-                comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + tab_name + temp_sub_tab + "-" + comp_name
-              except:
-                pass
+              # try:
+              #   comp_name = comp.get_config()['label'].replace(" ", "-").lower()
+              #   temp_sub_tab = ("_"+sub_tab) if sub_tab != "base" else ""
+              #   comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + tab_name + temp_sub_tab + "-" + comp_name
+              # except:
+              #   pass
+              comp_id = comp_create_id(comp, tab_name, ext_name, sub_tab)
               # comp_name = comp.get_config()['name'] + "_" + str(comp_index)
               # comp_index += 1
               # comp_id = 'state-ext-'+ ext_name.replace(" ","-").lower() + "-" + comp_name
               extensions_id_conponents["dropdown"][comp_id] = comp
+            elif(isinstance(comp, gr.Image)):
+              comp_id = comp_create_id(comp, tab_name, ext_name, sub_tab, True)
+              if("generated_image" in comp_id):
+                pass
+                #print(f"skip component: {comp_id}")
+              else:
+                extensions_id_conponents["image"][comp_id] = comp
+              
           except BaseException as e:
             pass
   #print(extensions_id_conponents)
@@ -280,168 +314,30 @@ def searching_extensions_title():
       extensions_conponents["img2img"][label] = {"base":[]}     
       #extensions_conponents[label] = []
 
+debug_num = 0
+def on_img_changed(*component):
+  global extensions_id_conponents, extensions_id_conponents_value, debug_num
 
+  test_vals = []
+  extensions_id_conponents_value["image"] = {}
+  i = 0
+  for id in extensions_id_conponents["image"].keys():
+    extensions_id_conponents_value["image"][id] = component[i]
+    if(component[i] == None):
+      test_vals.append("0")
+    else:
+      test_vals.append("1")
+    i+=1
 
-# '''
-# ---------不使用------------
-# python触发导入事件，按正常触发逻辑先执行js代码，把除图片以外的参数全部设置好，
-# 然后回到python代码，读取图片保存到Webui_Comps_Cur_Val，
-# 再用json2js的onchange事件触发js来点击隐藏按钮开始触发设置图片的事件队列。
-# '''
-# def on_after_component(component, **kwargs):
-#   global txt2img_script_container,img2img_script_container,extensions_id_conponents
-#   conponents_originlist.append(component)
-
-#   try:
-#     if(Webui_Comps.get(kwargs["elem_id"], None) == None):
-#       Webui_Comps[kwargs["elem_id"]] = component
-#   except BaseException as e:
-#     pass
-
-
-
-#   if(txt2img_script_container == None):
-#     temp = component
-#     i = 10
-#     while temp and i>0:
-#       if(temp.elem_id == "txt2img_script_container"):
-#         txt2img_script_container = temp
-#         break
-#       else:
-#         temp = temp.parent
-#         i-=1
-  
-#   if(img2img_script_container == None):
-#     temp = component
-#     i = 10
-#     while temp and i>0:
-#       if(temp.elem_id == "img2img_script_container"):
-#         img2img_script_container = temp
-#         break
-#       else:
-#         temp = temp.parent
-#         i-=1
-
-
-#   if (isinstance(component, gr.Button) and kwargs["elem_id"] == "change_checkpoint"): # 加载到最后一个组件了
-#     for group in txt2img_script_container.children: # 遍历读取所有的插件名称
-#       label = ""
-#       try:
-#         label = get_extname_from_label(group.children[0].label)
-#       except BaseException as e:
-#         pass
-      
-#       if(label == ""):
-#         try:
-#           label = get_extname_from_label(group.children[0].children[0].label)
-#         except BaseException as e:
-#           pass
-
-#       #print(label)
-#       if(label != ""):
-#         # extensions_conponents["txt2img"] = {}
-#         # extensions_conponents["img2img"] = {}
-#         # extensions_conponents["txt2img"][label] = {"base":[]}
-#         # extensions_conponents["img2img"][label] = {"base":[]}     
-#         extensions_conponents[label] = []
-
-#     for comp in conponents_originlist:
-#       temp_parent  = comp.parent
-#       # tab 也存在多层tab嵌套的结构，下次
-#       tab = None
-#       tabs = None
-
-#       while temp_parent:
-#         try:
-#           ext_name = get_extname_from_label(temp_parent.label)
-#           if(extensions_conponents.get(ext_name, None) != None):
-#             extensions_conponents[ext_name].append(comp)
-
-#           # if(isinstance(temp_parent,gr.Tab)):
-#           #   tab = temp_parent
-#           # if(isinstance(temp_parent,gr.Tabs)):
-#           #   tabs = temp_parent
-
-#           # ext_name = get_extname_from_label(temp_parent.label)
-#           # if(extensions_conponents.get(ext_name, None) != None):
-#           #   if(tabs):
-#           #     tab_index = 0
-#           #     for temp_tab in tabs.children:
-#           #       if (tab == temp_tab):
-#           #         break
-#           #       tab_index+=1
-#           #     if(extensions_conponents[ext_name].get(str(tab_index), None) != None):
-#           #       extensions_conponents[ext_name][str(tab_index)].append(comp)
-#           #     else:
-#           #       extensions_conponents[ext_name][str(tab_index)]= [comp]
-#           #   else:
-#           #     extensions_conponents[ext_name]["base"].append(comp)
-#           #   break
-#         except BaseException as e:
-#           pass
-#         temp_parent = temp_parent.parent
-#     #print(extensions_conponents) # 整理好的第三方插件用到的组件
-    
-#     params_create_ids()
-
-#     #print("LightDiffusionFlow绑定按钮")
-
-#     on_change_inputs = list(extensions_id_conponents["dropdown"].values())
-#     #print(on_change_inputs)
-#     for comp_to_bind in extensions_id_conponents["dropdown"].keys():
-#       extensions_id_conponents["dropdown"][comp_to_bind].change(on_dropdown_changed,inputs=on_change_inputs,outputs=[])
-
-#     target_comps = []
-
-#     target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
-#     #target_comps.append(State_Comps["outlog"][0])
-#     #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
-
-#     for btn in State_Comps["export"]:
-#       btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
-
-#     for btn in State_Comps["import"]:
-#       # js里加载除图片以外的参数 python加载图片
-#       btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
-#         inputs=[btn],outputs=target_comps)
-
-#     State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
-#       inputs=[State_Comps["json2js"]])
-    
-#     State_Comps["test_button"].click(test_func,_js="state.utils.testFunction",inputs=[])
-
-#     State_Comps["refresh_log"].click(add_output_log,inputs=[],outputs=[State_Comps["outlog"][0], State_Comps["outlog"][1]])
-
-#     temp_outputs = list(extensions_id_conponents["dropdown"].values())
-#     State_Comps["set_elements"].click(set_elements,inputs=[],outputs=temp_outputs)
-
-#     input_component = State_Comps["background_import"] #State_Comps["import"][0]
-#     State_Comps["set_file_button"].click(set_lightdiffusionflow_file,inputs=[],outputs=[input_component])
-#     State_Comps["preload_button"].click(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow", 
-#       inputs=[input_component],outputs=target_comps)
-
-#     for key in invisible_buttons.keys():
-#       segs = key.split("_")
-#       comp_name = "_".join(segs[2:])
-#       #print(comp_name)
-#       try:
-#         invisible_buttons[key].click(func_for_invisiblebutton,
-#           inputs=[], 
-#           outputs=[
-#             Webui_Comps[comp_name], 
-#             State_Comps["json2js"], 
-#             State_Comps["outlog"][0], 
-#             State_Comps["outlog"][1]
-#           ])
-#       except KeyError:
-#         print(f"No such component: {comp_name}")
-
+  debug_num += 1
+  print(debug_num)
+  print(test_vals)
 
 temp_index = -1
 next_index = -1
 def func_for_invisiblebutton():
   global temp_index,next_index
-  global Webui_Comps_Cur_Val, Output_Log
+  global extensions_id_conponents, Webui_Comps_Cur_Val, Output_Log
 
   temp_index = next_index+1
   next_index = temp_index
@@ -461,7 +357,9 @@ def func_for_invisiblebutton():
   
   # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
   if(temp_index > 0):
-    add_output_log(f"importing image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
+    
+    add_output_log(f"importing image: \'{list(extensions_id_conponents['image'].keys())[temp_index]}\' ") 
+    #add_output_log(f"importing image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
     
   if(next_index+1 == len(Webui_Comps_Cur_Val)):
     add_output_log(f"import completed!")
@@ -472,7 +370,7 @@ def func_for_invisiblebutton():
 
 def fn_import_workflow(workflow_file):
   global workflow_json, Output_Log
-  global Webui_Comps_Cur_Val, temp_index, next_index
+  global extensions_id_conponents, Webui_Comps_Cur_Val, temp_index, next_index
   temp_index = -1 # 重置索引
   next_index = -1
   
@@ -492,7 +390,8 @@ def fn_import_workflow(workflow_file):
       print("invalid file!")
 
   Webui_Comps_Cur_Val = []
-  for key in lf_config.Image_Components_Key:
+  for key in extensions_id_conponents["image"].keys():
+  #for key in lf_config.Image_Components_Key:
     image = None
     successed = 2
     tempkey = key
@@ -522,6 +421,7 @@ def fn_import_workflow(workflow_file):
     
     Webui_Comps_Cur_Val.append(image)
 
+  #print(Webui_Comps_Cur_Val)
   #set_elements()
   # return_vals.append(str(time.time())) # 用来触发json2js事件，python设置完图片 js继续设置其他参数  弃用
   # return tuple(return_vals)
@@ -576,7 +476,8 @@ class StateApi():
     global workflow_json, extensions_id_conponents_value
     temp_json = {}
     if(onlyimg):
-      for key in lf_config.Image_Components_Key:
+      for key in extensions_id_conponents["image"].keys():
+      # for key in lf_config.Image_Components_Key:
         try:
           temp_json[key] = workflow_json[key]
         except:
@@ -592,7 +493,8 @@ class StateApi():
       #print(temp_json)
     else:
       temp_json = copy.deepcopy(workflow_json)
-      for key in lf_config.Image_Components_Key:
+      for key in extensions_id_conponents["image"].keys():
+      #for key in lf_config.Image_Components_Key:
         temp_json[key] = ""
 
     return json.dumps(temp_json)
@@ -670,7 +572,13 @@ class StateApi():
     return file_content
 
   def get_img_elem_key(self):
-    keys_str = ",".join(lf_config.Image_Components_Key)
+    global extensions_id_conponents
+    keys_str = ""
+    #keys_str = ",".join(lf_config.Image_Components_Key)
+    try:
+      keys_str = ",".join(list(extensions_id_conponents["image"].keys()))
+    except:
+      pass
     return keys_str
 
   def imgs_callback(self, img_data:imgs_callback_params):
@@ -787,7 +695,7 @@ class Script(scripts.Script):
     #print(f"after_component {component} {kwargs.get('elem_id', None)} {'img2img' if self.is_img2img else 'txt2img'} ")
     try:
 
-      if kwargs["elem_id"] == "txt2img_generation_info_button" or kwargs["elem_id"] == "img2img_generation_info_button":
+      if kwargs["elem_id"] == "txt2img_generation_info_button": # or kwargs["elem_id"] == "img2img_generation_info_button":
         self.custom_ui()
 
       if(Webui_Comps.get(kwargs["elem_id"], None) == None):
@@ -848,7 +756,14 @@ class Script(scripts.Script):
       #print(extensions_conponents) # 整理好的第三方插件用到的组件
       # --------------------------------------组件分类--------------------------------------------------
       
+      if(self.is_img2img):
+          State_Comps["useless_Textbox"] = \
+            gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
+
       params_create_ids()
+      
+      # img2img下的面板
+      self.custom_ui()
 
       target_comps = []
       target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
@@ -874,6 +789,15 @@ class Script(scripts.Script):
       for comp_to_bind in extensions_id_conponents["dropdown"].keys():
         extensions_id_conponents["dropdown"][comp_to_bind].change(on_dropdown_changed,inputs=on_dropdown_change_inputs,outputs=[])
 
+      # change事件，每次上传一张图会触发change时间几十次
+      # clear事件，删除图片的时候不触发，官方bug好像新版本有解决。
+      # edit事件，每次编辑都能触发一次，上传图片的时候也能触发。
+      # 没有合适的清除图片的事件，无法使用python监控图片组件
+      # on_img_change_inputs = list(extensions_id_conponents["image"].values())
+      # for comp_to_bind in extensions_id_conponents["image"].keys():
+      #   extensions_id_conponents["image"][comp_to_bind].edit(on_img_changed,inputs=on_img_change_inputs,outputs=[])
+      #   extensions_id_conponents["image"][comp_to_bind].clear(on_img_changed,inputs=on_img_change_inputs,outputs=[])
+
       temp_dropdown_outputs = list(extensions_id_conponents["dropdown"].values())
       temp_dropdown_outputs.append(State_Comps["json2js"]) # json2js触发完成事件
       temp_dropdown_outputs.append(State_Comps["outlog"][0]) # 输出日志
@@ -895,7 +819,8 @@ class Script(scripts.Script):
           invisible_buttons[key].click(func_for_invisiblebutton,
             inputs=[], 
             outputs=[
-              Webui_Comps[comp_name], 
+              #Webui_Comps[comp_name], 
+              extensions_id_conponents["image"][comp_name],
               State_Comps["json2js"], 
               State_Comps["outlog"][0], 
               State_Comps["outlog"][1]
@@ -909,7 +834,7 @@ class Script(scripts.Script):
     pass
 
   def custom_ui(self):
-    global File_extension
+    global File_extension, extensions_id_conponents
     try:
       State_Comps["import"]
       State_Comps["export"]
@@ -938,24 +863,26 @@ class Script(scripts.Script):
         export_config = gr.Button(value='Export',elem_id=cur_mode+'_ldf_export')
         State_Comps["export"].append(export_config)
 
-      if(not self.is_img2img):
+      if(self.is_img2img):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
         State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
-        State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='txt2img_invisible_refresh_log',visible=False)
+        State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='img2img_invisible_refresh_log',visible=False)
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
         State_Comps["set_file_button"] = gr.Button(value='设置文件',elem_id='set_lightdiffusionflow_file',visible=False)
         State_Comps["preload_button"] = gr.Button(value='预加载',elem_id='preload_button',visible=False)
 
         with gr.Row():
-          State_Comps["useless_Textbox"] = \
-            gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
+          #State_Comps["useless_Textbox"] = \
+          #  gr.Textbox(value='useless_Textbox', elem_id='useless_Textbox', visible=False)
           
-          for key in lf_config.Image_Components_Key:
+          #for key in lf_config.Image_Components_Key:
+          for key in extensions_id_conponents["image"].keys():
+            #print(key)
             elem_id = ("img2img_" if self.is_img2img else "txt2img_") + "invisible_" + key
-            invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
+            invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=True)
 
 
 def on_before_reload():
