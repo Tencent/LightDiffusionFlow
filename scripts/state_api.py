@@ -22,6 +22,7 @@ from modules.sd_models import checkpoints_list
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
+from scripts.lightdiffusionflow_config import OutputPrompt
 import scripts.lightdiffusionflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
@@ -48,8 +49,22 @@ File_extension = ".flow"
 def test_func():
   global extensions_conponents, extensions_id_conponents
   print("test_func")
-  res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", "control_v11p_sd15_scribble [d4ba51aafd]")
-  print(res)
+  # res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", "control_v11p_sd15_scribble [d4ba51aafd]")
+  # print(res)
+  #from scripts.processor import preprocessor_filters
+  #print(preprocessor_filters)
+
+  cn_model_name = "control_v1p_sd15_qrco1de_monster [5e5778cb]"
+
+  cn_type_list = ['canny','depth','normalmap','openpose','mlsd','lineart_anime','lineart','softedge','scribble',
+    'seg','shuffle','tile','inpaint','ip2p','brightness','illumination','qrcode_monster','qrcode','normalbae']
+
+  type_pattern = "("+"|".join(cn_type_list)+")"
+  print(type_pattern)
+  res = re.search(type_pattern,cn_model_name)
+  if(res != None):
+    print(res.group())
+
   #print(extensions_id_conponents["dropdown"]["state-ext-control-net-txt2img_0-model"].get_config())
 
   # print(parameters_copypaste.paste_fields)
@@ -57,16 +72,38 @@ def test_func():
 def add_output_log(msg:str="", style:str=""):
   global Output_Log
   if(msg != ""):
-    #print(f"Output_Log: {msg}")
-    Output_Log += f'<p style="{style}">{msg}</p>'
+    clear_msg = msg
+    results = re.findall("(<.+?>)",msg)
+    for res in results:
+      clear_msg = clear_msg.replace(res,"")
+    print(clear_msg)
+    Output_Log += f"<p style='color:rgb(192,192,192);{style}'>{msg}</p>"
   return Output_Log, Output_Log
 
 def add_output_warning(msg:str=""):
     add_output_log(msg, style="color:Orange;")
 
 def add_output_error(msg:str=""):
-    add_output_log(msg, style="color:Tomato;")
+    add_output_log(msg, style="color:Red;")
 
+def add_preset_output_log(preset, key, value):
+  if(preset == "start"):
+    add_output_log(OutputPrompt.startimport())
+  elif(preset == "finished"):
+    add_output_log(OutputPrompt.import_completed())
+  elif(preset == "invalid"):
+    add_output_log(OutputPrompt.invalid_file())
+  elif(preset == "importing_img"):
+    add_output_log(OutputPrompt.importing_image(key))
+  elif(preset == "alt_option"):
+    add_output_log(OutputPrompt.alternative_option(key,value))
+  elif(preset == "no_option"):
+    add_output_log(OutputPrompt.no_option(key,value))
+  elif(preset == "missing_exts"):
+    ext_list = value.split(";")
+    add_output_log(OutputPrompt.missing_extensions(ext_list))
+  elif(preset == "download_url"):
+    add_output_log(OutputPrompt.click_to_download(key, value))
 
 def find_checkpoint_from_name(name:str):
 
@@ -103,6 +140,28 @@ def on_dropdown_changed(*component):
     extensions_id_conponents_value["dropdown"][id] = component[i]
     i+=1
 
+def cn_get_model_type(cn_model_name):
+
+  cn_type_list = ['canny','depth','normalmap','openpose','mlsd','lineart_anime','lineart','softedge','scribble',
+    'seg','shuffle','tile','inpaint','ip2p','brightness','illumination','qrcode_monster','qrcode','normalbae']
+
+  type_pattern = "("+"|".join(cn_type_list)+")"
+  res = re.search(type_pattern,cn_model_name)
+  if(res != None):
+    return res.group()
+
+  # #cn_model_name = "control_v1p_sd15_qrcode_monster [5e5778cb]"
+  # res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", cn_model_name)
+  # if(res != None):
+  #   cn_model_hash_val = res.group(1)
+  #   cn_model_no_hash = cn_model_name.replace(cn_model_hash_val,"").rstrip().lower()
+  # else:
+  #   cn_model_no_hash = cn_model_name.rstrip().lower()
+  # model_type = cn_model_no_hash.split("_")[-1]
+  # print(model_type)
+  # return model_type
+  return None
+
 def set_dropdowns():
   global extensions_id_conponents, workflow_json
   global temp_index,next_index
@@ -123,6 +182,7 @@ def set_dropdowns():
         new_value = value
         matching_successed = False
         options = extensions_id_conponents["dropdown"][comp_id].get_config()["choices"]
+
         for option in options:
           if(option == new_value):
             matching_successed = True
@@ -130,49 +190,69 @@ def set_dropdowns():
         
         # 没有完全匹配
         if(not matching_successed):
-          # 寻找哈希值
-          value_hash_val = None
-          value_no_hash = None
-          res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", new_value)
+          
+          # controlnet模型
+          res = re.search(r"state-ext-control-net-txt2img_[0-9]-model", comp_id)
           if(res != None):
-            value_hash_val = res.group(1)
-            value_no_hash = new_value.replace(value_hash_val,"").rstrip()
-              
-          for option in options:
-            option_hash_val = None
-            option_no_hash = None
-            res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", option)
-            if(res != None): # 选项有哈希
-              option_hash_val = res.group(1)
-              option_no_hash = option.replace(option_hash_val,"").rstrip()
-              if(value_hash_val == None): # 值没有哈希
-                if(new_value.rstrip() == option_no_hash):
-                  new_value = option
-                  matching_successed = True
-                  break
-              else: # 值有哈希
-                if(value_hash_val == option_hash_val or option_no_hash == value_no_hash):
-                  new_value = option
-                  matching_successed = True
-                  break
-            else: # 选项没有哈希
-              if(value_hash_val == None): # 值没有哈希
-                if(new_value.rstrip() == option.rstrip()):
-                  new_value = option
-                  matching_successed = True
-                  break
-              else: # 值有哈希
-                if(value_no_hash == option.rstrip()):
+            cn_model = cn_get_model_type(new_value)
+            if(cn_model != None):
+              if(len(options) <= 1):
+                add_preset_output_log("download_url", "ControlNet Models", "https://huggingface.co/lllyasviel/ControlNet-v1-1/tree/main")
+              for option in options:
+                if(cn_model == cn_get_model_type(option)):
                   new_value = option
                   matching_successed = True
                   break
 
+          # 哈希值匹配
+          if(not matching_successed):
+
+            # 寻找哈希值
+            value_hash_val = None
+            value_no_hash = None
+            res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", new_value)
+            if(res != None):
+              value_hash_val = res.group(1)
+              value_no_hash = new_value.replace(value_hash_val,"").rstrip()
+                
+            for option in options:
+
+              option_hash_val = None
+              option_no_hash = None
+              res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", option)
+              if(res != None): # 选项有哈希
+                option_hash_val = res.group(1)
+                option_no_hash = option.replace(option_hash_val,"").rstrip()
+                if(value_hash_val == None): # 值没有哈希
+                  if(new_value.rstrip() == option_no_hash):
+                    new_value = option
+                    matching_successed = True
+                    break
+                else: # 值有哈希
+                  if(value_hash_val == option_hash_val or option_no_hash == value_no_hash):
+                    new_value = option
+                    matching_successed = True
+                    break
+              else: # 选项没有哈希
+                if(value_hash_val == None): # 值没有哈希
+                  if(new_value.rstrip() == option.rstrip()):
+                    new_value = option
+                    matching_successed = True
+                    break
+                else: # 值有哈希
+                  if(value_no_hash == option.rstrip()):
+                    new_value = option
+                    matching_successed = True
+                    break
+
           if(matching_successed):
-            add_output_warning(f"Note: [{value}] not found. An approximate match [{new_value}] has been automatically selected as replacement.")
-            print(f"Note: [{value}] not found. An approximate match [{new_value}] has been automatically selected as replacement.")
+            add_output_log(OutputPrompt.alternative_option(value,new_value))
+            #add_output_log(f"Note: '<b style='color:Orange;'>{value}</b>' not found. An approximate match '<b style='color:Orange;'>{new_value}</b>' has been automatically selected as replacement.")
+            #print(f"Note: '{value}' not found. An approximate match '{new_value}' has been automatically selected as replacement.")
           else:
-            add_output_error(f"'{comp_id}' import failed! The option '{value}' was not found!")
-            print(f"'{comp_id}' import failed! The option '{value}' was not found!")
+            add_output_log(OutputPrompt.no_option(comp_id,value))
+            #add_output_log(f"Error: '<b style='color:Red;'>{comp_id}</b>' import failed! The option '<b style='color:Red;'>{value}</b>' was not found!")
+            #print(f"'{comp_id}' import failed! The option '{value}' was not found!")
             new_value = extensions_id_conponents["dropdown"][comp_id].get_config()["value"]
 
     except KeyError as e:
@@ -313,6 +393,7 @@ def searching_extensions_title():
       extensions_conponents["txt2img"][label] = {"base":[]}
       extensions_conponents["img2img"][label] = {"base":[]}     
       #extensions_conponents[label] = []
+  #print(extensions_conponents)
 
 debug_num = 0
 def on_img_changed(*component):
@@ -357,12 +438,12 @@ def func_for_invisiblebutton():
   
   # 第一个组件是用来预计算第一张图的索引 防止出现有没用的页面跳转 所以不用输出日志信息
   if(temp_index > 0):
-    
-    add_output_log(f"importing image: \'{list(extensions_id_conponents['image'].keys())[temp_index]}\' ") 
-    #add_output_log(f"importing image: \'{lf_config.Image_Components_Key[temp_index]}\' ") 
+    add_output_log(OutputPrompt.importing_image(list(extensions_id_conponents['image'].keys())[temp_index]))
+    #add_output_log(f"importing image: \'{list(extensions_id_conponents['image'].keys())[temp_index]}\' ") 
     
   if(next_index+1 == len(Webui_Comps_Cur_Val)):
-    add_output_log(f"import completed!")
+    add_output_log(OutputPrompt.import_completed())
+    #add_output_log(f"import completed!")
   
   # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
   return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log 
@@ -457,11 +538,14 @@ class StateApi():
     self.add_api_route('/local/lightdiffusionflow_config', self.get_lightdiffusionflow_config, methods=['GET']) 
     # 获取图片的组件id 由js来设置onchange事件
     self.add_api_route('/local/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
+    # 获取当前已安装的插件列表
+    self.add_api_route('/local/get_ext_list', self.get_ext_list, methods=['GET']) 
     # 用户设置了新图片 触发回调保存到 workflow_json
     self.add_api_route('/local/imgs_callback', self.imgs_callback, methods=['POST']) 
     # 刷新页面之后触发
     self.add_api_route('/local/refresh_ui', self.refresh_ui, methods=['GET']) 
     self.add_api_route('/local/output_log', add_output_log, methods=['GET']) 
+    self.add_api_route('/local/preset_output_log', add_preset_output_log, methods=['GET']) 
     self.add_api_route('/local/png_info', self.png_info, methods=['POST']) # 
     # 传入一个文件路径，返回文件内容
     self.add_api_route('/local/read_file', self.read_file, methods=['POST']) 
@@ -471,9 +555,18 @@ class StateApi():
 
   def get_config(self):
     return FileResponse(shared.cmd_opts.ui_settings_file)
+  
+  def get_ext_list(self):
+    global extensions_conponents
+    ext_str = ""
+    try:
+      ext_str = ",".join(list(extensions_conponents["txt2img"].keys())).lower().replace(" ", "-")
+    except:
+      pass
+    return ext_str
 
   def get_lightdiffusionflow_config(self, onlyimg:bool = False):
-    global workflow_json, extensions_id_conponents_value
+    global workflow_json, extensions_id_conponents, extensions_id_conponents_value
     temp_json = {}
     if(onlyimg):
       for key in extensions_id_conponents["image"].keys():
@@ -487,7 +580,10 @@ class StateApi():
       for comp_type in extensions_id_conponents_value.keys():
         for comp_id in extensions_id_conponents_value[comp_type].keys():
           try:
-            temp_json[comp_id] = extensions_id_conponents_value[comp_type][comp_id]
+            # 默认值的选项不导出
+            default_val = extensions_id_conponents[comp_type][comp_id].get_config()["value"]
+            if(default_val != extensions_id_conponents_value[comp_type][comp_id]):
+              temp_json[comp_id] = extensions_id_conponents_value[comp_type][comp_id]
           except KeyError as e:
             pass
       #print(temp_json)
@@ -853,21 +949,21 @@ class Script(scripts.Script):
         with gr.Column(scale=1):
           gr.HTML(label="",value='''
           <a style ="text-decoration:underline;color:cornflowerblue;",
-          href="https://www.lightflow.ai/">开源社区</a>''')
+          href="https://www.lightflow.ai/">开源社区/open-source community</a>''')
           State_Comps["outlog"].append(gr.HTML(label="Output Log",elem_id=cur_mode+'_ldf_outlog',value='''
-          <p style=color:Tomato;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
+          <p style=color:Red;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
           <p style=color:MediumSeaGreen;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>
           <p style=color:DodgerBlue;>Welcome to LightDiffusionFlow!  \(^o^)/~</p>'''))
 
       with gr.Row():
-        export_config = gr.Button(value='Export',elem_id=cur_mode+'_ldf_export')
+        export_config = gr.Button(value='导出/Export',elem_id=cur_mode+'_ldf_export')
         State_Comps["export"].append(export_config)
 
       if(self.is_img2img):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=True)
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='img2img_invisible_refresh_log',visible=False)
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
@@ -882,7 +978,7 @@ class Script(scripts.Script):
           for key in extensions_id_conponents["image"].keys():
             #print(key)
             elem_id = ("img2img_" if self.is_img2img else "txt2img_") + "invisible_" + key
-            invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=True)
+            invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
 
 
 def on_before_reload():

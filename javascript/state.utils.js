@@ -8,6 +8,9 @@ state.utils = {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
     // button.click();
+
+    ext_name = "state-ext-control-net-img2img_2-presets".match(/ext-([a-zA-z0-9\-]+)-txt2img/)
+    console.log(ext_name)
   },
 
   target_is_newer_version: function(cur_version, target_version){
@@ -422,8 +425,10 @@ state.utils = {
 
                 if(successed){
                   state.utils.triggerMouseEvent(li, 'mousedown');
-                  state.core.actions.output_warning(
-                    `The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
+                  // state.core.actions.output_log(
+                  //   `Note: \'<b style="color:Orange;">${value}</b>\' not found. An approximate match \'<b style="color:Orange;">${li.lastChild.wholeText.trim()}</b>\' has been automatically selected as replacement.`
+                  // )
+                  state.core.actions.preset_output_log("alt_option", value, li.lastChild.wholeText.trim())
                   break
                 }
               }
@@ -434,19 +439,22 @@ state.utils = {
               let option_name = store.prefix + id
               if(option_name === "state-setting_sd_model_checkpoint"){
                 // 大模型找不到就只用warning提示，因为不影响运行
-                state.core.actions.output_warning(`The option \'${value}\' was not found!`)
+                // state.core.actions.output_log(`Note: \'<b style="color:Orange;">${value}</b>\' not found.`)
+                state.core.actions.preset_output_log("no_option", "stable diffusion checkpoint", value)
               }
               else{
-                state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
+                //state.core.actions.output_log(`Error: \'<b style="color:Red;">${option_name}</b>\' import failed! The option \'<b style="color:Red;">${value}</b>\' was not found!`)
+                state.core.actions.preset_output_log("no_option", option_name, value)
               }
               if(hash_res != null){
                 let model_name = value
                 let hash_str = hash_res[0]
                 state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
                   if(downloadUrl != undefined){
-                    let warning_str = encodeURIComponent(`click to download \
-                    <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
-                    state.core.actions.output_warning(warning_str)
+                    // let warning_str = encodeURIComponent(`Click to download \
+                    // <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
+                    // state.core.actions.output_warning(warning_str)
+                    state.core.actions.preset_output_log("download_url", model_name, downloadUrl)
                   }
                 });
               }
@@ -529,8 +537,8 @@ state.utils = {
                 }
               });
               if(!successed){
-                state.core.actions.output_error(`\'${store.prefix + id}\' import failed!`)
-                state.core.actions.output_error(`The option \'${value}\' was not found!`)
+                state.core.actions.preset_output_log("no_option", store.prefix + id, value)
+                //state.core.actions.output_log(`Error: \'<b style="color:Red;">${store.prefix + id}</b>\' import failed! The option \'<b style="color:Red;">${value}</b>\' was not found!`)
               }
               setTimeout(selectOption, 100);
             }, 100);
@@ -567,13 +575,6 @@ state.utils = {
     link.href = url;
     link.download = fileName;
 
-    // // 创建一个<input type="file">元素，并设置其webkitdirectory属性为下载路径
-    // var fileInput = document.createElement('input');
-    // fileInput.type = 'file';
-    // fileInput.style.display = 'none';
-    // fileInput.webkitdirectory = path;
-
-    // document.body.appendChild(fileInput);
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);

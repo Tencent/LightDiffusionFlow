@@ -1,13 +1,86 @@
 import json
-import modules.shared as shared
 
 PNGINFO_2_LIGHTDIFFUSIONFLOW = {}
 PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
 Image_Components_Key = {}
 
+class OutputPrompt_English:
+
+  def startimport():
+    return "<hr style='margin-top:10px;margin-bottom:10px'></hr><b style='color:LimeGreen;'>Start parsing settings...</b>"
+
+  def invalid_file():
+    return "<b style='color:Red;'>Please select a valid lightdiffusionflow or image file!</b>"
+
+  def importing_image(image_name):
+    return f"<b style='color:LimeGreen;'>importing image: '{image_name}'.</b>"
+
+  def import_completed():
+    return "<b style='color:LimeGreen;'>import completed!</b>"
+
+  def alternative_option(target_value, new_value):
+    return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found.\
+      An approximate match '<b style='color:Orange;'>{new_value}</b>' has been automatically selected as replacement.'''
+
+  def no_option(option_name, value):
+    return f'''Error: '<b style='color:Red;'>{option_name}</b>' import failed!\
+    The option '<b style='color:Red;'>{value}</b>' was not found!'''
+
+  def missing_extensions(ext_list:[]):
+    error_str = "Error: <b style='color:Red;'>Found missing extensions.</b></p>"
+    for ext in ext_list:
+      error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p> "
+    return error_str
+
+  def click_to_download(file_name, file_url):
+    return f'''<p style="color:Orange;">Click to download \
+    <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>
+    '''
+
+class OutputPrompt_Chinese:
+
+  def startimport():
+    return "<hr style='margin-top:10px;margin-bottom:10px'></hr><b style='color:LimeGreen;'>开始解析设置...</b>"
+
+  def invalid_file():
+    return "<b style='color:Red;'>请选择一个有效的flow文件，或者含png_info数据的图片!</b>"
+
+  def importing_image(image_name):
+    return f"<b style='color:LimeGreen;'>导入图片'{image_name}'...</b>"
+
+  def import_completed():
+    return "<b style='color:LimeGreen;'>导入完成!</b>"
+
+  def alternative_option(target_value, new_value):
+    return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>'.\
+      已使用近似选项'<b style='color:Orange;'>{new_value}</b>'代替.'''
+
+  def no_option(option_name, value):
+    if(option_name == "stable diffusion checkpoint"):
+      return f'''未找到大模型'<b style='color:Orange;'>{value}</b>'!'''
+    return f'''错误: '<b style='color:Red;'>{option_name}</b>'导入失败!\
+    未找到选项'<b style='color:Red;'>{value}</b>'!'''
+
+  def missing_extensions(ext_list:[]):
+    error_str = "错误, <b style='color:Red;'>发现缺失的插件:</b></p>"
+    for ext in ext_list:
+      error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p> "
+    return error_str
+
+  def click_to_download(file_name, file_url):
+    name = file_name
+    if(name == "ControlNet Models"):
+      name = "常用ControlNet模型"
+    return f'''<p style="color:Orange;">点击下载 \
+    <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='https://pan.quark.cn/s/eafa2a9df949'> {name} </a>
+    '''
+
+OutputPrompt = OutputPrompt_English
+
 # 改成函数调用，修改配置之后能及时刷新
 def init():
-  global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW,Image_Components_Key
+  global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW
+  global OutputPrompt,Image_Components_Key
   # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
   #print(parameters_copypaste.paste_fields) 
   PNGINFO_2_LIGHTDIFFUSIONFLOW = {
@@ -46,6 +119,32 @@ def init():
     "preprocessor params": ""
   }
 
+  try:
+    import modules.shared as shared
+    webui_settings = {}
+    with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
+      json_str = f.read()
+      webui_settings = json.loads(json_str)
+      try:
+        if(webui_settings['lightdiffusionflow-language'] == "default"):
+          localization_files = ["zh_CN", "zh-Hans (Stable) [vladmandic]", "zh-Hans (Stable)",
+            "zh-Hans (Testing) [vladmandic]", "zh-Hans (Testing)"]
+          try:
+            # 如果用户使用了中文汉化文件，插件也默认显示中文
+            localization_files.index(webui_settings["localization"])
+            OutputPrompt = OutputPrompt_Chinese
+          except:
+            OutputPrompt = OutputPrompt_English
+        elif(webui_settings['lightdiffusionflow-language'] == "english"):
+          OutputPrompt = OutputPrompt_English
+        else:
+          OutputPrompt = OutputPrompt_Chinese
+      except KeyError:
+        pass
+  except:
+    # 啥都读不到就默认显示英文
+    OutputPrompt = OutputPrompt_English
+
   Image_Components_Key = [
     # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
     "useless_Textbox", 
@@ -78,5 +177,7 @@ def init():
 
   # # Segment Anything images
   # Image_Components_Key.extend(["txt2img_sam_input_image","img2img_sam_input_image"])
+
+
 
 init()

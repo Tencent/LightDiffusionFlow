@@ -142,6 +142,7 @@ state.core = (function () {
   }
 
   let img_elem_keys=[];
+  let ext_list=[];
 
   function get_imgs_elem_key(){
 
@@ -161,10 +162,16 @@ state.core = (function () {
             IMAGES_WITHOUT_PREFIX[key] = key
           });
           
+          fetch('/lightdiffusionflow/local/get_ext_list')
+          .then(response => response.json())
+          .then(data => {
+            ext_list = data.split(",")
+          });
+          
           // 等上面的组件ID同步过来后 再加载其他配置
           fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
             .then(response => response.json())
-            .then(config => {          
+            .then(config => {
               try {
                 store = new state.Store();
                 store.clearAll();
@@ -602,6 +609,13 @@ state.core = (function () {
             }
           }
 
+          for (let key in stored_config){
+            if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
+            {
+              stored_config[key] = "false"
+            }
+          }
+
           var checkTime = function (i) {
             if (i < 10) { i = "0" + i; }
             return i;
@@ -622,6 +636,8 @@ state.core = (function () {
             filename += ".flow";
           }
           if(filename != ".flow"){
+            // const handle = window.showDirectoryPicker();
+            // console.log(handle)
             state.utils.saveFile(filename, stored_config);
           }
 
@@ -632,14 +648,16 @@ state.core = (function () {
     },
 
     handleLightDiffusionFlow: function (fileInput){
-      actions.output_log("Start parsing settings...")
+      actions.preset_output_log("start")
+      //actions.output_log("<hr style='margin-top:10px;margin-bottom:10px'>Start parsing settings...")
       console.log(fileInput)
       let temp_fileInput = undefined
       try{temp_fileInput = fileInput[0]} catch(error){}
       if ( !temp_fileInput ) {temp_fileInput = fileInput}
       if ( !temp_fileInput ) {
         //alert('Please select a JSON file!');
-        actions.output_log("Please select a valid lightdiffusionflow or image file!")
+        actions.preset_output_log("invalid")
+        //actions.output_log("Please select a valid lightdiffusionflow or image file!")
         return;
       }
 
@@ -696,14 +714,42 @@ state.core = (function () {
     },
     importLightDiffusionFlow: function (inputData){
 
+      
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         state.utils.clearImage(getElement(image_id));
       });
       
       let json_obj = {}
       try { json_obj = JSON.parse(inputData) } catch (error) {
-        actions.output_log("Please select a valid lightdiffusionflow or image file!")
+        actions.preset_output_log("invalid")
+        //actions.output_log("Please select a valid lightdiffusionflow or image file!")
         return;
+      }
+
+      // 缺少的插件
+      console.log(ext_list)
+      missing_ext_list = []
+      for (let key in json_obj){
+        ext_name = key.match(/ext-(\S+)-(txt2img|img2img)/)
+        console.log(key)
+        if(ext_name != null){
+          ext_name = ext_name[1]
+          console.log(ext_name)
+          if(ext_list.indexOf(ext_name) === -1){
+            if(missing_ext_list.indexOf(ext_name) === -1){
+              missing_ext_list.push(ext_name)
+            }
+          }
+        }
+      }
+
+      if(missing_ext_list.length > 0){
+        // error_str = "Error: <b style='color:Red;'>Found missing extensions.</b></p>"
+        // for (ext of missing_ext_list){
+        //   error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p>"
+        // }
+        // actions.output_log(error_str)
+        actions.preset_output_log("missing_exts","",missing_ext_list.join(';'))
       }
 
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
@@ -718,10 +764,10 @@ state.core = (function () {
     startImportImage: function (index){
       index = Number(index)
 
-      console.log(`-------startImportImage--'${index}'---------------`)
+      //console.log(`-------startImportImage--'${index}'---------------`)
       if(index+1 < img_elem_keys.length){
         //console.log(`---------${img_elem_keys}---------------`)
-        console.log(`---------'${index}'-----'${img_elem_keys.length}'-----------`)
+        //console.log(`---------'${index}'-----'${img_elem_keys.length}'-----------`)
         switch_tab_dict = {
           "img2img_invisible_img2img_image": "switch_to_img2img()",
           "img2img_invisible_img2img_sketch": "switch_to_sketch()",
@@ -779,7 +825,11 @@ state.core = (function () {
         //   });
         //   break
       }
-
+    },
+    preset_output_log: function (preset, key="", value=""){
+      fetch(`/lightdiffusionflow/local/preset_output_log?preset=${preset}&key=${key}&value=${value}`).then(() => {
+        gradioApp().getElementById("img2img_invisible_refresh_log").click();
+      });
     },
     output_log: function (msg, msg_style=""){
       fetch(`/lightdiffusionflow/local/output_log?msg=${msg}&style=${msg_style}`).then(() => {
@@ -789,7 +839,7 @@ state.core = (function () {
     output_warning: function (msg, msg_style="color:Orange;"){
       actions.output_log(msg,msg_style)
     },
-    output_error: function (msg, msg_style="color:Tomato;"){
+    output_error: function (msg, msg_style="color:Red;"){
       actions.output_log(msg,msg_style)
     },
     get_sd_version: function (){
