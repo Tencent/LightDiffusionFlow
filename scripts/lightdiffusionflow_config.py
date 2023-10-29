@@ -19,17 +19,17 @@ class OutputPrompt_English:
     return "<b style='color:LimeGreen;'>import completed!</b>"
 
   def alternative_option(target_value, new_value):
-    return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found.\
+    return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found,<br>\
       An approximate match '<b style='color:Orange;'>{new_value}</b>' has been automatically selected as replacement.'''
 
   def no_option(option_name, value):
-    return f'''Error: '<b style='color:Red;'>{option_name}</b>' import failed!\
+    return f'''Error: '<b style='color:Red;'>{option_name}</b>' import failed!<br>\
     The option '<b style='color:Red;'>{value}</b>' was not found!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "Error: <b style='color:Red;'>Found missing extensions.</b></p>"
+    error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
     for ext in ext_list:
-      error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p> "
+      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):
@@ -52,19 +52,19 @@ class OutputPrompt_Chinese:
     return "<b style='color:LimeGreen;'>导入完成!</b>"
 
   def alternative_option(target_value, new_value):
-    return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>'.\
+    return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>',<br>\
       已使用近似选项'<b style='color:Orange;'>{new_value}</b>'代替.'''
 
   def no_option(option_name, value):
     if(option_name == "stable diffusion checkpoint"):
       return f'''未找到大模型'<b style='color:Orange;'>{value}</b>'!'''
-    return f'''错误: '<b style='color:Red;'>{option_name}</b>'导入失败!\
+    return f'''错误: '<b style='color:Red;'>{option_name}</b>'导入失败!<br>\
     未找到选项'<b style='color:Red;'>{value}</b>'!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "错误, <b style='color:Red;'>发现缺失的插件:</b></p>"
+    error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
     for ext in ext_list:
-      error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p> "
+      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):

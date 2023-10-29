@@ -48,22 +48,12 @@ File_extension = ".flow"
 
 def test_func():
   global extensions_conponents, extensions_id_conponents
+  global Output_Log
   print("test_func")
-  # res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", "control_v11p_sd15_scribble [d4ba51aafd]")
-  # print(res)
+  print(Output_Log)
+
   #from scripts.processor import preprocessor_filters
   #print(preprocessor_filters)
-
-  cn_model_name = "control_v1p_sd15_qrco1de_monster [5e5778cb]"
-
-  cn_type_list = ['canny','depth','normalmap','openpose','mlsd','lineart_anime','lineart','softedge','scribble',
-    'seg','shuffle','tile','inpaint','ip2p','brightness','illumination','qrcode_monster','qrcode','normalbae']
-
-  type_pattern = "("+"|".join(cn_type_list)+")"
-  print(type_pattern)
-  res = re.search(type_pattern,cn_model_name)
-  if(res != None):
-    print(res.group())
 
   #print(extensions_id_conponents["dropdown"]["state-ext-control-net-txt2img_0-model"].get_config())
 
@@ -150,16 +140,6 @@ def cn_get_model_type(cn_model_name):
   if(res != None):
     return res.group()
 
-  # #cn_model_name = "control_v1p_sd15_qrcode_monster [5e5778cb]"
-  # res = re.search(r"(\[[0-9A-Fa-f]{8,10}\])", cn_model_name)
-  # if(res != None):
-  #   cn_model_hash_val = res.group(1)
-  #   cn_model_no_hash = cn_model_name.replace(cn_model_hash_val,"").rstrip().lower()
-  # else:
-  #   cn_model_no_hash = cn_model_name.rstrip().lower()
-  # model_type = cn_model_no_hash.split("_")[-1]
-  # print(model_type)
-  # return model_type
   return None
 
 def set_dropdowns():
@@ -508,6 +488,9 @@ def fn_import_workflow(workflow_file):
   # return tuple(return_vals)
   return str(temp_index)#, Output_Log, Output_Log
 
+class config_params(BaseModel):
+  config_data:dict
+
 class imgs_callback_params(BaseModel):
   id:str
   img:str
@@ -529,7 +512,7 @@ class StateApi():
     return self.app.add_api_route(self.get_path(path), endpoint, **kwargs)
 
   def start(self, _: gr.Blocks, app: FastAPI):
-    print("-----------------state_api start------------------")
+    print("----------------- light_diffusion_flow api start------------------")
 
     self.app = app 
     # 读取本地的config.json
@@ -542,6 +525,7 @@ class StateApi():
     self.add_api_route('/local/get_ext_list', self.get_ext_list, methods=['GET']) 
     # 用户设置了新图片 触发回调保存到 workflow_json
     self.add_api_route('/local/imgs_callback', self.imgs_callback, methods=['POST']) 
+    self.add_api_route('/local/useless_config_filter', self.useless_config_filter, methods=['POST'])
     # 刷新页面之后触发
     self.add_api_route('/local/refresh_ui', self.refresh_ui, methods=['GET']) 
     self.add_api_route('/local/output_log', add_output_log, methods=['GET']) 
@@ -564,6 +548,20 @@ class StateApi():
     except:
       pass
     return ext_str
+
+  def useless_config_filter(self, config:config_params):
+    global extensions_id_conponents
+    new_config = config.config_data
+    for comp_type in extensions_id_conponents.keys():
+      for comp_id in extensions_id_conponents[comp_type].keys():
+        try:
+          # 筛掉python相关组件的默认值选项
+          default_val = extensions_id_conponents[comp_type][comp_id].get_config()["value"]
+          if(default_val == new_config[comp_id]):
+            del new_config[comp_id]
+        except KeyError as e:
+          pass
+    return new_config
 
   def get_lightdiffusionflow_config(self, onlyimg:bool = False):
     global workflow_json, extensions_id_conponents, extensions_id_conponents_value
@@ -963,7 +961,7 @@ class Script(scripts.Script):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=True)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='img2img_invisible_refresh_log',visible=False)
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)

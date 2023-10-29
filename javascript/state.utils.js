@@ -8,9 +8,6 @@ state.utils = {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
     // button.click();
-
-    ext_name = "state-ext-control-net-img2img_2-presets".match(/ext-([a-zA-z0-9\-]+)-txt2img/)
-    console.log(ext_name)
   },
 
   target_is_newer_version: function(cur_version, target_version){

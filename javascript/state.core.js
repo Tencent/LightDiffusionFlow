@@ -714,7 +714,6 @@ state.core = (function () {
     },
     importLightDiffusionFlow: function (inputData){
 
-      
       forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
         state.utils.clearImage(getElement(image_id));
       });
@@ -726,39 +725,47 @@ state.core = (function () {
         return;
       }
 
-      // 缺少的插件
-      console.log(ext_list)
-      missing_ext_list = []
-      for (let key in json_obj){
-        ext_name = key.match(/ext-(\S+)-(txt2img|img2img)/)
-        console.log(key)
-        if(ext_name != null){
-          ext_name = ext_name[1]
-          console.log(ext_name)
-          if(ext_list.indexOf(ext_name) === -1){
-            if(missing_ext_list.indexOf(ext_name) === -1){
-              missing_ext_list.push(ext_name)
+      // 筛选掉默认值参数
+      let data = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          "config_data":json_obj
+        })
+      }
+      fetch(`/lightdiffusionflow/local/useless_config_filter`, data)
+      .then(response => response.json())
+      .then(data => {
+        json_obj = data
+        console.log(ext_list)
+        // 缺少的插件
+        missing_ext_list = []
+        for (let key in json_obj){
+          ext_name = key.match(/ext-(\S+)-(txt2img|img2img)/)
+          console.log(key)
+          if(ext_name != null){
+            ext_name = ext_name[1]
+            console.log(ext_name)
+            if(ext_list.indexOf(ext_name) === -1){
+              if(missing_ext_list.indexOf(ext_name) === -1){
+                missing_ext_list.push(ext_name)
+              }
             }
           }
         }
-      }
 
-      if(missing_ext_list.length > 0){
-        // error_str = "Error: <b style='color:Red;'>Found missing extensions.</b></p>"
-        // for (ext of missing_ext_list){
-        //   error_str+="<p>- <b style='color:Red;'>"+ext+"</b></p>"
-        // }
-        // actions.output_log(error_str)
-        actions.preset_output_log("missing_exts","",missing_ext_list.join(';'))
-      }
+        if(missing_ext_list.length > 0){
+          actions.preset_output_log("missing_exts","",missing_ext_list.join(';'))
+        }
 
-      forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
-        json_obj[image_id] = ""
+        forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (image_id) => {
+          json_obj[image_id] = ""
+        });
+        // webui主界面 没有localization相关的兼容问题 所以不用管
+        store.clear();
+        store.load(json_obj);
+        actions.applyState();
       });
-      // webui主界面 没有localization相关的兼容问题 所以不用管
-      store.clear();
-      store.load(json_obj);
-      actions.applyState();
       return;
     },
     startImportImage: function (index){
