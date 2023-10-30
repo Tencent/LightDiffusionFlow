@@ -30,6 +30,7 @@ class OutputPrompt_English:
     error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
     for ext in ext_list:
       error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+    error_str+="<b style='color:Orange;'>The above Extension Missing Reminder is for reference only. Please determine the necessary plugins based on your actual needs and specific conditions.</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):
@@ -58,13 +59,15 @@ class OutputPrompt_Chinese:
   def no_option(option_name, value):
     if(option_name == "stable diffusion checkpoint"):
       return f'''未找到大模型'<b style='color:Orange;'>{value}</b>'!'''
-    return f'''错误: '<b style='color:Red;'>{option_name}</b>'导入失败!<br>\
+    clear_option_name = option_name.replace("state-ext-","")
+    return f'''错误: '<b style='color:Red;'>{clear_option_name}</b>'导入失败!<br>\
     未找到选项'<b style='color:Red;'>{value}</b>'!'''
 
   def missing_extensions(ext_list:[]):
     error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
     for ext in ext_list:
       error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+    error_str+="<b style='color:Orange;'>以上插件缺失提示仅供参考，请注意辨别实际情况下您所需要安装的插件。</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):
@@ -125,25 +128,45 @@ def init():
     with open(shared.cmd_opts.ui_settings_file, mode='r') as f:
       json_str = f.read()
       webui_settings = json.loads(json_str)
+
+      successed = False
+      auto_language = False
       try:
+        # 优先读取自己的设置
         if(webui_settings['lightdiffusionflow-language'] == "default"):
-          localization_files = ["zh_CN", "zh-Hans (Stable) [vladmandic]", "zh-Hans (Stable)",
-            "zh-Hans (Testing) [vladmandic]", "zh-Hans (Testing)"]
-          try:
-            # 如果用户使用了中文汉化文件，插件也默认显示中文
-            localization_files.index(webui_settings["localization"])
-            OutputPrompt = OutputPrompt_Chinese
-          except:
-            OutputPrompt = OutputPrompt_English
+          auto_language = True
         elif(webui_settings['lightdiffusionflow-language'] == "english"):
           OutputPrompt = OutputPrompt_English
+          successed = True
         else:
           OutputPrompt = OutputPrompt_Chinese
-      except KeyError:
-        pass
+          successed = True
+      except:
+        OutputPrompt = OutputPrompt_English
+      
+      # 如果是default就读取其他设置配合
+      if(auto_language and not successed):
+        # 自带的本地化文件
+        localization_files = ["zh_CN", "zh-Hans (Stable) [vladmandic]", "zh-Hans (Stable)",
+          "zh-Hans (Testing) [vladmandic]", "zh-Hans (Testing)","chinese-all-1024","chinese-english-1024"]
+        try:
+          # 如果用户使用了中文汉化文件，插件也默认显示中文
+          localization_files.index(webui_settings["localization"])
+          OutputPrompt = OutputPrompt_Chinese
+          successed = True
+        except:
+          pass
+        
+        # 第三方翻译插件bilingual-localization
+        if(not successed):
+          try:
+            if(webui_settings["bilingual_localization_enabled"] and webui_settings["bilingual_localization_file"] != "None"):
+              OutputPrompt = OutputPrompt_Chinese
+              successed = True
+          except:
+            OutputPrompt = OutputPrompt_English
   except:
-    # 啥都读不到就默认显示英文
-    OutputPrompt = OutputPrompt_English
+    pass
 
   Image_Components_Key = [
     # 第一个组件是用来预计算第一张有效图的索引 防止出现有没用的页面跳转
