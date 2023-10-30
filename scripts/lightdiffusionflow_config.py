@@ -74,8 +74,12 @@ class OutputPrompt_Chinese:
     name = file_name
     if(name == "ControlNet Models"):
       name = "常用ControlNet模型"
+      return f'''<p style="color:Orange;">点击下载 \
+      <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='https://pan.quark.cn/s/eafa2a9df949'> 常用ControlNet模型 </a>
+      '''
+
     return f'''<p style="color:Orange;">点击下载 \
-    <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='https://pan.quark.cn/s/eafa2a9df949'> {name} </a>
+    <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {name} </a>
     '''
 
 OutputPrompt = OutputPrompt_English
