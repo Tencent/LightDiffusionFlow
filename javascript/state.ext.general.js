@@ -365,8 +365,11 @@ function general_ext(tab_name, extension_name, root_container) {
       return;
     }
 
-    let tabs = container.querySelectorAll('.tabitem');
-    //console.log(tabs)
+    let tabnav = container.getElementsByClassName('tabs');
+    let tabs = []
+    if(tabnav.length > 0 ){
+      tabs = Array.from(tabnav[0].childNodes).filter(item => item.className && item.className.indexOf("tabitem") !== -1)
+    }
     
     cnTabs = [];
     if (tabs.length) {

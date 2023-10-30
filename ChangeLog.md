@@ -1,3 +1,24 @@
+## 2.1.2
+
+### Features:
+ * UI组件增加elem_id。
+ * flow文件导出时，支持自定义名称。
+ * ControlNet模型支持模糊匹配。
+ * 如本地没有ControlNet模型，会提供下载链接。
+ * 缺失插件提示。
+ * 插件增加中英文切换。
+
+### Bug Fixes:
+ * 图片组件保存功能优化，支持所有带elem_id的图片组件。  
+ 因为gradio组件bug影响，目前暂时不支持不带elem_id的组件保存功能。  
+ 目前新版本似乎已经修复，但秋叶启动器的gradio版本似乎还是旧版？待跟进。
+ issue链接: https://github.com/gradio-app/gradio/issues/5548
+ * refiner参数保存bug修复。
+ * 插件含tab的组件保存编号错误bug修复。
+ * 插件导入提示优化。
+ * 参数保存逻辑优化。
+ * 之前版本会保存多余参数，当前版本已修改，但注意缺失插件的提示，不一定是真的需要。
+
 ## 2.1.1
 
 ### Bug Fixes:

@@ -211,6 +211,21 @@ state.utils = {
     }
   },
 
+  onAccordionChange: function onAccordionChange(targetNode, func) {
+    if(targetNode) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' ) {
+            func(targetNode);
+          }
+        }
+      });
+      observer.observe(targetNode, {
+        attributes: true,
+      });
+    }
+  },
+
   getCurSeed: function getCurSeed(tab) {
     const elements = gradioApp().getElementById(`html_info_${tab}`).querySelectorAll(`#html_info_${tab}`);
     if (! elements || ! elements.length || !elements[0].innerText) {
@@ -252,7 +267,7 @@ state.utils = {
         } catch (error) {
           console.warn('[state]: Error:', error);
         }
-        
+        console.log(`image changed ${id}`)
         fetch(`/lightdiffusionflow/local/imgs_callback`, data)
       });
     }, 150);
@@ -333,20 +348,20 @@ state.utils = {
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
       if (value) {
         //for(child of children){
-        let span = child.querySelector('.transition, .icon');
-        if(span.style.transform !== 'rotate(90deg)'){
-        //if(child.className.split(' ').pop() != "open"){
+        //let span = child.querySelector('.transition, .icon');
+        //if(span.style.transform !== 'rotate(90deg)'){
+        if(child.className.split(' ').pop() != "open"){
           state.utils.triggerMouseEvent(child, 'click')
         }
         //}
       }
 
       setTimeout(() => {
-        state.utils.onContentChange(child, function (el) {
-          //store.set(id, el.className.split(' ').pop() == "open");
+        state.utils.onAccordionChange(child, function (el) {
+          store.set(id, el.className.split(' ').pop() == "open");
           //console.log(`accordion on change ${id}`)
-          let span = el.querySelector('.transition, .icon');
-          store.set(id, span.style.transform !== 'rotate(90deg)');
+          //let span = el.querySelector('.transition, .icon');
+          //store.set(id, span.style.transform !== 'rotate(90deg)');
         });
       }, 150);
 
@@ -407,8 +422,10 @@ state.utils = {
 
                 if(successed){
                   state.utils.triggerMouseEvent(li, 'mousedown');
-                  state.core.actions.output_warning(
-                    `The option '${value}' was not found, and has been replaced with '${li.lastChild.wholeText.trim()}'!`)
+                  // state.core.actions.output_log(
+                  //   `Note: \'<b style="color:Orange;">${value}</b>\' not found. An approximate match \'<b style="color:Orange;">${li.lastChild.wholeText.trim()}</b>\' has been automatically selected as replacement.`
+                  // )
+                  state.core.actions.preset_output_log("alt_option", value, li.lastChild.wholeText.trim())
                   break
                 }
               }
@@ -419,19 +436,22 @@ state.utils = {
               let option_name = store.prefix + id
               if(option_name === "state-setting_sd_model_checkpoint"){
                 // 大模型找不到就只用warning提示，因为不影响运行
-                state.core.actions.output_warning(`The option \'${value}\' was not found!`)
+                // state.core.actions.output_log(`Note: \'<b style="color:Orange;">${value}</b>\' not found.`)
+                state.core.actions.preset_output_log("no_option", "stable diffusion checkpoint", value)
               }
               else{
-                state.core.actions.output_error(`\'${option_name}\' import failed! The option \'${value}\' was not found!`)
+                //state.core.actions.output_log(`Error: \'<b style="color:Red;">${option_name}</b>\' import failed! The option \'<b style="color:Red;">${value}</b>\' was not found!`)
+                state.core.actions.preset_output_log("no_option", option_name, value)
               }
               if(hash_res != null){
                 let model_name = value
                 let hash_str = hash_res[0]
                 state.utils.searchCheckPointByHash(hash_str).then( downloadUrl => {
                   if(downloadUrl != undefined){
-                    let warning_str = encodeURIComponent(`click to download \
-                    <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
-                    state.core.actions.output_warning(warning_str)
+                    // let warning_str = encodeURIComponent(`Click to download \
+                    // <a style ='text-decoration:underline;color:cornflowerblue;', href='${downloadUrl}'> ${model_name} </a>`)
+                    // state.core.actions.output_warning(warning_str)
+                    state.core.actions.preset_output_log("download_url", model_name, downloadUrl)
                   }
                 });
               }
@@ -514,8 +534,8 @@ state.utils = {
                 }
               });
               if(!successed){
-                state.core.actions.output_error(`\'${store.prefix + id}\' import failed!`)
-                state.core.actions.output_error(`The option \'${value}\' was not found!`)
+                state.core.actions.preset_output_log("no_option", store.prefix + id, value)
+                //state.core.actions.output_log(`Error: \'<b style="color:Red;">${store.prefix + id}</b>\' import failed! The option \'<b style="color:Red;">${value}</b>\' was not found!`)
               }
               setTimeout(selectOption, 100);
             }, 100);
@@ -551,6 +571,7 @@ state.utils = {
     const link = document.createElement('a');
     link.href = url;
     link.download = fileName;
+
     document.body.appendChild(link);
     link.click();
     link.parentNode.removeChild(link);
