@@ -741,7 +741,7 @@ state.core = (function () {
         // 缺少的插件
         missing_ext_list = []
         for (let key in json_obj){
-          ext_name = key.match(/ext-(\S+)-(txt2img|img2img)/)
+          ext_name = key.match(/ext-(\S+?)-(txt2img|img2img)/)
           console.log(key)
           if(ext_name != null){
             ext_name = ext_name[1]
