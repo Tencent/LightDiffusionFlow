@@ -1,7 +1,7 @@
 import gradio as gr
 import modules.shared as shared
 from modules import scripts
-
+from scripts.lightdiffusionflow_config import OutputPrompt
 
 def on_ui_settings():
 
@@ -18,5 +18,16 @@ def on_ui_settings():
         "choices": ["default","中文","english"]
       }, section=section)
   )
+
+  shared.opts.add_option("lightdiffusionflow-mode",
+    shared.OptionInfo(
+      "Core",
+      f"模式/mode: ({OutputPrompt.note_for_save_mode()})",
+      gr.Dropdown, 
+      lambda: {
+        "choices": ["Core","All"]
+      }, section=section)
+  )
+
 
 scripts.script_callbacks.on_ui_settings(on_ui_settings)

@@ -1,6 +1,17 @@
 ## 2.1.2
 
 ### Features:
+ * 缺失LoRA模型提示。
+ * 插件增加Core和ALL两种运行模式，Core模式仅支持WebUI的基本参数+ControlNet参数。All模式则会尽可能多的支持页面上的参数，但是缺点是有概率导致UI卡住，无限转圈。
+
+### Bug Fixes:
+ * 修复了一些已知的问题。
+ * 修复了一些img2img模式丢失的参数。
+
+
+## 2.1.2
+
+### Features:
  * UI组件增加elem_id。
  * flow文件导出时，支持自定义名称。
  * ControlNet模型支持模糊匹配。

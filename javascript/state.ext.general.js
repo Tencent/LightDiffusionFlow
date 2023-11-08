@@ -411,7 +411,7 @@ function general_ext_main(tab){
     return res
   }
 
-  function init() {
+  function init(core_mode = true) {
     console.log(`------------${cur_tab_name}----init-------`)
 
     let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
@@ -446,6 +446,9 @@ function general_ext_main(tab){
       if(reg.test(title)){title = RegExp.$1} // 匹配 xxx v0.0.0 格式的标题，把后半部分的版本号去掉
 
       if(title == "ControlNet"){title = "Control Net"} // 兼容旧命名
+      else{
+        if(core_mode){continue}
+      }
       
       let ext_name = title.replace(" ","-").toLowerCase()
       console.log(ext_name)

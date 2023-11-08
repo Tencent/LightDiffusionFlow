@@ -8,6 +8,42 @@ state.utils = {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
     // button.click();
+    json_obj = {
+      "state-ext-control-net-txt2img_0-enable": "true",
+      "state-ext-control-net-txt2img_0-canny-high-threshold": "255",
+      "state-ext-control-net-txt2img_3-enable": "true",
+      "state-ext-control-net-txt2img_0-starting-control-step": "1",
+      "state-ext-control-net-txt2img_0-canny-low-threshold": "255",
+      "state-ext-control-net-txt2img_0-control-weight": "2",
+      "state-ext-control-net-txt2img_3-control-type": "OpenPose",
+      "state-ext-control-net-txt2img_0-control-mode": "ControlNet is more important",
+      "state-ext-control-net-txt2img_0-control-type": "Canny",
+      "state-setting_sd_model_checkpoint": "majicmixRealistic_betterV2V25.safetensors [d7e2ac2f4a]",
+      "state-ext-control-net-txt2img_0-preprocessor-resolution": "2048",
+      "state-ext-control-net-txt2img-tab": "ControlNet Unit 3 ",
+      "state-ext-control-net-txt2img_1-enable": "false",
+      "state-tab": "txt2img ",
+      "state-ext-control-net-txt2img-toggled": "true",
+      "txt2img_controlnet_ControlNet-1_input_image": "data:image",
+      "state-ext-control-net-txt2img_0-preprocessor": "canny",
+      "state-ext-control-net-txt2img_0-model": "control_v11p_sd15_canny [d14c016b]",
+      "state-ext-control-net-txt2img_3-preprocessor": "openpose_full",
+      "state-ext-control-net-txt2img_3-model": "control_v11p_sd15_openpose [cab727d4]"
+  }
+
+  console.log(json_obj["state-ext-control-net-txt2img_0-enable"])
+  console.log(json_obj["state-ext-control-net-txt2img_0-enabl1e"])
+
+  },
+
+  fix_old_json_error: function fix_old_json_error(json_obj){
+    
+    cn_index = 1
+    for (let cn_index=1; cn_index < 10; cn_index++){
+      
+    }
+
+    return json_obj
   },
 
   target_is_newer_version: function(cur_version, target_version){
