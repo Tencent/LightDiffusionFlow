@@ -182,7 +182,12 @@ state.utils = {
         if (element.value === value) {
           element.checked = true;
           this.triggerEvent(element, event);
-        } else {
+        }
+        else if(element.value == "Scribble/Sketch" && value == "Scribble"){
+          element.checked = true;
+          this.triggerEvent(element, event);
+        } 
+        else {
           element.checked = false;
         }
         break;

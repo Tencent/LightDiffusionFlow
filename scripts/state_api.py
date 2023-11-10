@@ -513,19 +513,17 @@ def config_filter(config):
         pass
 
   # 处理旧版插件保存的错误参数问题
-  #print("-------处理错误-------")
-  #print(new_config)
-  print("-------处理错误-------")
+  print("-------错误参数纠正-------")
   found_tabs = []
   fixed_config = {}
   for param in new_config.keys():
-    res = re.match("state-ext-control-net-txt2img_([0-9]+)-(.+)",param)
+    res = re.match("state-ext-control-net-(txt2img|img2img)_([0-9]+)-(.+)",param)
     if(res != None):
-      if(res.group(2) not in ["presets","preprocessor","model"]):
+      if(res.group(3) not in ["presets","preprocessor","model"]):
         try:
-          found_tabs.index(res.group(1))
+          found_tabs.index(res.group(2))
         except ValueError:
-          found_tabs.append(res.group(1))
+          found_tabs.append(res.group(2))
 
   for param in new_config.keys():
 
@@ -536,20 +534,27 @@ def config_filter(config):
         target_word = str(res.group()).replace(res.group(1),key)
         new_param = re.sub("[-_](model|models|checkpoint|checkpoints)($|[_-])", target_word, param)
         fixed_config[new_param] = new_config[param]
-
+    
     # 纠正编号
-    res = re.match("state-ext-control-net-txt2img_([0-9]+)-(.+)",param)
+    res = re.match("state-ext-control-net-(txt2img|img2img)_([0-9]+)-(.+)",param)
     if(res != None):
-      if(res.group(1) != "0" and res.group(2) not in ["presets","preprocessor","model"]):
-        tab_num = int(res.group(1))
-        if(tab_num%3 == 0):
-          try:
-            found_tabs.index(str(tab_num/3))
-            # 如果是9 如果发现3的位置有参数，就还需要检查一下1
-            if(tab_num == 9):
-              found_tabs.index("1")
-          except ValueError:
-            new_key = f"state-ext-control-net-txt2img_{int(tab_num/3)}-{res.group(2)}"
+      tab_num = int(res.group(2))
+      if(res.group(2) != "0" and tab_num%3 == 0 ):
+        try:
+          found_tabs.index(str(tab_num/3))
+          # 如果是9 如果发现3的位置有参数，就还需要检查一下1
+          if(tab_num == 9):
+            found_tabs.index("1")
+        except ValueError:
+          new_key = f"state-ext-control-net-{res.group(1)}_{int(tab_num/3)}-{res.group(3)}"
+          # 这三个选项，旧版是js控制会有序号问题，新版本py控制没有序号问题，所以这里判断纠正之后的位置有没有值，有的话就不动。
+          if(res.group(3) in ["presets","preprocessor","model"]):
+              #print(param)
+              if(new_config.get(new_key,None) == None):
+                fixed_config[new_key] = new_config[param]
+                print(f" {param} 改为 {new_key}")
+                continue
+          else:
             fixed_config[new_key] = new_config[param]
             print(f" {param} 改为 {new_key}")
             continue
@@ -557,9 +562,8 @@ def config_filter(config):
     # 其余参数照搬
     fixed_config[param] = new_config[param]
 
-  #print("-------处理错误-------")
   #print(fixed_config)
-  print("-------处理错误-------")
+  #print("-------处理错误-------")
 
   new_config = fixed_config
   return new_config
