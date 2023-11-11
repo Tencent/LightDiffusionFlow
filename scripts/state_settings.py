@@ -1,7 +1,7 @@
 import gradio as gr
 import modules.shared as shared
 from modules import scripts
-
+from scripts.lightdiffusionflow_config import OutputPrompt
 
 def on_ui_settings():
 
@@ -17,6 +17,25 @@ def on_ui_settings():
       lambda: {
         "choices": ["default","中文","english"]
       }, section=section)
+  )
+
+  shared.opts.add_option("lightdiffusionflow-mode",
+    shared.OptionInfo(
+      "All",
+      f"模式/mode: ({OutputPrompt.note_for_save_mode()})",
+      gr.Dropdown, 
+      lambda: {
+        "choices": ["Core","All"]
+      }, section=section)
+  )
+
+  shared.opts.add_option("lightdiffusionflow-auto-fix-params",
+    shared.OptionInfo(
+      True,
+      f"自动纠正错误的参数/Automatically fix incorrect parameters",
+      gr.Checkbox, 
+      {"interactive": True}, 
+      section=section)
   )
 
 scripts.script_callbacks.on_ui_settings(on_ui_settings)

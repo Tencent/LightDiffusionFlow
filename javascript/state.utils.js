@@ -7,7 +7,7 @@ state.utils = {
   testFunction: function testFunction() {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
-    // button.click();
+    // button.click();    
   },
 
   target_is_newer_version: function(cur_version, target_version){
@@ -182,7 +182,12 @@ state.utils = {
         if (element.value === value) {
           element.checked = true;
           this.triggerEvent(element, event);
-        } else {
+        }
+        else if(element.value == "Scribble/Sketch" && value == "Scribble"){
+          element.checked = true;
+          this.triggerEvent(element, event);
+        } 
+        else {
           element.checked = false;
         }
         break;

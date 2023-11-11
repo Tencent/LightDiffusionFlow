@@ -3,6 +3,9 @@ import json
 PNGINFO_2_LIGHTDIFFUSIONFLOW = {}
 PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
 Image_Components_Key = {}
+LoRAs_In_Use = "loras_in_use"
+Flow_Save_mode = "All"
+Auto_Fix_Params = True
 
 class OutputPrompt_English:
 
@@ -27,16 +30,33 @@ class OutputPrompt_English:
     The option '<b style='color:Red;'>{value}</b>' was not found!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
-    for ext in ext_list:
-      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
-    error_str+="<b style='color:Orange;'>The above Extension Missing Reminder is for reference only. Please determine the necessary plugins based on your actual needs and specific conditions.</b></p> "
+    if(Flow_Save_mode == "Core"):
+      error_str = "Note:  <b style='color:Orange;'>The current flow file contains parameters for other plugins:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>You can switch to 'ALL' mode to load more parameters. (This prompt is for reference only, please choose the plugin mode according to the actual situation.)</b></p> "
+    else:
+      error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>The above Extension Missing Reminder is for reference only. Please determine the necessary plugins based on your actual needs and specific conditions.</b></p> "
+    return error_str
+
+  def missing_loras(loras_list:[]):
+    error_str = "Note: <b style='color:Orange;'>Found missing LoRAs.</b></p>"
+    for lora in loras_list:
+      error_str+="<p>- <b style='color:Orange;'>"+lora+"</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):
     return f'''<p style="color:Orange;">Click to download \
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>
     '''
+
+  def note_for_save_mode():
+    return "Core mode only supports basic parameters for Text-to-Image and Image-to-Image, along with ControlNet parameters. \
+The All mode, on the other hand, aims to support as many parameters as possible on the page, \
+but the downside is that it may occasionally cause the UI to freeze with an infinite loading circle."
 
 class OutputPrompt_Chinese:
 
@@ -64,10 +84,23 @@ class OutputPrompt_Chinese:
     未找到选项'<b style='color:Red;'>{value}</b>'!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
-    for ext in ext_list:
-      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
-    error_str+="<b style='color:Orange;'>以上插件缺失提示仅供参考，请注意辨别实际情况下您所需要安装的插件。</b></p> "
+    global Flow_Save_mode
+    if(Flow_Save_mode == "Core"):
+      error_str = "注意, <b style='color:Orange;'>当前flow文件含有其他插件参数:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>可切换至'ALL'模式加载更多参数。（提示仅供参考，请根据实际情况选择插件模式。）</b></p> "
+    else:
+      error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>以上插件缺失提示仅供参考，请注意辨别实际情况下您所需要安装的插件。</b></p> "
+    return error_str
+
+  def missing_loras(loras_list:[]):
+    error_str = "注意, <b style='color:Orange;'>发现缺失的LoRA模型:</b></p>"
+    for lora in loras_list:
+      error_str+="<p>- <b style='color:Orange;'>"+lora+"</b></p> "
     return error_str
 
   def click_to_download(file_name, file_url):
@@ -82,12 +115,16 @@ class OutputPrompt_Chinese:
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {name} </a>
     '''
 
+  def note_for_save_mode():
+    return "Core模式仅支持文生图和图生图的基本参数+ControlNet参数。All模式则会尽可能多的支持页面上的参数，但是缺点是有概率导致UI卡住，无限转圈。"
+
+
 OutputPrompt = OutputPrompt_English
 
 # 改成函数调用，修改配置之后能及时刷新
 def init():
   global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW
-  global OutputPrompt,Image_Components_Key
+  global OutputPrompt,Flow_Save_mode,Auto_Fix_Params,Image_Components_Key
   # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
   #print(parameters_copypaste.paste_fields) 
   PNGINFO_2_LIGHTDIFFUSIONFLOW = {
@@ -133,7 +170,19 @@ def init():
       json_str = f.read()
       webui_settings = json.loads(json_str)
 
-      successed = False
+      # 保存模式
+      try:
+        Flow_Save_mode = webui_settings["lightdiffusionflow-mode"]
+      except:
+        Flow_Save_mode = "Core"
+
+      # 自动纠正错误的参数
+      try:
+        Auto_Fix_Params = webui_settings["lightdiffusionflow-auto-fix-params"]
+      except:
+        Auto_Fix_Params = True
+
+      language_successed = False
       auto_language = False
       try:
         # 优先读取自己的设置
@@ -141,15 +190,15 @@ def init():
           auto_language = True
         elif(webui_settings['lightdiffusionflow-language'] == "english"):
           OutputPrompt = OutputPrompt_English
-          successed = True
+          language_successed = True
         else:
           OutputPrompt = OutputPrompt_Chinese
-          successed = True
+          language_successed = True
       except:
         OutputPrompt = OutputPrompt_English
       
       # 如果是default就读取其他设置配合
-      if(auto_language and not successed):
+      if(auto_language and not language_successed):
         # 自带的本地化文件
         localization_files = ["zh_CN", "zh-Hans (Stable) [vladmandic]", "zh-Hans (Stable)",
           "zh-Hans (Testing) [vladmandic]", "zh-Hans (Testing)","chinese-all-1024","chinese-english-1024"]
@@ -157,16 +206,16 @@ def init():
           # 如果用户使用了中文汉化文件，插件也默认显示中文
           localization_files.index(webui_settings["localization"])
           OutputPrompt = OutputPrompt_Chinese
-          successed = True
+          language_successed = True
         except:
           pass
         
         # 第三方翻译插件bilingual-localization
-        if(not successed):
+        if(not language_successed):
           try:
             if(webui_settings["bilingual_localization_enabled"] and webui_settings["bilingual_localization_file"] != "None"):
               OutputPrompt = OutputPrompt_Chinese
-              successed = True
+              language_successed = True
           except:
             OutputPrompt = OutputPrompt_English
   except:

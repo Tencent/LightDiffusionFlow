@@ -39,7 +39,13 @@ state.core = (function () {
     'resize_mode': 'resize_mode',
     'setting_inpainting_mask_weight': 'setting_inpainting_mask_weight',
     'setting_CLIP_stop_at_last_layers': 'setting_CLIP_stop_at_last_layers',
-    'setting_eta_noise_seed_delta': 'setting_eta_noise_seed_delta'
+    'setting_eta_noise_seed_delta': 'setting_eta_noise_seed_delta',
+    'img2img_mask_blur': 'img2img_mask_blur',
+    'img2img_mask_mode': 'img2img_mask_mode',
+    'img2img_inpainting_fill': 'img2img_inpainting_fill',
+    'img2img_inpaint_full_res_padding': 'img2img_inpaint_full_res_padding',
+    'img2img_inpaint_full_res': 'img2img_inpaint_full_res',
+    'img2img_mask_alpha': 'img2img_mask_alpha'
     //'generation_info_txt2img': 'generation_info_txt2img' // 可能因为是visible=false 所以触发不了onchange事件？
   };
 
@@ -143,6 +149,7 @@ state.core = (function () {
 
   let img_elem_keys=[];
   let ext_list=[];
+  let flow_save_mode = "Core"
 
   function get_imgs_elem_key(){
 
@@ -173,6 +180,13 @@ state.core = (function () {
             .then(response => response.json())
             .then(config => {
               try {
+                
+                try{
+                  flow_save_mode = config['lightdiffusionflow-mode']
+                }catch (error) {
+                  flow_save_mode = "Core"
+                }
+
                 store = new state.Store();
                 store.clearAll();
                 load(config);
@@ -469,7 +483,7 @@ state.core = (function () {
     // }
 
     for (const [name, obj] of Object.entries(state.extensions)) {
-      obj.init();
+      obj.init(flow_save_mode == "Core");
     }
 
   }
@@ -546,6 +560,12 @@ state.core = (function () {
         .then(config => {
           try {
             config.hasSetting = hasSetting
+            
+            try{
+              flow_save_mode = config['lightdiffusionflow-mode']
+            }catch (error) {
+              flow_save_mode = "Core"
+            }
             //console.log(config)
             //restoreTabs(config); // 恢复到最后点击的tab页面
             load(config);
@@ -612,6 +632,7 @@ state.core = (function () {
           for (let key in stored_config){
             if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
             {
+              console.log("allow-preview改成false")
               stored_config[key] = "false"
             }
           }
@@ -741,7 +762,7 @@ state.core = (function () {
         // 缺少的插件
         missing_ext_list = []
         for (let key in json_obj){
-          ext_name = key.match(/ext-(\S+)-(txt2img|img2img)/)
+          ext_name = key.match(/ext-(\S+?)-(txt2img|img2img)/)
           console.log(key)
           if(ext_name != null){
             ext_name = ext_name[1]

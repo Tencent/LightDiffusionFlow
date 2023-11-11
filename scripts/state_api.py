@@ -22,7 +22,7 @@ from modules.sd_models import checkpoints_list
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
-from scripts.lightdiffusionflow_config import OutputPrompt
+from scripts.lightdiffusionflow_config import OutputPrompt, Flow_Save_mode, Auto_Fix_Params, LoRAs_In_Use
 import scripts.lightdiffusionflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
@@ -50,9 +50,21 @@ def test_func():
   global extensions_conponents, extensions_id_conponents
   global Output_Log
   print("test_func")
-  print(Output_Log)
-
-  #from scripts.processor import preprocessor_filters
+  import networks
+  print("----------------------------")
+  available_loras = []
+  for network in networks.available_networks.keys():
+    print(networks.available_networks[network].name)
+    print(networks.available_networks[network].alias)
+    print(networks.available_networks[network].hash)
+    print(networks.available_networks[network].shorthash)
+  print("----------------------------")
+  SearchingCheckPointByHashFromCivitai("efd248ef6c0e")
+  SearchingCheckPointByHashFromCivitai("5BF8CE6E0E0097235E06614EDEA32DC0DF9066BAD550B6145C19C2B373D78D99")
+  SearchingCheckPointByHashFromCivitai("5BF8CE6E0E00")
+  print("----------------------------")
+  #print(Output_Log)
+  #print(networks.available_networks)
   #print(preprocessor_filters)
 
   #print(extensions_id_conponents["dropdown"]["state-ext-control-net-txt2img_0-model"].get_config())
@@ -92,6 +104,9 @@ def add_preset_output_log(preset, key, value):
   elif(preset == "missing_exts"):
     ext_list = value.split(";")
     add_output_log(OutputPrompt.missing_extensions(ext_list))
+  elif(preset == "missing_loras"):
+    lora_list = value.split(";")
+    add_output_log(OutputPrompt.missing_loras(lora_list))
   elif(preset == "download_url"):
     add_output_log(OutputPrompt.click_to_download(key, value))
 
@@ -116,6 +131,12 @@ def find_checkpoint_from_hash(hash:str):
     except:
       pass
   return hash
+
+def SearchingCheckPointByHashFromCivitai(hash:str):
+  hash_str = hash.replace("[","").replace("]","").strip()
+  response = requests.get("https://civitai.com/api/v1/model-versions/by-hash/"+hash_str)
+  if(response.status_code == 200):
+    print(response.content)
 
 def set_lightdiffusionflow_file():
   global Preload_File
@@ -167,6 +188,11 @@ def set_dropdowns():
           if(option == new_value):
             matching_successed = True
             break
+
+          # 去掉模型的多余路径？
+          # if(os.path.split(option)[-1] == os.path.split(new_value)[-1]):
+          #   matching_successed = True
+          #   break
         
         # 没有完全匹配
         if(not matching_successed):
@@ -312,6 +338,45 @@ def params_create_ids():
             pass
   #print(extensions_id_conponents)
 
+def get_lora_info(loras_in_use:list):
+  import networks
+  loras_info = []
+  for lora_name in using_loras:
+    for network in networks.available_networks.keys():
+      if( (lora_name == networks.available_networks[network].name or lora_name == networks.available_networks[network].alias) and networks.available_networks[network].shorthash != ""):
+        loras_info[networks.available_networks[network].hash] = {
+          'name':networks.available_networks[network].name,
+          'alias':networks.available_networks[network].alias
+        }
+  return loras_info
+
+def get_lora_from_prompt(prompt):
+  # re_parens = re.compile(r"[\\/\[\](){}]+")
+  # prompt = re.sub(
+  #   re_parens, "", prompt.replace("，", ",")#.replace("-", " ").replace("_", " ")
+  # )
+
+  import networks
+  available_loras = []
+  for network in networks.available_networks.keys():
+    available_loras.append((networks.available_networks[network].name,networks.available_networks[network].alias))
+  #print(available_loras)
+  
+  missing_loras = []
+  re_lora_prompt = re.compile("<lora:([\w_\s.]+):([ \d.]+)>", re.IGNORECASE)
+  results = re.findall(re_lora_prompt, prompt)
+  # print("使用到的lora:")
+  # print(results)
+  for res in results:
+    lora_name = res[0]
+    for lora in available_loras:
+      if(lora_name == lora[0] or lora_name == lora[1]):
+        break
+    else:
+      missing_loras.append(lora_name)
+  # print("丢失的lora:")
+  # print(missing_loras)
+  return missing_loras
 
 def get_extname_from_label(label):
   ext_name = label
@@ -349,50 +414,55 @@ def get_script_container(component):
         i-=1
 
 def searching_extensions_title():
-  global txt2img_script_container, img2img_script_container, extensions_conponents
-  for group in txt2img_script_container.children: # 遍历读取所有的插件名称
+  global txt2img_script_container, img2img_script_container, extensions_conponents, Flow_Save_mode
 
-    label = ""
-    try:
-      label = get_extname_from_label(group.children[0].label)
-    except BaseException as e:
-      pass
-    
-    if(label == ""):
+  if(Flow_Save_mode == "Core"):
+    extensions_conponents["txt2img"] = {}
+    extensions_conponents["img2img"] = {}
+    extensions_conponents["txt2img"]["Control-Net"] = {"base":[]}
+    extensions_conponents["img2img"]["Control-Net"] = {"base":[]}     
+
+  else:
+    for group in txt2img_script_container.children: # 遍历读取所有的插件名称
+
+      label = ""
       try:
-        label = get_extname_from_label(group.children[0].children[0].label)
+        label = get_extname_from_label(group.children[0].label)
       except BaseException as e:
         pass
+      
+      if(label == ""):
+        try:
+          label = get_extname_from_label(group.children[0].children[0].label)
+        except BaseException as e:
+          pass
 
-    if(label != ""):
-      try:
-        extensions_conponents["txt2img"]
-      except:
-        extensions_conponents["txt2img"] = {}
-        extensions_conponents["img2img"] = {}
-      extensions_conponents["txt2img"][label] = {"base":[]}
-      extensions_conponents["img2img"][label] = {"base":[]}     
-      #extensions_conponents[label] = []
-  #print(extensions_conponents)
+      if(label != ""):
+        try:
+          extensions_conponents["txt2img"]
+        except:
+          extensions_conponents["txt2img"] = {}
+          extensions_conponents["img2img"] = {}
+        extensions_conponents["txt2img"][label] = {"base":[]}
+        extensions_conponents["img2img"][label] = {"base":[]}     
+        #extensions_conponents[label] = []
+    #print(extensions_conponents)
 
-debug_num = 0
 def on_img_changed(*component):
-  global extensions_id_conponents, extensions_id_conponents_value, debug_num
+  global extensions_id_conponents, extensions_id_conponents_value
 
-  test_vals = []
+  #test_vals = []
   extensions_id_conponents_value["image"] = {}
   i = 0
   for id in extensions_id_conponents["image"].keys():
     extensions_id_conponents_value["image"][id] = component[i]
-    if(component[i] == None):
-      test_vals.append("0")
-    else:
-      test_vals.append("1")
+    # if(component[i] == None):
+    #   test_vals.append("0")
+    # else:
+    #   test_vals.append("1")
     i+=1
 
-  debug_num += 1
-  print(debug_num)
-  print(test_vals)
+  #print(test_vals)
 
 temp_index = -1
 next_index = -1
@@ -429,6 +499,80 @@ def func_for_invisiblebutton():
   return Webui_Comps_Cur_Val[temp_index], next_index, Output_Log, Output_Log 
 
 
+def config_filter(config):
+  global extensions_id_conponents
+  new_config = config
+  for comp_type in extensions_id_conponents.keys():
+    for comp_id in extensions_id_conponents[comp_type].keys():
+      try:
+        # 筛掉python相关组件的默认值选项
+        default_val = extensions_id_conponents[comp_type][comp_id].get_config()["value"]
+        if(default_val == new_config[comp_id]):
+          del new_config[comp_id]
+      except KeyError as e:
+        pass
+
+  if(Auto_Fix_Params == False):
+    return new_config
+    
+  # 处理旧版插件保存的错误参数问题
+  print("-------错误参数纠正-------")
+  found_tabs = []
+  fixed_config = {}
+  for param in new_config.keys():
+    res = re.match("state-ext-control-net-(txt2img|img2img)_([0-9]+)-(.+)",param)
+    if(res != None):
+      if(res.group(3) not in ["presets","preprocessor","model"]):
+        try:
+          found_tabs.index(res.group(2))
+        except ValueError:
+          found_tabs.append(res.group(2))
+
+  for param in new_config.keys():
+
+    # 缝缝补补。。。 js保存的参数因为是汉语反推回英文，所以就会有 model->模型->models 的情况。
+    res = re.search("[-_](model|models|checkpoint|checkpoints)$",param)
+    if(res != None):
+      for key in ["model","models","checkpoint","checkpoints"]:
+        target_word = str(res.group()).replace(res.group(1),key)
+        new_param = re.sub("[-_](model|models|checkpoint|checkpoints)$", target_word, param)
+        fixed_config[new_param] = new_config[param]
+        #print(f"根据{param}，补充{new_param}")
+    
+    # 纠正编号
+    res = re.match("state-ext-control-net-(txt2img|img2img)_([0-9]+)-(.+)",param)
+    if(res != None):
+      tab_num = int(res.group(2))
+      if(res.group(2) != "0" and tab_num%3 == 0 ):
+        try:
+          found_tabs.index(str(tab_num/3))
+          # 如果是9 如果发现3的位置有参数，就还需要检查一下1
+          if(tab_num == 9):
+            found_tabs.index("1")
+        except ValueError:
+          new_key = f"state-ext-control-net-{res.group(1)}_{int(tab_num/3)}-{res.group(3)}"
+          # 这三个选项，旧版是js控制会有序号问题，新版本py控制没有序号问题，所以这里判断纠正之后的位置有没有值，有的话就不动。
+          if(res.group(3) in ["presets","preprocessor","model"]):
+              #print(param)
+              if(new_config.get(new_key,None) == None):
+                fixed_config[new_key] = new_config[param]
+                print(f" {param} 改为 {new_key}")
+                continue
+          else:
+            fixed_config[new_key] = new_config[param]
+            print(f" {param} 改为 {new_key}")
+            continue
+
+    # 其余参数照搬
+    fixed_config[param] = new_config[param]
+
+  #print(fixed_config)
+  #print("-------处理错误-------")
+
+  new_config = fixed_config
+  return new_config
+
+
 def fn_import_workflow(workflow_file):
   global workflow_json, Output_Log
   global extensions_id_conponents, Webui_Comps_Cur_Val, temp_index, next_index
@@ -436,6 +580,7 @@ def fn_import_workflow(workflow_file):
   next_index = -1
   
   workflow_json = {}
+  workflow_json_str = ""
   if(workflow_file):
     try:
       config_file = workflow_file[0].name
@@ -445,10 +590,12 @@ def fn_import_workflow(workflow_file):
     print("fn_import_workflow "+str(config_file))
     if (os.path.splitext(config_file)[-1] in  [File_extension, ".lightflow", ".json"]): # 兼容部分旧版本文件
       with open(config_file, mode='r', encoding='UTF-8') as f:
-        json_str = f.read()
-        workflow_json = json.loads(json_str)
+        workflow_json_str = f.read()
+        workflow_json = json.loads(workflow_json_str)
     else:
       print("invalid file!")
+
+  workflow_json = config_filter(workflow_json)
 
   Webui_Comps_Cur_Val = []
   for key in extensions_id_conponents["image"].keys():
@@ -481,6 +628,23 @@ def fn_import_workflow(workflow_file):
       successed-=1
     
     Webui_Comps_Cur_Val.append(image)
+
+  # 检查lora
+  missing_loras = []
+  try:
+    missing_loras = get_lora_from_prompt(workflow_json_str)
+    if(len(missing_loras) > 0):
+      add_output_log(OutputPrompt.missing_loras(missing_loras))
+    
+    # lora的hash值无法用来在C站搜索，所以下载链接功能暂缓。
+    # loras_info = workflow_json[LoRAs_In_Use]
+    # for lora_name in missing_loras:
+    #   for short_hash in loras_info.keys():
+    #     if(loras_info[short_hash].name == lora_name or loras_info[short_hash].alias == lora_name):
+    #       pass
+  except KeyError as e:
+    pass
+    #print(f"except missing loras error: {e}")
 
   #print(Webui_Comps_Cur_Val)
   #set_elements()
@@ -550,18 +714,7 @@ class StateApi():
     return ext_str
 
   def useless_config_filter(self, config:config_params):
-    global extensions_id_conponents
-    new_config = config.config_data
-    for comp_type in extensions_id_conponents.keys():
-      for comp_id in extensions_id_conponents[comp_type].keys():
-        try:
-          # 筛掉python相关组件的默认值选项
-          default_val = extensions_id_conponents[comp_type][comp_id].get_config()["value"]
-          if(default_val == new_config[comp_id]):
-            del new_config[comp_id]
-        except KeyError as e:
-          pass
-    return new_config
+    return config_filter(config.config_data)
 
   def get_lightdiffusionflow_config(self, onlyimg:bool = False):
     global workflow_json, extensions_id_conponents, extensions_id_conponents_value
@@ -802,7 +955,7 @@ class Script(scripts.Script):
     get_script_container(component)
 
     if (isinstance(component, gr.Button) and kwargs["elem_id"] == "img2img_generation_info_button"): # 加载到最后一个组件了。   兼容旧版，暂时不使用“img2img_preview_filename”
-      
+
       searching_extensions_title()
       #print(extensions_conponents)
 
@@ -847,7 +1000,7 @@ class Script(scripts.Script):
         except KeyError as e:
           pass
 
-      #print(extensions_conponents) # 整理好的第三方插件用到的组件
+      # print(extensions_conponents) # 整理好的第三方插件用到的组件
       # --------------------------------------组件分类--------------------------------------------------
       
       if(self.is_img2img):
@@ -870,7 +1023,7 @@ class Script(scripts.Script):
       for btn in State_Comps["import"]:
         # js里加载除图片以外的参数 python加载图片
         btn.upload(fn_import_workflow, _js=f"state.core.actions.handleLightDiffusionFlow",
-          inputs=[btn],outputs=target_comps)
+          inputs=[btn],outputs=target_comps, show_progress=False)
 
       State_Comps["json2js"].change(fn=None,_js="state.core.actions.startImportImage",
         inputs=[State_Comps["json2js"]])
@@ -896,7 +1049,7 @@ class Script(scripts.Script):
       temp_dropdown_outputs.append(State_Comps["json2js"]) # json2js触发完成事件
       temp_dropdown_outputs.append(State_Comps["outlog"][0]) # 输出日志
       temp_dropdown_outputs.append(State_Comps["outlog"][1]) # 输出日志
-      State_Comps["set_dropdowns"].click(set_dropdowns,inputs=[],outputs=temp_dropdown_outputs)
+      State_Comps["set_dropdowns"].click(set_dropdowns,inputs=[],outputs=temp_dropdown_outputs,show_progress=False)
 
       State_Comps["set_js_params"].click(set_js_params,inputs=[],outputs=State_Comps["json2js"])
 
@@ -939,7 +1092,11 @@ class Script(scripts.Script):
       State_Comps["outlog"] = []
 
     cur_mode = "img2img" if self.is_img2img else "txt2img"
-    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
+    save_mode = " (for all extensions)"
+    if(Flow_Save_mode == "Core"):
+      save_mode = " (only ControlNet)"
+
+    with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version + save_mode, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
       with gr.Row():
         lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension], elem_id=cur_mode+'_ldf_import')
         State_Comps["import"].append(lightdiffusionflow_file)
@@ -979,11 +1136,26 @@ class Script(scripts.Script):
             invisible_buttons[elem_id] = gr.Button(value=elem_id, elem_id=elem_id, visible=False)
 
 
+
+def on_after_component(component, **kwargs):
+  global Webui_Comps
+
+  # img2img和txt2img面板以外的组件信息只能在这里获取
+  # 如果希望python里控制这些组件，还需要把部分代码移到这里实现
+  try:
+    if(Webui_Comps.get(kwargs["elem_id"], None) == None):
+      Webui_Comps[kwargs["elem_id"]] = component
+      #if( kwargs["elem_id"] == "setting_sd_model_checkpoint"):
+      #  print("--------------setting_sd_model_checkpoint---------------")
+  except KeyError:
+    pass
+
+
 def on_before_reload():
   lightdiffusionflow_config.init()
 
 # add callbacks
 api = StateApi()
 script_callbacks.on_app_started(api.start)
-#script_callbacks.on_after_component(on_after_component)
+script_callbacks.on_after_component(on_after_component)
 script_callbacks.on_before_reload(on_before_reload)
