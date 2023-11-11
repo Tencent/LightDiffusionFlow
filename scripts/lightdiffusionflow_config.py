@@ -4,6 +4,7 @@ PNGINFO_2_LIGHTDIFFUSIONFLOW = {}
 PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
 Image_Components_Key = {}
 LoRAs_In_Use = "loras_in_use"
+Flow_Save_mode = "All"
 
 class OutputPrompt_English:
 
@@ -28,10 +29,16 @@ class OutputPrompt_English:
     The option '<b style='color:Red;'>{value}</b>' was not found!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
-    for ext in ext_list:
-      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
-    error_str+="<b style='color:Orange;'>The above Extension Missing Reminder is for reference only. Please determine the necessary plugins based on your actual needs and specific conditions.</b></p> "
+    if(Flow_Save_mode == "Core"):
+      error_str = "Note:  <b style='color:Orange;'>The current flow file contains parameters for other plugins:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>You can switch to 'ALL' mode to load more parameters. (This prompt is for reference only, please choose the plugin mode according to the actual situation.)</b></p> "
+    else:
+      error_str = "Note: <b style='color:Orange;'>Found missing extensions.</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>The above Extension Missing Reminder is for reference only. Please determine the necessary plugins based on your actual needs and specific conditions.</b></p> "
     return error_str
 
   def missing_loras(loras_list:[]):
@@ -76,10 +83,17 @@ class OutputPrompt_Chinese:
     未找到选项'<b style='color:Red;'>{value}</b>'!'''
 
   def missing_extensions(ext_list:[]):
-    error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
-    for ext in ext_list:
-      error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
-    error_str+="<b style='color:Orange;'>以上插件缺失提示仅供参考，请注意辨别实际情况下您所需要安装的插件。</b></p> "
+    global Flow_Save_mode
+    if(Flow_Save_mode == "Core"):
+      error_str = "注意, <b style='color:Orange;'>当前flow文件含有其他插件参数:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>可切换至'ALL'模式加载更多参数。（提示仅供参考，请根据实际情况选择插件模式。）</b></p> "
+    else:
+      error_str = "注意, <b style='color:Orange;'>发现缺失的插件:</b></p>"
+      for ext in ext_list:
+        error_str+="<p>- <b style='color:Orange;'>"+ext+"</b></p> "
+      error_str+="<b style='color:Orange;'>以上插件缺失提示仅供参考，请注意辨别实际情况下您所需要安装的插件。</b></p> "
     return error_str
 
   def missing_loras(loras_list:[]):
@@ -105,7 +119,6 @@ class OutputPrompt_Chinese:
 
 
 OutputPrompt = OutputPrompt_English
-Flow_Save_mode = "Core"
 
 # 改成函数调用，修改配置之后能及时刷新
 def init():

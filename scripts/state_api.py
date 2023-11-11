@@ -532,8 +532,9 @@ def config_filter(config):
     if(res != None):
       for key in ["model","models","checkpoint","checkpoints"]:
         target_word = str(res.group()).replace(res.group(1),key)
-        new_param = re.sub("[-_](model|models|checkpoint|checkpoints)($|[_-])", target_word, param)
+        new_param = re.sub("[-_](model|models|checkpoint|checkpoints)$", target_word, param)
         fixed_config[new_param] = new_config[param]
+        #print(f"根据{param}，补充{new_param}")
     
     # 纠正编号
     res = re.match("state-ext-control-net-(txt2img|img2img)_([0-9]+)-(.+)",param)
@@ -1114,7 +1115,7 @@ class Script(scripts.Script):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=True)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='img2img_invisible_refresh_log',visible=False)
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)

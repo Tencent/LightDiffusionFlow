@@ -21,7 +21,7 @@ def on_ui_settings():
 
   shared.opts.add_option("lightdiffusionflow-mode",
     shared.OptionInfo(
-      "Core",
+      "All",
       f"模式/mode: ({OutputPrompt.note_for_save_mode()})",
       gr.Dropdown, 
       lambda: {
