@@ -5,6 +5,7 @@ PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
 Image_Components_Key = {}
 LoRAs_In_Use = "loras_in_use"
 Flow_Save_mode = "All"
+Auto_Fix_Params = True
 
 class OutputPrompt_English:
 
@@ -123,7 +124,7 @@ OutputPrompt = OutputPrompt_English
 # 改成函数调用，修改配置之后能及时刷新
 def init():
   global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW
-  global OutputPrompt,Flow_Save_mode,Image_Components_Key
+  global OutputPrompt,Flow_Save_mode,Auto_Fix_Params,Image_Components_Key
   # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
   #print(parameters_copypaste.paste_fields) 
   PNGINFO_2_LIGHTDIFFUSIONFLOW = {
@@ -174,6 +175,12 @@ def init():
         Flow_Save_mode = webui_settings["lightdiffusionflow-mode"]
       except:
         Flow_Save_mode = "Core"
+
+      # 自动纠正错误的参数
+      try:
+        Auto_Fix_Params = webui_settings["lightdiffusionflow-auto-fix-params"]
+      except:
+        Auto_Fix_Params = True
 
       language_successed = False
       auto_language = False

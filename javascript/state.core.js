@@ -632,6 +632,7 @@ state.core = (function () {
           for (let key in stored_config){
             if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
             {
+              console.log("allow-preview改成false")
               stored_config[key] = "false"
             }
           }

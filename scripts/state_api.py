@@ -22,7 +22,7 @@ from modules.sd_models import checkpoints_list
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
-from scripts.lightdiffusionflow_config import OutputPrompt, Flow_Save_mode, LoRAs_In_Use
+from scripts.lightdiffusionflow_config import OutputPrompt, Flow_Save_mode, Auto_Fix_Params, LoRAs_In_Use
 import scripts.lightdiffusionflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
@@ -512,6 +512,9 @@ def config_filter(config):
       except KeyError as e:
         pass
 
+  if(Auto_Fix_Params == False):
+    return new_config
+    
   # 处理旧版插件保存的错误参数问题
   print("-------错误参数纠正-------")
   found_tabs = []

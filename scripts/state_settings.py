@@ -29,5 +29,13 @@ def on_ui_settings():
       }, section=section)
   )
 
+  shared.opts.add_option("lightdiffusionflow-auto-fix-params",
+    shared.OptionInfo(
+      True,
+      f"自动纠正错误的参数/Automatically fix incorrect parameters",
+      gr.Checkbox, 
+      {"interactive": True}, 
+      section=section)
+  )
 
 scripts.script_callbacks.on_ui_settings(on_ui_settings)
