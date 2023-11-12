@@ -37,13 +37,16 @@ In the SD Web UI, configure the desired options, and click the "Export" button t
 In the SD Web UI, click the "FileBox", select the corresponding flow file, and import the parameters from the file.
 You can also directly drag and drop the flow file into the "FileBox" for importing.
 
+**Currently, the plugin supports versions 1.5 and above, and compatibility testing for earlier versions has not been conducted.**  
+**If not due to compatibility issues with essential functionalities, it is strongly recommended to upgrade to version 1.6 or above before using this plugin!**
+
 ### Examples
 
 You can find several official examples in the example/ folder. If you want to try out more possibilities, please visit [**Our open-source community**](https://www.lightflow.ai/) for more public examples. 
 
 ### Contributing
 
-If you have any comments, suggestions, or encounter issues with our project, please feel free to raise them through an issue, and we also welcome pull requests at any time!
+If you have any comments, suggestions, or encounter issues with our project, please feel free to raise them through an issue, and we also welcome pull requests at any time!  
 You are also more than welcomed to share your own LightDiffusionFlow on [**Our open-source community**](https://www.lightflow.ai/). 
 
 ### Credits
