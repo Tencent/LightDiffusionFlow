@@ -37,8 +37,8 @@ In the SD Web UI, configure the desired options, and click the "Export" button t
 In the SD Web UI, click the "FileBox", select the corresponding flow file, and import the parameters from the file.
 You can also directly drag and drop the flow file into the "FileBox" for importing.
 
-**Currently, the plugin supports versions 1.5 and above, and compatibility testing for earlier versions has not been conducted.**  
-**If not due to compatibility issues with essential functionalities, it is strongly recommended to upgrade to version 1.6 or above before using this plugin!**
+**Currently, the plugin supports SD WebUI versions v1.5 and above, and compatibility testing for earlier versions has not been conducted.**  
+**If not due to compatibility issues with essential functionalities, it is strongly recommended to upgrade to version v1.6 or above before using this plugin!**
 
 ### Examples
 
