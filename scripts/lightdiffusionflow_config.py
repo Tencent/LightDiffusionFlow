@@ -174,13 +174,13 @@ def init():
       try:
         Flow_Save_mode = webui_settings["lightdiffusionflow-mode"]
       except:
-        Flow_Save_mode = "Core"
+        pass
 
       # 自动纠正错误的参数
       try:
         Auto_Fix_Params = webui_settings["lightdiffusionflow-auto-fix-params"]
       except:
-        Auto_Fix_Params = True
+        pass
 
       language_successed = False
       auto_language = False
