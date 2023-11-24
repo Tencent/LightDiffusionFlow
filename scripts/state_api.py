@@ -134,9 +134,12 @@ def find_checkpoint_from_hash(hash:str):
 
 def SearchingCheckPointByHashFromCivitai(hash:str):
   hash_str = hash.replace("[","").replace("]","").strip()
-  response = requests.get("https://civitai.com/api/v1/model-versions/by-hash/"+hash_str)
-  if(response.status_code == 200):
-    print(response.content)
+  try:
+    response = requests.get("https://civitai.com/api/v1/model-versions/by-hash/"+hash_str)
+    if(response.status_code == 200):
+      print(response.content)
+  except:
+    pass
 
 def set_lightdiffusionflow_file():
   global Preload_File
@@ -592,8 +595,17 @@ def fn_import_workflow(workflow_file):
       with open(config_file, mode='r', encoding='UTF-8') as f:
         workflow_json_str = f.read()
         workflow_json = json.loads(workflow_json_str)
+
+      try:
+        response = requests.get("https://api.lightflow.ai/openapi/access?action=import")
+        if(response.status_code == 200):
+          pass
+      except:
+        pass
+
     else:
       print("invalid file!")
+
 
   workflow_json = config_filter(workflow_json)
 
