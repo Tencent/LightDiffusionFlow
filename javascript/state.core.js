@@ -659,7 +659,17 @@ state.core = (function () {
           if(filename != ".flow"){
             // const handle = window.showDirectoryPicker();
             // console.log(handle)
+            
             state.utils.saveFile(filename, stored_config);
+            
+            fetch('https://api.lightflow.ai/openapi/access?action=export')
+            .then(response => response.json())
+            .then(config => {
+              console.log(config)
+            }).catch(function(e) {
+              console.log("Oops, export callback error!");
+            });
+
           }
 
         }).catch(error => console.error('[state]: Error getting Flow file:', error));
