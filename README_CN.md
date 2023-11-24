@@ -9,8 +9,10 @@
 
 这是为[Stable Diffusion Web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) 开发的一款导入/导出参数选项的插件。  
 Stable Diffusion Web UI 以下简称 SD Web UI。  
-[**插件效果演示和其他说明**](https://fvkij7wuqx9.feishu.cn/docx/HgZndihraotmmzxFni7cFZISnvb)  
-[**我们的开源社区**](https://www.lightflow.ai/)
+* [**插件效果演示和其他说明**](https://fvkij7wuqx9.feishu.cn/docx/HgZndihraotmmzxFni7cFZISnvb)  
+* [**Lightflow开源社区**](https://www.lightflow.ai/)
+* [**Discord**](https://discord.gg/CaD4mchHxW)  
+* [**Twitter: @LightFlow_AI**](https://twitter.com/LightFlow_AI)  
 
 ### 功能
 

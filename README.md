@@ -9,8 +9,11 @@
 
 This extension is developed for AUTOMATIC1111's [Stable Diffusion web UI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) that provides import/export options for parameters.  
 "Stable Diffusion Web UI" hereafter referred to as "SD Web UI"  
-[**Plugin demonstration and other instructions**](https://fvkij7wuqx9.feishu.cn/docx/HgZndihraotmmzxFni7cFZISnvb)  
-[**Our open-source community**](https://www.lightflow.ai/)
+* [**Plugin demonstration and other instructions**](https://fvkij7wuqx9.feishu.cn/docx/HgZndihraotmmzxFni7cFZISnvb)  
+* [**LightFlow workflow community**](https://www.lightflow.ai/)  
+* [**Discord**](https://discord.gg/CaD4mchHxW)  
+* [**Twitter: @LightFlow_AI**](https://twitter.com/LightFlow_AI)  
+
 
 ### Capabilities
 
