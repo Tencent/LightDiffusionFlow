@@ -57,6 +57,8 @@ state.utils = {
         }
         if(downloadUrl == undefined){downloadUrl = data["files"][0]["downloadUrl"]}
       //} catch (error) {}
+    }).catch(function(e) {
+      console.log("search model error!");
     });
 
     return downloadUrl
