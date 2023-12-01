@@ -349,7 +349,7 @@ function general_ext(tab_name, extension_name, root_container) {
       handleCheckboxes();
       handleTextAreas();
       if(state.utils.target_is_newer_version(state.core.actions.get_sd_version(), "v1.6.0")){
-        console.log("-----------general handleSelects-------")
+        //console.log("-----------general handleSelects-------")
         handleSelects();
       }
       handleSliders();
@@ -440,7 +440,7 @@ function general_ext_main(tab){
       let translations = state.utils.reverseTranslation(title)
       title = translations[0] // 标题翻译一般只会有一个？
       if(title.toLowerCase() == 'script'){break} // script后面的面板暂时不考虑
-      //console.log(title)
+      console.log(title)
       
       reg = /(.+) v[0-9\.]+/
       if(reg.test(title)){title = RegExp.$1} // 匹配 xxx v0.0.0 格式的标题，把后半部分的版本号去掉

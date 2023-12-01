@@ -198,6 +198,27 @@ state.utils = {
         this.triggerEvent(element, event);
     }
   },
+  onFrameContentChange: function onFrameContentChange(targetNode, func) {
+    if(targetNode) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'childList' || 
+            (mutation.type === 'attributes' && mutation.attributeName == 'src') // 图片被更改
+          ) {
+            //console.log(`onFrameContentChange ${mutation.type} `)
+            func(targetNode);
+          }
+        }
+      });
+      observer.observe(targetNode, {
+        //attributes: true,
+        childList: true,
+        //characterData: true,
+        subtree: true
+      });
+    }
+  },
+
   onContentChange: function onContentChange(targetNode, func) {
     if(targetNode) {
       const observer = new MutationObserver((mutationsList, observer) => {
@@ -274,7 +295,7 @@ state.utils = {
         } catch (error) {
           console.warn('[state]: Error:', error);
         }
-        console.log(`image changed ${id}`)
+        //console.log(`image changed ${id}`)
         fetch(`/lightdiffusionflow/local/imgs_callback`, data)
       });
     }, 150);

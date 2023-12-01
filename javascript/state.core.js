@@ -82,6 +82,12 @@ state.core = (function () {
   let timer = null;
   let inited = false
   let sd_versions = "0.0.0"
+  let waiting_second_apply = false
+  let timeout_id = undefined
+  let img_elem_keys=[];
+  let ext_list=[];
+  let flow_save_mode = "Core"
+
 
   function hasSetting(id, tab) {
     return true // 需要默认保存全部选项 不需要判断
@@ -146,10 +152,6 @@ state.core = (function () {
     // }
       
   }
-
-  let img_elem_keys=[];
-  let ext_list=[];
-  let flow_save_mode = "Core"
 
   function get_imgs_elem_key(){
 
@@ -244,6 +246,23 @@ state.core = (function () {
     config.hasSetting = hasSetting
 
     //loadUI(); // 往页面上添加按钮
+
+    for (let tab of TABS)
+    {
+      console.log(`${tab}_script_container start`)
+      let script_container = getElement(`${tab}_script_container`)
+      state.utils.onFrameContentChange(script_container, function (el) {
+        clearTimeout(timeout_id);
+        timeout_id = setTimeout(() => {
+          if(waiting_second_apply)
+          {
+            waiting_second_apply = false
+            console.log(`###################### ${tab}_script_container changed ###############################`)
+            actions.applyState();
+          }
+        }, 2000);
+      });
+    }
 
     forEachElement(ACCORDION, config, (element, tab) => {
       handleSavedAccordion(`${tab}_${element}`);
@@ -481,7 +500,7 @@ state.core = (function () {
     //     }
     //   });
     // }
-
+    console.log("@@@@@@ handleExtensions @@@@@@@@@@")
     for (const [name, obj] of Object.entries(state.extensions)) {
       obj.init(flow_save_mode == "Core");
     }
@@ -793,6 +812,8 @@ state.core = (function () {
           json_obj[image_id] = ""
         });
         // webui主界面 没有localization相关的兼容问题 所以不用管
+        
+        waiting_second_apply = true
         store.clear();
         store.load(json_obj);
         actions.applyState();
