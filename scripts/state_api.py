@@ -494,8 +494,8 @@ def func_for_invisiblebutton():
     add_output_log(OutputPrompt.importing_image(list(extensions_id_conponents['image'].keys())[temp_index]))
     #add_output_log(f"importing image: \'{list(extensions_id_conponents['image'].keys())[temp_index]}\' ") 
     
-  if(next_index+1 == len(Webui_Comps_Cur_Val)):
-    add_output_log(OutputPrompt.import_completed())
+  #if(next_index+1 == len(Webui_Comps_Cur_Val)):
+    #add_output_log(OutputPrompt.import_completed())
     #add_output_log(f"import completed!")
   
   # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出

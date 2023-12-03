@@ -12,7 +12,7 @@ function general_ext(tab_name, extension_name, root_container) {
   let ext_name = extension_name
   let LS_PREFIX = 'ext-'+ ext_name.replace(" ","-").toLowerCase() + "-"
 
-  function handleToggle() {
+  function handleToggle(addEvtLsner=true) {
     let value = store.get('toggled');
     let toggleBtn = container.querySelector('div.cursor-pointer, .label-wrap');
     //for(let toggleBtn of toggleBtns){
@@ -22,26 +22,33 @@ function general_ext(tab_name, extension_name, root_container) {
         state.utils.triggerEvent(toggleBtn, 'click');
         //load();
       }
-      toggleBtn.addEventListener('click', function () {
-        let span = this.querySelector('.transition, .icon');
-        store.set('toggled', span.style.transform !== 'rotate(90deg)');
-        //load();
-      });
+
+      if(addEvtLsner)
+      {
+        toggleBtn.addEventListener('click', function () {
+          let span = this.querySelector('.transition, .icon');
+          store.set('toggled', span.style.transform !== 'rotate(90deg)');
+          //load();
+        });
+      }
     }
     //}
   }
 
-  function bindTabEvents() {
+  function bindTabEvents(addEvtLsner=true) {
     const tabs = container.querySelectorAll('.tabs > div > button');
-    tabs.forEach(tab => { // dirty hack here
-      tab.removeEventListener('click', onTabClick);
-      tab.addEventListener('click', onTabClick);
-    });
+    if(addEvtLsner)
+    {
+      tabs.forEach(tab => { // dirty hack here
+        tab.removeEventListener('click', onTabClick);
+        tab.addEventListener('click', onTabClick);
+      });
+    }
     return tabs;
   }
 
-  function handleTabs() {
-    let tabs = bindTabEvents();
+  function handleTabs(addEvtLsner=true) {
+    let tabs = bindTabEvents(addEvtLsner);
     let value = store.get('tab');
     if (value) {
       for (var i = 0; i < tabs.length; i++) {
@@ -60,7 +67,7 @@ function general_ext(tab_name, extension_name, root_container) {
     bindTabEvents();
   }
 
-  function handleCheckbox(checkbox, store) {
+  function handleCheckbox(checkbox, store, addEvtLsner=true) {
     let label = checkbox.nextElementSibling;
     let translations = state.utils.reverseTranslation(label.textContent)
     for (var text of translations){
@@ -71,20 +78,23 @@ function general_ext(tab_name, extension_name, root_container) {
     if (value) {
       state.utils.setValue(checkbox, value, 'change');
     }
-    checkbox.addEventListener('change', function () {
-      let label = checkbox.nextElementSibling;
-      let translations = state.utils.reverseTranslation(label.textContent)
-      for (var text of translations){
-        var id = state.utils.txtToId(text);
-        store.set(id, this.checked);
-      }
-    });
+
+    if(addEvtLsner){
+      checkbox.addEventListener('change', function () {
+        let label = checkbox.nextElementSibling;
+        let translations = state.utils.reverseTranslation(label.textContent)
+        for (var text of translations){
+          var id = state.utils.txtToId(text);
+          store.set(id, this.checked);
+        }
+      });
+    }
   }
-  function handleCheckboxes() {
+  function handleCheckboxes(addEvtLsner=true) {
     let root_checkboxes = root_not_tabs.container.querySelectorAll('input[type="checkbox"]');
     root_checkboxes.forEach(function (root_checkbox) {
       if(cnTabs.length == 0){
-        handleCheckbox(root_checkbox, root_not_tabs.store)
+        handleCheckbox(root_checkbox, root_not_tabs.store, addEvtLsner)
       }
       else{
         let needsHandle = true
@@ -94,39 +104,42 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleCheckbox(root_checkbox, root_not_tabs.store)}
+        if(needsHandle){handleCheckbox(root_checkbox, root_not_tabs.store, addEvtLsner)}
       } // else
     });
     
     cnTabs.forEach(({ container, store }) => {
       let checkboxes = container.querySelectorAll('input[type="checkbox"]');
       checkboxes.forEach(function (checkbox) {
-        handleCheckbox(checkbox, store)
+        handleCheckbox(checkbox, store, addEvtLsner)
       });
     });
 
   }
 
-  function handleTextArea(textarea, index, store) {
+  function handleTextArea(textarea, index, store, addEvtLsner=true) {
     var id = state.utils.txtToId(`textarea_${index}`);
     var value = store.get(id);
     if (value) {
       state.utils.setValue(textarea, value, 'change');
     }
-    textarea.addEventListener('change', function () {
-      let text = this.value;
-      store.set(id, text);
-      //console.log(`id = ${id}  value = ${text}`)
-    });
+
+    if(addEvtLsner){
+      textarea.addEventListener('change', function () {
+        let text = this.value;
+        store.set(id, text);
+        //console.log(`id = ${id}  value = ${text}`)
+      });
+    }
   }
-  function handleTextAreas() {
+  function handleTextAreas(addEvtLsner=true) {
     let textArea_index = 0; // 因为文本框的顺序不会变，所以命名直接使用序号区分 "textarea_0"
     
     let root_textareas = root_not_tabs.container.querySelectorAll('textarea');
     root_textareas.forEach(function (root_textarea) {
     
       if(cnTabs.length == 0){
-        handleTextArea(root_textarea, textArea_index, root_not_tabs.store)
+        handleTextArea(root_textarea, textArea_index, root_not_tabs.store, addEvtLsner)
         textArea_index += 1
       }
       else{
@@ -138,7 +151,7 @@ function general_ext(tab_name, extension_name, root_container) {
           }
         }
         if(needsHandle){
-          handleTextArea(root_textarea, textArea_index, root_not_tabs.store)
+          handleTextArea(root_textarea, textArea_index, root_not_tabs.store, addEvtLsner)
           textArea_index += 1
         }
       } // else
@@ -147,14 +160,14 @@ function general_ext(tab_name, extension_name, root_container) {
 
     cnTabs.forEach(({ container, store }) => {
       container.querySelectorAll('textarea').forEach(textarea => {
-        handleTextArea(textarea, textArea_index, store)
+        handleTextArea(textarea, textArea_index, store, addEvtLsner)
         textArea_index += 1
       });
     });
 
   }
 
-  function handleSelect(select, store) {
+  function handleSelect(select, store, addEvtLsner=true) {
     let translations = state.utils.reverseTranslation(select.querySelector('label').firstChild.textContent)
     for (var text of translations){
       var id = state.utils.txtToId(text);
@@ -163,7 +176,7 @@ function general_ext(tab_name, extension_name, root_container) {
     }
     //id = state.utils.txtToId(translations[0]);
     //if (value) { //前面不需要判断是否有值，因为需要执行handleSelect绑定onchange事件
-    state.utils.handleSelect(select, id, store, force=true);
+    state.utils.handleSelect(select, id, store, force=true, addEvtLsner);
     //}
 
     // let id = state.constants.LS_PREFIX+LS_PREFIX+"dropdown_"+index
@@ -185,7 +198,7 @@ function general_ext(tab_name, extension_name, root_container) {
       state.utils.onNextUiUpdates(handleSliders); // update new sliders if needed
     }
   }
-  function handleSelects() {
+  function handleSelects(addEvtLsner=true) {
     // let root_selects = root_not_tabs.container.querySelectorAll('.gradio-dropdown');
     // root_selects.forEach(function (root_select) {
     //   if(cnTabs.length == 0){
@@ -220,7 +233,7 @@ function general_ext(tab_name, extension_name, root_container) {
     let root_selects = root_not_tabs.container.querySelectorAll('.gradio-dropdown');
     root_selects.forEach(function (root_select) {
       if(cnTabs.length == 0){
-        handleSelect(root_select, root_not_tabs.store)
+        handleSelect(root_select, root_not_tabs.store, addEvtLsner)
       }
       else{
         let needsHandle = true
@@ -230,19 +243,19 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleSelect(root_select, root_not_tabs.store)}
+        if(needsHandle){handleSelect(root_select, root_not_tabs.store, addEvtLsner)}
       } // else
     });
 
     cnTabs.forEach(({ container, store }) => {
       container.querySelectorAll('.gradio-dropdown').forEach(select => {
-        handleSelect(select, store)
+        handleSelect(select, store, addEvtLsner)
       });
     });
 
   }
 
-  function handleSlider(slider, store) {
+  function handleSlider(slider, store, addEvtLsner=true) {
     let label = slider.previousElementSibling.querySelector('label span');
     let translations = state.utils.reverseTranslation(label.textContent)
     for (var text of translations){
@@ -253,22 +266,24 @@ function general_ext(tab_name, extension_name, root_container) {
     if (value) {
       state.utils.setValue(slider, value, 'change');
     }
-    slider.addEventListener('change', function () {
-      //store.set(id, state.utils.reverseTranslation(this.value)[0]);
-      let label = slider.previousElementSibling.querySelector('label span');
-      let translations = state.utils.reverseTranslation(label.textContent)
-      for (var text of translations){
-        var id = state.utils.txtToId(text);
-        store.set(id, state.utils.reverseTranslation(this.value)[0]);
-      }
-    });
+    if(addEvtLsner){
+      slider.addEventListener('change', function () {
+        //store.set(id, state.utils.reverseTranslation(this.value)[0]);
+        let label = slider.previousElementSibling.querySelector('label span');
+        let translations = state.utils.reverseTranslation(label.textContent)
+        for (var text of translations){
+          var id = state.utils.txtToId(text);
+          store.set(id, state.utils.reverseTranslation(this.value)[0]);
+        }
+      });
+    }
   }
-  function handleSliders() {
+  function handleSliders(addEvtLsner=true) {
 
     let root_sliders = root_not_tabs.container.querySelectorAll('input[type="range"]');
     root_sliders.forEach(function (root_slider) {
       if(cnTabs.length == 0){
-        handleSlider(root_slider, root_not_tabs.store)
+        handleSlider(root_slider, root_not_tabs.store, addEvtLsner)
       }
       else{
         let needsHandle = true
@@ -278,19 +293,19 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleSlider(root_slider, root_not_tabs.store)}
+        if(needsHandle){handleSlider(root_slider, root_not_tabs.store, addEvtLsner)}
       } // else
     });
 
     cnTabs.forEach(({ container, store }) => {
       let sliders = container.querySelectorAll('input[type="range"]');
       sliders.forEach(function (slider) {
-        handleSlider(slider, store)
+        handleSlider(slider, store, addEvtLsner)
       });
     });
   }
 
-  function handleRadioButton(fieldset, store) {
+  function handleRadioButton(fieldset, store, addEvtLsner=true) {
     let label = fieldset.firstChild.nextElementSibling;
     let radios = fieldset.querySelectorAll('input[type="radio"]');
     let translations = state.utils.reverseTranslation(label.textContent)
@@ -304,23 +319,26 @@ function general_ext(tab_name, extension_name, root_container) {
         state.utils.setValue(radio, value, 'change');
       });
     }
-    radios.forEach(function (radio) {
-      radio.addEventListener('change', function () {
-        let label = fieldset.firstChild.nextElementSibling;
-        let translations = state.utils.reverseTranslation(label.textContent)
-        for (var text of translations){
-          var id = state.utils.txtToId(text);
-          store.set(id, state.utils.reverseTranslation(this.value)[0]);
-        }
+
+    if(addEvtLsner){
+      radios.forEach(function (radio) {
+        radio.addEventListener('change', function () {
+          let label = fieldset.firstChild.nextElementSibling;
+          let translations = state.utils.reverseTranslation(label.textContent)
+          for (var text of translations){
+            var id = state.utils.txtToId(text);
+            store.set(id, state.utils.reverseTranslation(this.value)[0]);
+          }
+        });
       });
-    });
+    }
   }
-  function handleRadioButtons() {
+  function handleRadioButtons(addEvtLsner=true) {
 
     let root_fieldsets = root_not_tabs.container.querySelectorAll('fieldset');
     root_fieldsets.forEach(function (root_fieldset) {
       if(cnTabs.length == 0){
-        handleRadioButton(root_fieldset, root_not_tabs.store)
+        handleRadioButton(root_fieldset, root_not_tabs.store, addEvtLsner)
       }
       else{
         let needsHandle = true
@@ -330,34 +348,34 @@ function general_ext(tab_name, extension_name, root_container) {
             break
           }
         }
-        if(needsHandle){handleRadioButton(root_fieldset, root_not_tabs.store)}
+        if(needsHandle){handleRadioButton(root_fieldset, root_not_tabs.store, addEvtLsner)}
       } // else
     });
 
     cnTabs.forEach(({ container, store }) => {
       let fieldsets = container.querySelectorAll('fieldset');
       fieldsets.forEach(function (fieldset) {
-        handleRadioButton(fieldset, store)
+        handleRadioButton(fieldset, store, addEvtLsner)
       });
     });
   }
 
 
-  function load() {
+  function load(addEvtLsner=true) {
     setTimeout(function () {
-      handleTabs();
-      handleCheckboxes();
-      handleTextAreas();
+      handleTabs(addEvtLsner);
+      handleCheckboxes(addEvtLsner);
+      handleTextAreas(addEvtLsner);
       if(state.utils.target_is_newer_version(state.core.actions.get_sd_version(), "v1.6.0")){
         //console.log("-----------general handleSelects-------")
-        handleSelects();
+        handleSelects(addEvtLsner);
       }
-      handleSliders();
-      handleRadioButtons();
+      handleSliders(addEvtLsner);
+      handleRadioButtons(addEvtLsner);
     }, 500);
   }
 
-  function init() {
+  function init(addEvtLsner=true) {
 
     store = new state.Store(LS_PREFIX + cur_tab_name);
 
@@ -387,8 +405,8 @@ function general_ext(tab_name, extension_name, root_container) {
     }
     //}
 
-    handleToggle();
-    load();
+    handleToggle(addEvtLsner);
+    load(addEvtLsner);
   }
   return { init,LS_PREFIX };
 }
@@ -397,7 +415,7 @@ function general_ext(tab_name, extension_name, root_container) {
 function general_ext_main(tab){
 
   let cur_tab_name = tab
-  let general_ext_obj = undefined
+  let general_ext_list = []
   // 遍历第一级子节点  每个节点选出一个层级最小且innerText不为空的子节点
   function walks_element(element, cur_gen){
     if(element.innerText != "" && element.innerText != undefined && element.children.length == 0){
@@ -411,8 +429,17 @@ function general_ext_main(tab){
     return res
   }
 
-  function init(core_mode = true) {
-    console.log(`------------${cur_tab_name}----init-------`)
+  function init(core_mode = true, addEvtLsner=true) {
+    console.log(`------------${cur_tab_name}----init--- addEvtLsner=${addEvtLsner} ----`)
+
+    if(addEvtLsner==false)
+    {
+      for (let obj of general_ext_list)
+      {
+        obj.init(addEvtLsner);
+      }
+      return
+    }
 
     let container = gradioApp().getElementById(cur_tab_name+'_script_container'); // main container
 
@@ -456,7 +483,9 @@ function general_ext_main(tab){
       // if(!global_dropdown_index[ext_name]){
       //   global_dropdown_index[ext_name] = 0
       // }
-      general_ext(cur_tab_name, ext_name, root_container).init();
+      general_ext_obj = general_ext(cur_tab_name, ext_name, root_container)
+      general_ext_list.push(general_ext_obj)
+      general_ext_obj.init(addEvtLsner);
     }
     
   }

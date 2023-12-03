@@ -121,9 +121,6 @@ state.core = (function () {
     //   fetch('/lightdiffusionflow/local/get_imgs_elem_key') //初始化部分图片组件id, 后续设置onchanged事件
     //   .then(response => response.json())
     //   .then(data => {
-    //     console.log('-----------------------------')
-    //     console.log(data)
-    //     console.log('-----------------------------')
     //     if(data != ""){
 
     //       img_elem_keys = data.split(",")
@@ -160,7 +157,6 @@ state.core = (function () {
       .then(data => {
         console.log(data)
         if(data == ''){
-          console.log('-----------------------------')
           setTimeout(() => {
             get_imgs_elem_key()
           }, 500);
@@ -242,14 +238,14 @@ state.core = (function () {
     }
   }
 
-  function load(config) {
+  function load(config, addEvtLsner=true) {
     config.hasSetting = hasSetting
 
     //loadUI(); // 往页面上添加按钮
 
     for (let tab of TABS)
     {
-      console.log(`${tab}_script_container start`)
+      //console.log(`${tab}_script_container start`)
       let script_container = getElement(`${tab}_script_container`)
       state.utils.onFrameContentChange(script_container, function (el) {
         clearTimeout(timeout_id);
@@ -257,49 +253,52 @@ state.core = (function () {
           if(waiting_second_apply)
           {
             waiting_second_apply = false
-            console.log(`###################### ${tab}_script_container changed ###############################`)
-            actions.applyState();
+            console.log(`######## ${tab}_script_container changed ########`)
+            actions.applyState(false);
+            setTimeout(() => {
+              actions.preset_output_log("finished")
+            }, 3000);
           }
-        }, 2000);
+        }, 3000);
       });
     }
 
     forEachElement(ACCORDION, config, (element, tab) => {
-      handleSavedAccordion(`${tab}_${element}`);
+      handleSavedAccordion(`${tab}_${element}`, addEvtLsner);
     });
 
     forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
-      handleSavedSelects(element);
+      handleSavedSelects(element, addEvtLsner);
     });
 
     forEachElement(ELEMENTS, config, (element, tab) => {
-      handleSavedInput(`${tab}_${element}`);
+      handleSavedInput(`${tab}_${element}`, addEvtLsner);
     });
 
     forEachElement_WithoutTabs(ELEMENTS_WITHOUT_PREFIX, (element) => {
-      handleSavedInput(element);
+      handleSavedInput(element, addEvtLsner);
     });
 
     forEachElement(SELECTS, config, (element, tab) => {
-      handleSavedSelects(`${tab}_${element}`);
+      handleSavedSelects(`${tab}_${element}`, addEvtLsner);
     });
 
     forEachElement(MULTI_SELECTS, config, (element, tab) => {
-      handleSavedMultiSelects(`${tab}_${element}`);
+      handleSavedMultiSelects(`${tab}_${element}`, addEvtLsner);
     });
 
     forEachElement(TOGGLE_BUTTONS, config, (element, tab) => {
-      handleToggleButton(`${tab}_${element}`);
+      handleToggleButton(`${tab}_${element}`, addEvtLsner);
     });
 
     forEachElement_WithoutTabs(IMAGES_WITHOUT_PREFIX, (element) => {
-      handleSavedImage(`${element}`);
+      handleSavedImage(`${element}`, addEvtLsner);
     });
 
-    handleExtensions(config);
+    handleExtensions(config, addEvtLsner);
     //handleSettingsPage();
 
-    restoreTabs(config); // 恢复到最后点击的tab页面
+    restoreTabs(config, addEvtLsner); // 恢复到最后点击的tab页面
 
     forEachElement_WithoutTabs(ELEMENTS_ALWAYS_SAVE, (element) => {
       state.utils.forceSaveSelect(getElement(element), element, store); //每次无论有没有修改都需要导出的选项
@@ -365,7 +364,7 @@ state.core = (function () {
   // }
 
 
-  function restoreTabs(config) {
+  function restoreTabs(config, addEvtLsner=true) {
 
     if (! config.hasSetting('tabs')) {
       return;
@@ -386,7 +385,9 @@ state.core = (function () {
     // onUiTabChange(function () {
     //   store.set('tab', gradioApp().querySelector('#tabs .tab-nav button.selected').textContent);
     // });
-    bindTabClickEvents();
+    if(addEvtLsner){
+      bindTabClickEvents();
+    }
   }
 
   function bindTabClickEvents() {
@@ -412,7 +413,7 @@ state.core = (function () {
     return gradioApp().getElementById(id);
   }
 
-  function handleSavedInput(id) {
+  function handleSavedInput(id, addEvtLsner=true) {
 
     const elements = gradioApp().querySelectorAll(`#${id} textarea, #${id} input, #${id} img`);
     const events = ['change', 'input'];
@@ -429,30 +430,32 @@ state.core = (function () {
       });
     };
 
-    forEach(function (event) {
-      this.addEventListener(event, function () {
-        let value = this.value;
-        if (this.type && this.type === 'checkbox') {
-          value = this.checked;
-        }
-        else if (this.className === 'img') {
-          value = this.checked;
-        }
-        store.set(id, value);
-      });
-    });
-
-    TABS.forEach(tab => {
-      const seedInput = gradioApp().querySelector(`#${tab}_seed input`);
-      ['random_seed', 'reuse_seed'].forEach(id => {
-        const btn = gradioApp().querySelector(`#${tab}_${id}`);
-        btn.addEventListener('click', () => {
-          setTimeout(() => {
-            state.utils.triggerEvent(seedInput, 'change');
-          }, 100);
+    if(addEvtLsner){
+      forEach(function (event) {
+        this.addEventListener(event, function () {
+          let value = this.value;
+          if (this.type && this.type === 'checkbox') {
+            value = this.checked;
+          }
+          else if (this.className === 'img') {
+            value = this.checked;
+          }
+          store.set(id, value);
         });
       });
-    });
+
+      TABS.forEach(tab => {
+        const seedInput = gradioApp().querySelector(`#${tab}_seed input`);
+        ['random_seed', 'reuse_seed'].forEach(id => {
+          const btn = gradioApp().querySelector(`#${tab}_${id}`);
+          btn.addEventListener('click', () => {
+            setTimeout(() => {
+              state.utils.triggerEvent(seedInput, 'change');
+            }, 100);
+          });
+        });
+      });
+    }
 
     let value = store.get(id);
     if (! value) {
@@ -463,36 +466,38 @@ state.core = (function () {
     });
   }
 
-  function handleSavedSelects(id) {
-    state.utils.handleSelect(getElement(id), id, store, force=false);
+  function handleSavedSelects(id, addEvtLsner=true) {
+    state.utils.handleSelect(getElement(id), id, store, force=false, addEvtLsner);
   }
 
-  function handleSavedAccordion(id) {
-    state.utils.handleAccordion(getElement(id), id, store);
+  function handleSavedAccordion(id, addEvtLsner=true) {
+    state.utils.handleAccordion(getElement(id), id, store, addEvtLsner);
   }
 
-  function handleSavedMultiSelects(id) {
+  function handleSavedMultiSelects(id, addEvtLsner=true) {
     const select = gradioApp().getElementById(`${id}`);
-    state.utils.handleMultipleSelect(select, id, store);
+    state.utils.handleMultipleSelect(select, id, store, addEvtLsner);
   }
 
-  function handleSavedImage(id) {
-    state.utils.handleImage(getElement(id), id, store); // 图片有修改就发回到python保存
+  function handleSavedImage(id, addEvtLsner=true) {
+    state.utils.handleImage(getElement(id), id, store, addEvtLsner); // 图片有修改就发回到python保存
   }
 
-  function handleToggleButton(id) {
+  function handleToggleButton(id, addEvtLsner=true) {
     const btn = gradioApp().querySelector(`button#${id}`);
     if (! btn) { return; }
     // legionfu
     if (store.get(id) === 'true') {
       state.utils.triggerMouseEvent(btn);
     }
-    btn.addEventListener('click', function () {
-      store.set(id, Array.from(this.classList).indexOf('secondary-down') === -1);
-    });
+    if(addEvtLsner){
+      btn.addEventListener('click', function () {
+        store.set(id, Array.from(this.classList).indexOf('secondary-down') === -1);
+      });
+    }
   }
 
-  function handleExtensions(config) {
+  function handleExtensions(config, addEvtLsner=true) {
     // if (config['state_extensions']) {
     //   config['state_extensions'].forEach(function (ext) {
     //     if (ext in state.extensions) {
@@ -500,9 +505,8 @@ state.core = (function () {
     //     }
     //   });
     // }
-    console.log("@@@@@@ handleExtensions @@@@@@@@@@")
     for (const [name, obj] of Object.entries(state.extensions)) {
-      obj.init(flow_save_mode == "Core");
+      obj.init(flow_save_mode == "Core", addEvtLsner);
     }
 
   }
@@ -572,7 +576,7 @@ state.core = (function () {
     //     alert('All state values deleted!');
     //   }
     // },
-    applyState: async function () {
+    applyState: async function (addEvtLsner=true) {
       console.log("applyState")
       await fetch('/lightdiffusionflow/local/config.json?_=' + (+new Date()))
         .then(response => response.json())
@@ -587,7 +591,7 @@ state.core = (function () {
             }
             //console.log(config)
             //restoreTabs(config); // 恢复到最后点击的tab页面
-            load(config);
+            load(config, addEvtLsner);
             // forEachElement_WithoutTabs(SELECTS_WITHOUT_PREFIX, (element) => {
             //   handleSavedSelects(element);
             // });
@@ -711,11 +715,9 @@ state.core = (function () {
         return;
       }
 
-      console.log(temp_fileInput)
       let file_name = temp_fileInput.name;
       console.log(file_name)
       let extension = file_name.substring(file_name.lastIndexOf("."));
-      console.log(extension)
       if( Image_extensions.indexOf(extension) != -1 ){
         let data = {
           method: 'POST',
@@ -727,17 +729,15 @@ state.core = (function () {
         fetch(`/lightdiffusionflow/local/png_info`, data)
           .then(response => response.json())
           .then(data => {
-            console.log(data)
+            //console.log(data)
             actions.importLightDiffusionFlow(data)
           });
       }
       else{
         // const file = new Blob([fileInput[0].name]);
         const file = temp_fileInput.blob;
-        console.log(file)
         const reader = new FileReader();
         reader.onload = function (event) {
-          console.log(event)
           actions.importLightDiffusionFlow(event.target.result)
         };
         try{ reader.readAsText(file); } catch (error) {
@@ -753,7 +753,6 @@ state.core = (function () {
             fetch(`/lightdiffusionflow/local/read_file`, data)
               .then(response => response.json())
               .then(data => {
-                //console.log(data)
                 actions.importLightDiffusionFlow(data)
               });
           }
@@ -792,10 +791,10 @@ state.core = (function () {
         missing_ext_list = []
         for (let key in json_obj){
           ext_name = key.match(/ext-(\S+?)-(txt2img|img2img)/)
-          console.log(key)
+          //console.log(key)
           if(ext_name != null){
             ext_name = ext_name[1]
-            console.log(ext_name)
+            //console.log(ext_name)
             if(ext_list.indexOf(ext_name) === -1){
               if(missing_ext_list.indexOf(ext_name) === -1){
                 missing_ext_list.push(ext_name)

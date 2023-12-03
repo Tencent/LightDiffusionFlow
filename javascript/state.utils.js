@@ -270,35 +270,37 @@ state.utils = {
     return seed
   },
 
-  handleImage: function handleImage(select, id, store) {
-    setTimeout(() => {
-      state.utils.onContentChange(select, function (el) {
-        
-        let data = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            "id":id,
-            "img":""
-          })
-        }
-
-        try {
-          // new gradio version...
-          let img = el.querySelector('img');
-          if (img) {
-            data.body = JSON.stringify({
+  handleImage: function handleImage(select, id, store, addEvtLsner=true) {
+    if(addEvtLsner){
+      setTimeout(() => {
+        state.utils.onContentChange(select, function (el) {
+          
+          let data = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
               "id":id,
-              "img":img.src
+              "img":""
             })
           }
-        } catch (error) {
-          console.warn('[state]: Error:', error);
-        }
-        //console.log(`image changed ${id}`)
-        fetch(`/lightdiffusionflow/local/imgs_callback`, data)
-      });
-    }, 150);
+          
+          try {
+            // new gradio version...
+            let img = el.querySelector('img');
+            if (img) {
+              data.body = JSON.stringify({
+                "id":id,
+                "img":img.src
+              })
+            }
+          } catch (error) {
+            console.warn('[state]: Error:', error);
+          }
+          //console.log(`image changed ${id}`)
+          fetch(`/lightdiffusionflow/local/imgs_callback`, data)
+        });
+      }, 150);
+    }
   },
 
   clearImage: function clearImage(select) {
@@ -370,7 +372,7 @@ state.utils = {
       }
     }
   },
-  handleAccordion: function handleAccordion(accordion, id, store){
+  handleAccordion: function handleAccordion(accordion, id, store, addEvtLsner=true){
     try{
       let value = store.get(id);
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
@@ -384,22 +386,22 @@ state.utils = {
         //}
       }
 
-      setTimeout(() => {
-        state.utils.onAccordionChange(child, function (el) {
-          store.set(id, el.className.split(' ').pop() == "open");
-          //console.log(`accordion on change ${id}`)
-          //let span = el.querySelector('.transition, .icon');
-          //store.set(id, span.style.transform !== 'rotate(90deg)');
-        });
-      }, 150);
-
+      if(addEvtLsner){
+        setTimeout(() => {
+          state.utils.onAccordionChange(child, function (el) {
+            store.set(id, el.className.split(' ').pop() == "open");
+            //console.log(`accordion on change ${id}`)
+            //let span = el.querySelector('.transition, .icon');
+            //store.set(id, span.style.transform !== 'rotate(90deg)');
+          });
+        }, 150);
+      }
     } catch (error) {
       console.warn(`accordion:${accordion}, id:${id}`)
       console.warn('[state]: Error:', error);
     }
-
   },
-  handleSelect: function handleSelect(select, id, store, force=false) {
+  handleSelect: function handleSelect(select, id, store, force=false, addEvtLsner=true) {
     try {
 
       let value = store.get(id);
@@ -493,43 +495,46 @@ state.utils = {
         }, selectingQueue * 200)
       }
 
-      setTimeout(() => {
-        state.utils.onContentChange(select, function (el) {
-          let selected = el.querySelector('span.single-select');
-          if(force){
-            let localized_id = state.utils.getTranslation(id)
-            let id_translations = state.utils.reverseTranslation(localized_id)
-            //宁可错存一千，也不漏存一个
-            for (trans_id of id_translations){
+      if(addEvtLsner)
+      {
+        setTimeout(() => {
+          state.utils.onContentChange(select, function (el) {
+            let selected = el.querySelector('span.single-select');
+            if(force){
+              let localized_id = state.utils.getTranslation(id)
+              let id_translations = state.utils.reverseTranslation(localized_id)
+              //宁可错存一千，也不漏存一个
+              for (trans_id of id_translations){
+                if (selected) {
+                  store.set(trans_id, selected.textContent);
+                } else {
+                  // new gradio version...
+                  let input = el.querySelector('input');
+                  if (input) {
+                    store.set(trans_id, input.value);
+                  }
+                }
+              }
+            }
+            else{
               if (selected) {
-                store.set(trans_id, selected.textContent);
+                store.set(id, selected.textContent);
               } else {
                 // new gradio version...
                 let input = el.querySelector('input');
                 if (input) {
-                  store.set(trans_id, input.value);
+                  store.set(id, input.value);
                 }
               }
             }
-          }
-          else{
-            if (selected) {
-              store.set(id, selected.textContent);
-            } else {
-              // new gradio version...
-              let input = el.querySelector('input');
-              if (input) {
-                store.set(id, input.value);
-              }
-            }
-          }
-        });
-      }, 150);
+          });
+        }, 150);
+    }
     } catch (error) {
       console.warn('[state]: Error:', error);
     }
   },
-  handleMultipleSelect: function handleMultipleSelect(select, id, store) {
+  handleMultipleSelect: function handleMultipleSelect(select, id, store, addEvtLsner=true) {
     try {
       let value = store.get(id);
 
@@ -571,10 +576,13 @@ state.utils = {
           selectOption();
         }
       }
-      state.utils.onContentChange(select, function (el) {
-        const selected = Array.from(el.querySelectorAll('.token > span')).map(item => item.textContent);
-        store.set(id, selected);
-      });
+
+      if(addEvtLsner){
+        state.utils.onContentChange(select, function (el) {
+          const selected = Array.from(el.querySelectorAll('.token > span')).map(item => item.textContent);
+          store.set(id, selected);
+        });
+      }
     } catch (error) {
       console.warn('[state]: Error:', error);
     }
