@@ -16,10 +16,13 @@ class OutputPrompt_English:
     return "<b style='color:Red;'>Please select a valid lightdiffusionflow or image file!</b>"
 
   def importing_image(image_name):
-    return f"<b style='color:LimeGreen;'>importing image: '{image_name}'.</b>"
+    return f"<b style='color:LimeGreen;'>Importing image: '{image_name}'.</b>"
 
   def import_completed():
-    return "<b style='color:LimeGreen;'>import completed!</b>"
+    return "<b style='color:LimeGreen;'>Import Completed!</b>"
+
+  def import_completed_info():
+    return "Import Completed!"
 
   def alternative_option(target_value, new_value):
     return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found,<br>\
@@ -71,6 +74,9 @@ class OutputPrompt_Chinese:
 
   def import_completed():
     return "<b style='color:LimeGreen;'>导入完成!</b>"
+
+  def import_completed_info():
+    return "导入完成！"
 
   def alternative_option(target_value, new_value):
     return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>',<br>\

@@ -45,24 +45,26 @@ img2img_script_container = None
 Need_Preload = False
 Preload_File = r""
 File_extension = ".flow"
+g_msg_info = ""
 
 def test_func():
-  global extensions_conponents, extensions_id_conponents
-  global Output_Log
-  print("test_func")
-  import networks
-  print("----------------------------")
-  available_loras = []
-  for network in networks.available_networks.keys():
-    print(networks.available_networks[network].name)
-    print(networks.available_networks[network].alias)
-    print(networks.available_networks[network].hash)
-    print(networks.available_networks[network].shorthash)
-  print("----------------------------")
-  SearchingCheckPointByHashFromCivitai("efd248ef6c0e")
-  SearchingCheckPointByHashFromCivitai("5BF8CE6E0E0097235E06614EDEA32DC0DF9066BAD550B6145C19C2B373D78D99")
-  SearchingCheckPointByHashFromCivitai("5BF8CE6E0E00")
-  print("----------------------------")
+  gr.Warning("hello")
+  # global extensions_conponents, extensions_id_conponents
+  # global Output_Log
+  # print("test_func")
+  # import networks
+  # print("----------------------------")
+  # available_loras = []
+  # for network in networks.available_networks.keys():
+  #   print(networks.available_networks[network].name)
+  #   print(networks.available_networks[network].alias)
+  #   print(networks.available_networks[network].hash)
+  #   print(networks.available_networks[network].shorthash)
+  # print("----------------------------")
+  # SearchingCheckPointByHashFromCivitai("efd248ef6c0e")
+  # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E0097235E06614EDEA32DC0DF9066BAD550B6145C19C2B373D78D99")
+  # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E00")
+  # print("----------------------------")
   #print(Output_Log)
   #print(networks.available_networks)
   #print(preprocessor_filters)
@@ -70,6 +72,13 @@ def test_func():
   #print(extensions_id_conponents["dropdown"]["state-ext-control-net-txt2img_0-model"].get_config())
 
   # print(parameters_copypaste.paste_fields)
+
+# 直接从http请求带参数过来触发不了弹窗？
+# 为了正常显示弹窗只能改成全局参数。
+def custom_msg_box():
+  global g_msg_info
+  if(g_msg_info != ""):
+    gr.Info(g_msg_info)
 
 def add_output_log(msg:str="", style:str=""):
   global Output_Log
@@ -80,6 +89,8 @@ def add_output_log(msg:str="", style:str=""):
       clear_msg = clear_msg.replace(res,"")
     print(clear_msg)
     Output_Log += f"<p style='color:rgb(192,192,192);{style}'>{msg}</p>"
+
+  custom_msg_box()
   return Output_Log, Output_Log
 
 def add_output_warning(msg:str=""):
@@ -89,9 +100,12 @@ def add_output_error(msg:str=""):
     add_output_log(msg, style="color:Red;")
 
 def add_preset_output_log(preset, key, value):
+  global g_msg_info
+  g_msg_info = ""
   if(preset == "start"):
     add_output_log(OutputPrompt.startimport())
   elif(preset == "finished"):
+    g_msg_info = OutputPrompt.import_completed_info()
     add_output_log(OutputPrompt.import_completed())
   elif(preset == "invalid"):
     add_output_log(OutputPrompt.invalid_file())

@@ -253,7 +253,6 @@ state.core = (function () {
           if(waiting_second_apply)
           {
             waiting_second_apply = false
-            console.log(`######## ${tab}_script_container changed ########`)
             actions.applyState(false);
             setTimeout(() => {
               actions.preset_output_log("finished")
