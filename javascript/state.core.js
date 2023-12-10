@@ -812,7 +812,7 @@ state.core = (function () {
         // webui主界面 没有localization相关的兼容问题 所以不用管
         
         waiting_second_apply = true
-        store.clear();
+        store.clearAll();
         store.load(json_obj);
         actions.applyState();
       });

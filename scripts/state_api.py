@@ -19,6 +19,7 @@ import modules.script_callbacks as script_callbacks
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
+from modules import ui_components
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
@@ -34,6 +35,7 @@ invisible_buttons = {}
 Webui_Comps = {} # webui上需要操作的图片组件
 Webui_Comps_Cur_Val = [] # 顺序与Image_Components_Key一致
 Output_Log = ""
+g_msg_info = ""
 
 conponents_originlist = []
 extensions_conponents = {}
@@ -42,10 +44,15 @@ extensions_id_conponents_value = {}
 txt2img_script_container = None
 img2img_script_container = None
 
+local_flows_path = "lightdiffusionflow"
 Need_Preload = False
 Preload_File = r""
 File_extension = ".flow"
-g_msg_info = ""
+
+paste_symbol = '\u2199\ufe0f'  # ↙
+refresh_symbol = '\U0001f504'  # 🔄
+save_style_symbol = '\U0001f4be'  # 💾
+apply_style_symbol = '\U0001f4cb'  # 📋
 
 def test_func():
   gr.Warning("hello")
@@ -1112,10 +1119,19 @@ class Script(scripts.Script):
       State_Comps["import"]
       State_Comps["export"]
       State_Comps["outlog"]
+      State_Comps["local_flows"]
+      State_Comps["apply"]
+      State_Comps["save"]
+      State_Comps["refresh"]
     except:
       State_Comps["import"] = []
       State_Comps["export"] = []
       State_Comps["outlog"] = []
+      State_Comps["local_flows"] = []
+      State_Comps["apply"] = []
+      State_Comps["save"] = []
+      State_Comps["refresh"] = []
+
 
     cur_mode = "img2img" if self.is_img2img else "txt2img"
     save_mode = " (for all extensions)"
@@ -1139,6 +1155,12 @@ class Script(scripts.Script):
       with gr.Row():
         export_config = gr.Button(value='导出/Export',elem_id=cur_mode+'_ldf_export')
         State_Comps["export"].append(export_config)
+
+      with gr.Row():
+        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,value='',elem_id=cur_mode+'_ldf_local_flows'))
+        State_Comps["apply"].append(ui_components.ToolButton(value=paste_symbol,elem_id=cur_mode+'_ldf_apply'))
+        State_Comps["save"].append(ui_components.ToolButton(value=save_style_symbol,elem_id=cur_mode+'_ldf_save'))
+        State_Comps["refresh"].append(ui_components.ToolButton(value=refresh_symbol,elem_id=cur_mode+'_ldf_refresh'))
 
       if(self.is_img2img):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
