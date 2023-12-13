@@ -1,3 +1,12 @@
+## 2.1.4
+
+### Features:
+ * 增加记录额外LoRA模型数据，以便导入时从Civitai搜索缺失的lora模型。
+
+### Bug Fixes:
+ * 修复了部分已知的参数设置失败的问题，如ControlNet在Canny模式下的"Canny Low/Hight Threshold"等参数。
+
+
 ## 2.1.3
 
 ### Features:

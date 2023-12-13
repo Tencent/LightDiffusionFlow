@@ -639,62 +639,81 @@ state.core = (function () {
         store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
       }
 
-      fetch('/lightdiffusionflow/local/lightdiffusionflow_config?onlyimg=true')
+      
+      fetch('/lightdiffusionflow/local/lightdiffusionflow_config?data2export=true')
+      .then(response => response.json())
+      .then(config => {
+
+        config = JSON.parse(config)
+        stored_config = store.getAll()
+        
+        let data = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            "config_data":stored_config
+          })
+        }
+        fetch(`/lightdiffusionflow/local/parse_lora_info`, data)
         .then(response => response.json())
-        .then(config => {
-          config = JSON.parse(config)
-          stored_config = store.getAll()
+        .then(response_lora_info => {
           
-          for (let key in config){
-            if(config[key] != ""){
-              stored_config[key] = config[key]
-            }
-          }
+        for (let key in response_lora_info){
+          stored_config[key] = response_lora_info[key]
+        }
 
-          for (let key in stored_config){
-            if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
-            {
-              console.log("allow-preview改成false")
-              stored_config[key] = "false"
-            }
+        for (let key in config){
+          if(config[key] != ""){
+            stored_config[key] = config[key]
           }
+        }
 
-          var checkTime = function (i) {
-            if (i < 10) { i = "0" + i; }
-            return i;
+        for (let key in stored_config){
+          if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
+          {
+            console.log("allow-preview改成false")
+            stored_config[key] = "false"
           }
-          let nowdate = new Date();
-          let year = String(nowdate.getFullYear())
-          let month = String(checkTime(nowdate.getMonth() + 1))
-          let day = String(checkTime(nowdate.getDate()))
-          let h = String(checkTime(nowdate.getHours()))
-          let m = String(checkTime(nowdate.getMinutes()))
-          let s = String(checkTime(nowdate.getSeconds()))
-          let time_str = year+month+day+h+m+s
+        }
 
-          filename = 'flow-'+time_str+'.flow'
-          filename = prompt("Export workflow as:", filename);
-          if (!filename) return;
-          if (!filename.toLowerCase().endsWith(".flow")) {
-            filename += ".flow";
-          }
-          if(filename != ".flow"){
-            // const handle = window.showDirectoryPicker();
-            // console.log(handle)
-            
-            state.utils.saveFile(filename, stored_config);
-            
-            fetch('https://api.lightflow.ai/openapi/access?action=export')
-            .then(response => response.json())
-            .then(config => {
-              console.log(config)
-            }).catch(function(e) {
-              console.log("Oops, export callback error!");
-            });
+        var checkTime = function (i) {
+          if (i < 10) { i = "0" + i; }
+          return i;
+        }
+        let nowdate = new Date();
+        let year = String(nowdate.getFullYear())
+        let month = String(checkTime(nowdate.getMonth() + 1))
+        let day = String(checkTime(nowdate.getDate()))
+        let h = String(checkTime(nowdate.getHours()))
+        let m = String(checkTime(nowdate.getMinutes()))
+        let s = String(checkTime(nowdate.getSeconds()))
+        let time_str = year+month+day+h+m+s
 
-          }
+        filename = 'flow-'+time_str+'.flow'
+        filename = prompt("Export workflow as:", filename);
+        if (!filename) return;
+        if (!filename.toLowerCase().endsWith(".flow")) {
+          filename += ".flow";
+        }
+        if(filename != ".flow"){
+          // const handle = window.showDirectoryPicker();
+          // console.log(handle)
+          
+          state.utils.saveFile(filename, stored_config);
+          
+          // fetch('https://api.lightflow.ai/openapi/access?action=export')
+          // .then(response => response.json())
+          // .then(config => {
+          //   console.log(config)
+          // }).catch(function(e) {
+          //   console.log("Oops, export callback error!");
+          // });
+
+        }
 
         }).catch(error => console.error('[state]: Error getting Flow file:', error));
+
+      }).catch(error => console.error('[state]: Error getting Flow file:', error));
 
       //config = JSON.stringify(store.getAll(), null, 4);
       //fetch(`/lightdiffusionflow/local/ExportLightDiffusionFlow?config=${config}`)

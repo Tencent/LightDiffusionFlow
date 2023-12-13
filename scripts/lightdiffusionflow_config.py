@@ -56,6 +56,9 @@ class OutputPrompt_English:
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>
     '''
 
+  def download_link(file_name, file_url):
+    return f'''<a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>'''
+
   def note_for_save_mode():
     return "Core mode only supports basic parameters for Text-to-Image and Image-to-Image, along with ControlNet parameters. \
 The All mode, on the other hand, aims to support as many parameters as possible on the page, \
@@ -120,6 +123,9 @@ class OutputPrompt_Chinese:
     return f'''<p style="color:Orange;">点击下载 \
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {name} </a>
     '''
+
+  def download_link(file_name, file_url):
+    return f'''<a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>'''
 
   def note_for_save_mode():
     return "Core模式仅支持文生图和图生图的基本参数+ControlNet参数。All模式则会尽可能多的支持页面上的参数，但是缺点是有概率导致UI卡住，无限转圈。"

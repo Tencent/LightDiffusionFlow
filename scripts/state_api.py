@@ -59,19 +59,31 @@ def test_func():
   # global extensions_conponents, extensions_id_conponents
   # global Output_Log
   # print("test_func")
-  # import networks
-  # print("----------------------------")
+  print("----------------------------")
   # available_loras = []
-  # for network in networks.available_networks.keys():
-  #   print(networks.available_networks[network].name)
-  #   print(networks.available_networks[network].alias)
-  #   print(networks.available_networks[network].hash)
-  #   print(networks.available_networks[network].shorthash)
-  # print("----------------------------")
+  import network
+  for network in networks.available_networks.keys():
+    print(networks.available_networks[network].name)
+    print(networks.available_networks[network].alias)
+    print(networks.available_networks[network].hash)
+    print(networks.available_networks[network].shorthash)
+    print(networks.available_networks[network].filename)
+  print("----------------------------")
   # SearchingCheckPointByHashFromCivitai("efd248ef6c0e")
   # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E0097235E06614EDEA32DC0DF9066BAD550B6145C19C2B373D78D99")
   # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E00")
   # print("----------------------------")
+
+  print("------ZhangSan'sSong------")
+  #hash = gen_file_sha256(r"A:\AIPainter\sd-webui-aki-v4.4\models\Lora\ZhangSan'sSong.safetensors")
+  hash = gen_file_sha256(r"A:\AIPainter\sd-webui-aki-v4.4\models\Lora\yaeMikoRealistic_yaemikoMixed.safetensors")
+  print(hash)
+
+  model_info = SearchingCheckPointByHashFromCivitai(hash)
+  print(model_info)
+  print(model_info["name"])
+  print(model_info["downloadUrl"])
+
   #print(Output_Log)
   #print(networks.available_networks)
   #print(preprocessor_filters)
@@ -86,6 +98,7 @@ def custom_msg_box():
   global g_msg_info
   if(g_msg_info != ""):
     gr.Info(g_msg_info)
+    g_msg_info = ""
 
 def add_output_log(msg:str="", style:str=""):
   global Output_Log
@@ -131,6 +144,31 @@ def add_preset_output_log(preset, key, value):
   elif(preset == "download_url"):
     add_output_log(OutputPrompt.click_to_download(key, value))
 
+
+def read_chunks(file, size=io.DEFAULT_BUFFER_SIZE):
+  """Yield pieces of data from a file-like object until EOF."""
+  while True:
+      chunk = file.read(size)
+      if not chunk:
+          break
+      yield chunk
+def gen_file_sha256(filname):
+  import hashlib
+  """ pip-style sha256 hash generation"""
+  print("Use Memory Optimized SHA256")
+  blocksize=1 << 20
+  sha256_hash = hashlib.sha256()
+  length = 0
+  with open(os.path.realpath(filname), 'rb') as read_file:
+      for block in read_chunks(read_file, size=blocksize):
+          length += len(block)
+          sha256_hash.update(block)
+
+  hash_value =  sha256_hash.hexdigest()
+  print(f"sha256: {hash_value}")
+  print(f"length: {length}")
+  return hash_value
+
 def find_checkpoint_from_name(name:str):
 
   for checkpoint in checkpoints_list.keys():
@@ -158,9 +196,11 @@ def SearchingCheckPointByHashFromCivitai(hash:str):
   try:
     response = requests.get("https://civitai.com/api/v1/model-versions/by-hash/"+hash_str)
     if(response.status_code == 200):
-      print(response.content)
+      #print(response.content)
+      return response.json()
   except:
     pass
+  return {}
 
 def set_lightdiffusionflow_file():
   global Preload_File
@@ -362,31 +402,31 @@ def params_create_ids():
             pass
   #print(extensions_id_conponents)
 
-def get_lora_info(loras_in_use:list):
+def get_lora_info(using_loras:list):
   import networks
-  loras_info = []
+  print(f"using_loras = {using_loras}")
+  loras_info = {}
   for lora_name in using_loras:
     for network in networks.available_networks.keys():
       if( (lora_name == networks.available_networks[network].name or lora_name == networks.available_networks[network].alias) and networks.available_networks[network].shorthash != ""):
-        loras_info[networks.available_networks[network].hash] = {
+        print(networks.available_networks[network].filename)
+        sha256 = gen_file_sha256(networks.available_networks[network].filename)
+        loras_info[sha256] = {
           'name':networks.available_networks[network].name,
           'alias':networks.available_networks[network].alias
         }
+  print(f"loras_info = {loras_info}")
   return loras_info
 
 def get_lora_from_prompt(prompt):
-  # re_parens = re.compile(r"[\\/\[\](){}]+")
-  # prompt = re.sub(
-  #   re_parens, "", prompt.replace("，", ",")#.replace("-", " ").replace("_", " ")
-  # )
-
   import networks
+
   available_loras = []
   for network in networks.available_networks.keys():
     available_loras.append((networks.available_networks[network].name,networks.available_networks[network].alias))
   #print(available_loras)
   
-  missing_loras = []
+  used_loras = []
   re_lora_prompt = re.compile("<lora:([\w_\s.]+):([ \d.]+)>", re.IGNORECASE)
   results = re.findall(re_lora_prompt, prompt)
   # print("使用到的lora:")
@@ -395,9 +435,49 @@ def get_lora_from_prompt(prompt):
     lora_name = res[0]
     for lora in available_loras:
       if(lora_name == lora[0] or lora_name == lora[1]):
+        used_loras.append(lora_name)
+  return used_loras
+
+def get_missing_lora(workflow_json):
+  import networks
+
+  data_str = json.dumps(workflow_json)
+  # re_parens = re.compile(r"[\\/\[\](){}]+")
+  # prompt = re.sub(
+  #   re_parens, "", prompt.replace("，", ",")#.replace("-", " ").replace("_", " ")
+  # )
+
+  available_loras = []
+  for network in networks.available_networks.keys():
+    available_loras.append((networks.available_networks[network].name,networks.available_networks[network].alias))
+  #print(available_loras)
+  
+  missing_loras = []
+  loras_info = workflow_json[LoRAs_In_Use]
+  re_lora_prompt = re.compile("<lora:([\w_\s.]+):([ \d.]+)>", re.IGNORECASE)
+  results = re.findall(re_lora_prompt, data_str)
+  # print("使用到的lora:")
+  # print(results)
+  for res in results:
+    lora_name = res[0]
+    for lora in available_loras:
+      if(lora_name == lora[0] or lora_name == lora[1]):
         break
     else:
-      missing_loras.append(lora_name)
+      # SD默认计算的lora的hash值无法用来在C站搜索，下载链接需要的Hash需单独计算导出才能支持。
+      # name,alias,hash,downloadUrl
+      for sha256 in loras_info.keys():
+        if(loras_info[sha256]["name"] == lora_name or loras_info[sha256]["alias"] == lora_name):
+          try:
+            model_info = SearchingCheckPointByHashFromCivitai(sha256)
+            if(model_info != {}):
+              lora_link = OutputPrompt.download_link(lora_name, model_info["downloadUrl"])
+              missing_loras.append(lora_link)
+              break
+          except:
+           pass
+      else:
+        missing_loras.append(lora_name)
   # print("丢失的lora:")
   # print(missing_loras)
   return missing_loras
@@ -665,16 +745,22 @@ def fn_import_workflow(workflow_file):
   # 检查lora
   missing_loras = []
   try:
-    missing_loras = get_lora_from_prompt(workflow_json_str)
+    missing_loras = get_missing_lora(workflow_json)
     if(len(missing_loras) > 0):
       add_output_log(OutputPrompt.missing_loras(missing_loras))
     
-    # lora的hash值无法用来在C站搜索，所以下载链接功能暂缓。
+    # # SD默认计算的lora的hash值无法用来在C站搜索，下载链接需要的Hash需单独计算导出才能支持。
+    # # name,alias,hash,downloadUrl
     # loras_info = workflow_json[LoRAs_In_Use]
     # for lora_name in missing_loras:
-    #   for short_hash in loras_info.keys():
-    #     if(loras_info[short_hash].name == lora_name or loras_info[short_hash].alias == lora_name):
-    #       pass
+    #   for sha256 in loras_info.keys():
+    #     if(loras_info[sha256]["name"] == lora_name or loras_info[sha256]["alias"] == lora_name):
+    #       try:
+    #         model_info = SearchingCheckPointByHashFromCivitai(sha256)
+    #         if(model_info != {}):
+    #           add_preset_output_log("download_url", lora_name, model_info["downloadUrl"])
+    #       except:
+    #         pass
   except KeyError as e:
     pass
     #print(f"except missing loras error: {e}")
@@ -698,6 +784,7 @@ class png_info_params(BaseModel):
 class file_params(BaseModel):
   file_path:str
 
+
 class StateApi():
 
   BASE_PATH = '/lightdiffusionflow'
@@ -716,6 +803,7 @@ class StateApi():
     self.add_api_route('/local/config.json', self.get_config, methods=['GET']) 
     # python已经加载好的配置workflow_json  发送给 js
     self.add_api_route('/local/lightdiffusionflow_config', self.get_lightdiffusionflow_config, methods=['GET']) 
+    self.add_api_route('/local/parse_lora_info', self.parse_lora_info, methods=['POST']) 
     # 获取图片的组件id 由js来设置onchange事件
     self.add_api_route('/local/get_imgs_elem_key', self.get_img_elem_key, methods=['GET']) 
     # 获取当前已安装的插件列表
@@ -749,16 +837,20 @@ class StateApi():
   def useless_config_filter(self, config:config_params):
     return config_filter(config.config_data)
 
-  def get_lightdiffusionflow_config(self, onlyimg:bool = False):
+  def get_lightdiffusionflow_config(self, data2export:bool = False):
     global workflow_json, extensions_id_conponents, extensions_id_conponents_value
     temp_json = {}
-    if(onlyimg):
+    if(data2export):
+
       for key in extensions_id_conponents["image"].keys():
       # for key in lf_config.Image_Components_Key:
         try:
           temp_json[key] = workflow_json[key]
         except:
           pass
+
+      # using_loras = get_lora_from_prompt(json.dumps(temp_json))
+      # temp_json[LoRAs_In_Use] = get_lora_info(using_loras)
           
       # 导出时调用，这里把py负责的其他组件一起读进来
       for comp_type in extensions_id_conponents_value.keys():
@@ -770,7 +862,6 @@ class StateApi():
               temp_json[comp_id] = extensions_id_conponents_value[comp_type][comp_id]
           except KeyError as e:
             pass
-      #print(temp_json)
     else:
       temp_json = copy.deepcopy(workflow_json)
       for key in extensions_id_conponents["image"].keys():
@@ -778,6 +869,13 @@ class StateApi():
         temp_json[key] = ""
 
     return json.dumps(temp_json)
+
+  def parse_lora_info(self, config:config_params):
+    temp_json = {}
+    json_str = json.dumps(config.config_data)
+    using_loras = get_lora_from_prompt(json_str)
+    temp_json[LoRAs_In_Use] = get_lora_info(using_loras)
+    return temp_json
 
   def str_2_json(self, str_data:str):
     out_json = {}
@@ -1139,6 +1237,16 @@ class Script(scripts.Script):
       save_mode = " (only ControlNet)"
 
     with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version + save_mode, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
+
+      with gr.Row():
+        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,value='',elem_id=cur_mode+'_ldf_local_flows'))
+        State_Comps["apply"].append(ui_components.ToolButton(value=paste_symbol,elem_id=cur_mode+'_ldf_apply'))
+        State_Comps["save"].append(ui_components.ToolButton(value=save_style_symbol,elem_id=cur_mode+'_ldf_save'))
+        State_Comps["refresh"].append(ui_components.ToolButton(value=refresh_symbol,elem_id=cur_mode+'_ldf_refresh'))
+
+      with gr.Row():
+        gr.HTML(label="",value="<hr style='margin-top:10px;margin-bottom:10px'></hr>")
+
       with gr.Row():
         lightdiffusionflow_file = gr.File(label="LightDiffusionFlow File",file_count="single", file_types=[File_extension], elem_id=cur_mode+'_ldf_import')
         State_Comps["import"].append(lightdiffusionflow_file)
@@ -1156,17 +1264,11 @@ class Script(scripts.Script):
         export_config = gr.Button(value='导出/Export',elem_id=cur_mode+'_ldf_export')
         State_Comps["export"].append(export_config)
 
-      with gr.Row():
-        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,value='',elem_id=cur_mode+'_ldf_local_flows'))
-        State_Comps["apply"].append(ui_components.ToolButton(value=paste_symbol,elem_id=cur_mode+'_ldf_apply'))
-        State_Comps["save"].append(ui_components.ToolButton(value=save_style_symbol,elem_id=cur_mode+'_ldf_save'))
-        State_Comps["refresh"].append(ui_components.ToolButton(value=refresh_symbol,elem_id=cur_mode+'_ldf_refresh'))
-
       if(self.is_img2img):
         State_Comps["background_import"] = gr.File(label="LightDiffusionFlow File",file_count="single",
            file_types=[File_extension],visible=False)
         State_Comps["json2js"] = gr.Textbox(label="json2js",visible=False)
-        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=False)
+        State_Comps["test_button"] = gr.Button(value='测试',elem_id='test_button',visible=True)
         State_Comps["refresh_log"] = gr.Button(value='刷新日志',elem_id='img2img_invisible_refresh_log',visible=False)
         State_Comps["set_dropdowns"] = gr.Button(value='设置部分参数',elem_id='lightdiffusionflow_set_dropdowns',visible=False)
         State_Comps["set_js_params"] = gr.Button(value='设置剩下的js参数',elem_id='lightdiffusionflow_set_js_params',visible=False)
