@@ -20,6 +20,7 @@ import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.generation_parameters_copypaste import paste_fields, registered_param_bindings, parse_generation_parameters
 from modules.sd_models import checkpoints_list
 from modules import ui_components
+from modules.paths_internal import data_path
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
@@ -28,7 +29,7 @@ import scripts.lightdiffusionflow_config as lf_config
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # sys.path.append(os.path.join(current_path,"lib"))
-
+api = None
 workflow_json = {}
 State_Comps = {} # 当前页面的按钮组件
 invisible_buttons = {}
@@ -44,7 +45,13 @@ extensions_id_conponents_value = {}
 txt2img_script_container = None
 img2img_script_container = None
 
-local_flows_path = "lightdiffusionflow"
+local_flows_path = "models/LightDiffusionFlow"
+flows_path = os.path.join(data_path, local_flows_path) 
+flows_path = flows_path.replace("/","\\")
+if(not os.path.isdir(flows_path)):
+  os.mkdir(flows_path)
+
+local_flow_list = []
 Need_Preload = False
 Preload_File = r""
 File_extension = ".flow"
@@ -53,6 +60,7 @@ paste_symbol = '\u2199\ufe0f'  # ↙
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
+
 
 def test_func():
   gr.Warning("hello")
@@ -97,16 +105,20 @@ def test_func():
 def custom_msg_box():
   global g_msg_info
   if(g_msg_info != ""):
+    print(f"gr.Info({g_msg_info})")
     gr.Info(g_msg_info)
-    g_msg_info = ""
+
+def clear_markup(html_str):
+    clearly_str = html_str
+    results = re.findall("(<.+?>)",clearly_str)
+    for res in results:
+      clearly_str = clearly_str.replace(res,"")
+    return clearly_str
 
 def add_output_log(msg:str="", style:str=""):
   global Output_Log
   if(msg != ""):
-    clear_msg = msg
-    results = re.findall("(<.+?>)",msg)
-    for res in results:
-      clear_msg = clear_msg.replace(res,"")
+    clear_msg = clear_markup(msg)
     print(clear_msg)
     Output_Log += f"<p style='color:rgb(192,192,192);{style}'>{msg}</p>"
 
@@ -201,6 +213,37 @@ def SearchingCheckPointByHashFromCivitai(hash:str):
   except:
     pass
   return {}
+
+def refresh_local_flows(*inputs):
+  print("refresh_local_flows")
+  global local_flow_list,local_flows_path
+  flows_path = os.path.join(data_path, local_flows_path) 
+  local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
+      os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+  print(inputs)
+  print(local_flow_list)
+  ret = []
+  for dd in inputs:
+    if dd in local_flow_list:
+      selected = dd
+    else:
+      selected = None
+    ret.append(gr.Dropdown.update(choices=local_flow_list, value=selected))
+  #ret = [gr.Dropdown.update(choices=local_flow_list, value=selected) for i in inputs]
+  return ret
+
+def apply_local_flow(selected):
+  global local_flow_list,local_flows_path
+  global Need_Preload,Preload_File
+
+  if(selected != "" and selected != None):
+    flow_path = os.path.join(data_path, local_flows_path, selected) 
+    if(os.path.exists(flow_path)):
+      print("OK,Local File!")
+      print(flow_path)
+      Preload_File = flow_path
+      Need_Preload = True
+      gr.Info(clear_markup(OutputPrompt.startimport()))
 
 def set_lightdiffusionflow_file():
   global Preload_File
@@ -784,6 +827,9 @@ class png_info_params(BaseModel):
 class file_params(BaseModel):
   file_path:str
 
+class savefile_params(BaseModel):
+  file_name:str
+  file_data:dict
 
 class StateApi():
 
@@ -819,7 +865,9 @@ class StateApi():
     # 传入一个文件路径，返回文件内容
     self.add_api_route('/local/read_file', self.read_file, methods=['POST']) 
     self.add_api_route('/local/need_preload', self.need_preload, methods=['GET'])
-
+    # 保存当前配置到本地文件夹
+    self.add_api_route('/local/save_flow_to_local', self.saveFlowToLocal, methods=['POST'])
+    
     self.add_api_route('/set_preload', self.set_preload, methods=['POST'])
 
   def get_config(self):
@@ -1011,6 +1059,41 @@ class StateApi():
       return Preload_File
     return ""
 
+  def saveFlowToLocal(self, data_to_save:savefile_params):
+    global local_flows_path
+    global add_output_log
+
+    overall_data = {}
+    print(data_to_save.file_name)
+    print(data_to_save.file_data)
+    filedata = data_to_save.file_data
+
+    # python处理的图片和dropdown信息
+    overall_data = json.loads(self.get_lightdiffusionflow_config(True))
+    for key in filedata.keys():
+      if(filedata[key] != ""):
+        overall_data[key] = filedata[key]
+
+    # Lora信息
+    params = config_params(config_data=overall_data)
+    lora_info = self.parse_lora_info(params)
+    for key in lora_info.keys():
+      overall_data[key] = lora_info[key]
+
+    # 过滤掉一些没用的默认值的信息
+    overall_data = config_filter(overall_data)
+
+    flow_path = os.path.join(data_path, local_flows_path, data_to_save.file_name) 
+    print(flow_path)
+    if(not os.path.exists(flow_path)):
+      with open(flow_path,"w") as f:
+        #json.dump(overall_data,f)
+        f.write(json.dumps(overall_data, ensure_ascii=False, indent=4))
+      add_output_log(OutputPrompt.save_completed())
+    else:
+      add_output_log(OutputPrompt.save_failed())
+
+    return flow_path
 
 class Script(scripts.Script):  
 
@@ -1147,6 +1230,13 @@ class Script(scripts.Script):
       target_comps.append(State_Comps["json2js"]) # 触发事件传递json给js
       #target_comps.append(State_Comps["outlog"][0])
       #target_comps.append(State_Comps["outlog"][1]) # 因为显示日志的窗口分txt2img和img2img两个位置 所以两个位置同步导出
+      
+      for i in range(len(State_Comps["local_flows"])):
+        #State_Comps["local_flows"]
+        State_Comps["refresh"][i].click(refresh_local_flows, inputs=State_Comps["local_flows"],outputs=State_Comps["local_flows"])
+        State_Comps["apply"][i].click(apply_local_flow, inputs=[State_Comps["local_flows"][i]],outputs=[])
+        State_Comps["save"][i].click(fn=None,_js="state.core.actions.saveFlowToLocal", inputs=[],outputs=[])
+        
 
       for btn in State_Comps["export"]:
         btn.click(None,_js="state.core.actions.exportState") #, inputs=[],outputs=[] 
@@ -1236,10 +1326,15 @@ class Script(scripts.Script):
     if(Flow_Save_mode == "Core"):
       save_mode = " (only ControlNet)"
 
+    global local_flow_list,local_flows_path
+    flows_path = os.path.join(data_path, local_flows_path) 
+    local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
+        os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+
     with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version + save_mode, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
 
       with gr.Row():
-        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,value='',elem_id=cur_mode+'_ldf_local_flows'))
+        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,choices=local_flow_list,value='',elem_id=cur_mode+'_ldf_local_flows'))
         State_Comps["apply"].append(ui_components.ToolButton(value=paste_symbol,elem_id=cur_mode+'_ldf_apply'))
         State_Comps["save"].append(ui_components.ToolButton(value=save_style_symbol,elem_id=cur_mode+'_ldf_save'))
         State_Comps["refresh"].append(ui_components.ToolButton(value=refresh_symbol,elem_id=cur_mode+'_ldf_refresh'))

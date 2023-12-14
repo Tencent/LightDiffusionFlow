@@ -101,7 +101,7 @@ state.core = (function () {
       fetch('/lightdiffusionflow/local/need_preload')
       .then(response => response.json())
       .then(data => {
-        //console.log(`fn_timer`)
+        console.log(`fn_timer`)
         if (data != ""){
           //state.core.actions.handleLightDiffusionFlow([{"name":data}]);
           const btn1 = gradioApp().querySelector(`button#set_lightdiffusionflow_file`);
@@ -148,6 +148,28 @@ state.core = (function () {
 
     // }
       
+  }
+
+  function get_js_local_data(){
+    
+    if(state.utils.getCurSeed('txt2img') != undefined){
+      store.set(`txt2img_seed`,state.utils.getCurSeed('txt2img'))
+    }
+    if(state.utils.getCurSeed('img2img') != undefined){
+      store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
+    }
+
+    stored_config = store.getAll()
+
+    for (let key in stored_config){
+      if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
+      {
+        console.log("allow-preview改成false")
+        stored_config[key] = "false"
+      }
+    }
+
+    return stored_config
   }
 
   function get_imgs_elem_key(){
@@ -632,20 +654,20 @@ state.core = (function () {
     
     exportState: function () {
       
-      if(state.utils.getCurSeed('txt2img') != undefined){
-        store.set(`txt2img_seed`,state.utils.getCurSeed('txt2img'))
-      }
-      if(state.utils.getCurSeed('img2img') != undefined){
-        store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
-      }
-
+      // if(state.utils.getCurSeed('txt2img') != undefined){
+      //   store.set(`txt2img_seed`,state.utils.getCurSeed('txt2img'))
+      // }
+      // if(state.utils.getCurSeed('img2img') != undefined){
+      //   store.set(`img2img_seed`,state.utils.getCurSeed('img2img'))
+      // }
+      let stored_config = get_js_local_data()
       
       fetch('/lightdiffusionflow/local/lightdiffusionflow_config?data2export=true')
       .then(response => response.json())
       .then(config => {
 
         config = JSON.parse(config)
-        stored_config = store.getAll()
+        //stored_config = store.getAll()
         
         let data = {
           method: 'POST',
@@ -668,13 +690,13 @@ state.core = (function () {
           }
         }
 
-        for (let key in stored_config){
-          if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
-          {
-            console.log("allow-preview改成false")
-            stored_config[key] = "false"
-          }
-        }
+        // for (let key in stored_config){
+        //   if(key.indexOf("allow-preview") !== -1 && key.indexOf("ext-control-net") !== -1)
+        //   {
+        //     console.log("allow-preview改成false")
+        //     stored_config[key] = "false"
+        //   }
+        // }
 
         var checkTime = function (i) {
           if (i < 10) { i = "0" + i; }
@@ -717,6 +739,39 @@ state.core = (function () {
 
       //config = JSON.stringify(store.getAll(), null, 4);
       //fetch(`/lightdiffusionflow/local/ExportLightDiffusionFlow?config=${config}`)
+    },
+    saveFlowToLocal: function saveFlowToLocal(){
+      var checkTime = function (i) {
+        if (i < 10) { i = "0" + i; }
+        return i;
+      }
+      let nowdate = new Date();
+      let year = String(nowdate.getFullYear())
+      let month = String(checkTime(nowdate.getMonth() + 1))
+      let day = String(checkTime(nowdate.getDate()))
+      let h = String(checkTime(nowdate.getHours()))
+      let m = String(checkTime(nowdate.getMinutes()))
+      let s = String(checkTime(nowdate.getSeconds()))
+      let time_str = year+month+day+h+m+s
+
+      filename = 'flow-'+time_str+'.flow'
+      filename = prompt("Save workflow as:", filename);
+      if (!filename) return;
+      if (!filename.toLowerCase().endsWith(".flow")) {
+        filename += ".flow";
+      }
+      if(filename != ".flow"){
+        let stored_config = get_js_local_data()
+        let data = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            "file_name":filename,
+            "file_data":stored_config
+          })
+        }
+        fetch("/lightdiffusionflow/local/save_flow_to_local",data)
+      }
     },
 
     handleLightDiffusionFlow: function (fileInput){

@@ -23,6 +23,12 @@ class OutputPrompt_English:
 
   def import_completed_info():
     return "Import Completed!"
+  
+  def save_completed():
+    return "<b style='color:LimeGreen;'>Save Completed!</b>"
+
+  def save_failed():
+    return "<b style='color:Red;'>Save Failed!</b>"
 
   def alternative_option(target_value, new_value):
     return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found,<br>\
@@ -77,9 +83,15 @@ class OutputPrompt_Chinese:
 
   def import_completed():
     return "<b style='color:LimeGreen;'>导入完成!</b>"
-
+    
   def import_completed_info():
     return "导入完成！"
+
+  def save_completed():
+    return "<b style='color:LimeGreen;'>保存完毕！</b>"
+
+  def save_failed():
+    return "<b style='color:Red;'>保存失败！</b>"
 
   def alternative_option(target_value, new_value):
     return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>',<br>\
