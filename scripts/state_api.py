@@ -59,6 +59,7 @@ File_extension = ".flow"
 paste_symbol = '\u2199\ufe0f'  # ↙
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
+clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
 apply_style_symbol = '\U0001f4cb'  # 📋
 
 
@@ -100,13 +101,14 @@ def test_func():
 
   # print(parameters_copypaste.paste_fields)
 
-# 直接从http请求带参数过来触发不了弹窗？
-# 为了正常显示弹窗只能改成全局参数。
+
+# fastapi触发不了弹窗
 def custom_msg_box():
   global g_msg_info
   if(g_msg_info != ""):
     print(f"gr.Info({g_msg_info})")
     gr.Info(g_msg_info)
+    g_msg_info = ""
 
 def clear_markup(html_str):
     clearly_str = html_str
@@ -122,7 +124,7 @@ def add_output_log(msg:str="", style:str=""):
     print(clear_msg)
     Output_Log += f"<p style='color:rgb(192,192,192);{style}'>{msg}</p>"
 
-  custom_msg_box()
+  #custom_msg_box()
   return Output_Log, Output_Log
 
 def add_output_warning(msg:str=""):
@@ -244,6 +246,14 @@ def apply_local_flow(selected):
       Preload_File = flow_path
       Need_Preload = True
       gr.Info(clear_markup(OutputPrompt.startimport()))
+
+def delete_local_flow(selected):
+  global local_flow_list,local_flows_path
+  if(selected != "" and selected != None):
+    flow_path = os.path.join(data_path, local_flows_path, selected) 
+    if(os.path.exists(flow_path)):
+      os.remove(flow_path)
+      print("Local File Deleted!")
 
 def set_lightdiffusionflow_file():
   global Preload_File
@@ -830,6 +840,7 @@ class file_params(BaseModel):
 class savefile_params(BaseModel):
   file_name:str
   file_data:dict
+  overwrite:bool
 
 class StateApi():
 
@@ -864,6 +875,7 @@ class StateApi():
     self.add_api_route('/local/png_info', self.png_info, methods=['POST']) # 
     # 传入一个文件路径，返回文件内容
     self.add_api_route('/local/read_file', self.read_file, methods=['POST']) 
+    self.add_api_route('/local/file_exist', self.file_exist, methods=['POST']) 
     self.add_api_route('/local/need_preload', self.need_preload, methods=['GET'])
     # 保存当前配置到本地文件夹
     self.add_api_route('/local/save_flow_to_local', self.saveFlowToLocal, methods=['POST'])
@@ -994,8 +1006,16 @@ class StateApi():
     file_content = ""
     with open(params.file_path, mode='r', encoding='UTF-8') as f:
       file_content = f.read()
-      
-    return file_content
+
+  def file_exist(self, params:file_params):
+    print("file_exist")
+    if(not os.path.exists(params.file_path)):
+      flow_path = os.path.join(data_path, local_flows_path, params.file_path) 
+      if(os.path.exists(flow_path)):
+        return True
+      else:
+        return False
+    return False
 
   def get_img_elem_key(self):
     global extensions_id_conponents
@@ -1085,7 +1105,7 @@ class StateApi():
 
     flow_path = os.path.join(data_path, local_flows_path, data_to_save.file_name) 
     print(flow_path)
-    if(not os.path.exists(flow_path)):
+    if(not os.path.exists(flow_path) or (data_to_save.overwrite)):
       with open(flow_path,"w") as f:
         #json.dump(overall_data,f)
         f.write(json.dumps(overall_data, ensure_ascii=False, indent=4))
@@ -1236,6 +1256,7 @@ class Script(scripts.Script):
         State_Comps["refresh"][i].click(refresh_local_flows, inputs=State_Comps["local_flows"],outputs=State_Comps["local_flows"])
         State_Comps["apply"][i].click(apply_local_flow, inputs=[State_Comps["local_flows"][i]],outputs=[])
         State_Comps["save"][i].click(fn=None,_js="state.core.actions.saveFlowToLocal", inputs=[],outputs=[])
+        #State_Comps["delete"][i].click(delete_local_flow, inputs=[State_Comps["local_flows"][i]],outputs=State_Comps["local_flows"])
         
 
       for btn in State_Comps["export"]:
@@ -1309,6 +1330,7 @@ class Script(scripts.Script):
       State_Comps["outlog"]
       State_Comps["local_flows"]
       State_Comps["apply"]
+      State_Comps["delete"]
       State_Comps["save"]
       State_Comps["refresh"]
     except:
@@ -1317,6 +1339,7 @@ class Script(scripts.Script):
       State_Comps["outlog"] = []
       State_Comps["local_flows"] = []
       State_Comps["apply"] = []
+      State_Comps["delete"] = []
       State_Comps["save"] = []
       State_Comps["refresh"] = []
 
@@ -1334,8 +1357,9 @@ class Script(scripts.Script):
     with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version + save_mode, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
 
       with gr.Row():
-        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False ,choices=local_flow_list,value='',elem_id=cur_mode+'_ldf_local_flows'))
+        State_Comps["local_flows"].append(gr.Dropdown(label="", show_label=False , multiselect=False, choices=local_flow_list,value='',elem_id=cur_mode+'_ldf_local_flows'))
         State_Comps["apply"].append(ui_components.ToolButton(value=paste_symbol,elem_id=cur_mode+'_ldf_apply'))
+        #State_Comps["delete"].append(ui_components.ToolButton(value=clear_prompt_symbol,elem_id=cur_mode+'_ldf_delete'))
         State_Comps["save"].append(ui_components.ToolButton(value=save_style_symbol,elem_id=cur_mode+'_ldf_save'))
         State_Comps["refresh"].append(ui_components.ToolButton(value=refresh_symbol,elem_id=cur_mode+'_ldf_refresh'))
 

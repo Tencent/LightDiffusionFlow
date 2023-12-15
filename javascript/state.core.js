@@ -761,16 +761,34 @@ state.core = (function () {
         filename += ".flow";
       }
       if(filename != ".flow"){
-        let stored_config = get_js_local_data()
+
         let data = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            "file_name":filename,
-            "file_data":stored_config
+            "file_path":filename
           })
         }
-        fetch("/lightdiffusionflow/local/save_flow_to_local",data)
+        fetch(`/lightdiffusionflow/local/file_exist`, data)
+        .then(response => response.json())
+        .then(data => {
+            console.log("file_exist")
+            console.log(data)
+            if(!data || (data && confirm("Overwrite the existing file with the same name?")))
+            {
+              let stored_config = get_js_local_data()
+              data = {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                  "file_name":filename,
+                  "file_data":stored_config,
+                  "overwrite":true
+                })
+              }
+              fetch("/lightdiffusionflow/local/save_flow_to_local",data)
+            }
+        });
       }
     },
 
