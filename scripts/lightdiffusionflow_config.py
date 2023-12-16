@@ -16,10 +16,19 @@ class OutputPrompt_English:
     return "<b style='color:Red;'>Please select a valid lightdiffusionflow or image file!</b>"
 
   def importing_image(image_name):
-    return f"<b style='color:LimeGreen;'>importing image: '{image_name}'.</b>"
+    return f"<b style='color:LimeGreen;'>Importing image: '{image_name}'.</b>"
 
   def import_completed():
-    return "<b style='color:LimeGreen;'>import completed!</b>"
+    return "<b style='color:LimeGreen;'>Import Completed!</b>"
+
+  def import_completed_info():
+    return "Import Completed!"
+  
+  def save_completed():
+    return "<b style='color:LimeGreen;'>Save Completed!</b>"
+
+  def save_failed():
+    return "<b style='color:Red;'>Save Failed!</b>"
 
   def alternative_option(target_value, new_value):
     return f'''Note: '<b style='color:Orange;'>{target_value}</b>' not found,<br>\
@@ -53,6 +62,9 @@ class OutputPrompt_English:
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>
     '''
 
+  def download_link(file_name, file_url):
+    return f'''<a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>'''
+
   def note_for_save_mode():
     return "Core mode only supports basic parameters for Text-to-Image and Image-to-Image, along with ControlNet parameters. \
 The All mode, on the other hand, aims to support as many parameters as possible on the page, \
@@ -71,6 +83,15 @@ class OutputPrompt_Chinese:
 
   def import_completed():
     return "<b style='color:LimeGreen;'>导入完成!</b>"
+    
+  def import_completed_info():
+    return "导入完成！"
+
+  def save_completed():
+    return "<b style='color:LimeGreen;'>保存完毕！</b>"
+
+  def save_failed():
+    return "<b style='color:Red;'>保存失败！</b>"
 
   def alternative_option(target_value, new_value):
     return f'''注意: 未找到选项'<b style='color:Orange;'>{target_value}</b>',<br>\
@@ -114,6 +135,9 @@ class OutputPrompt_Chinese:
     return f'''<p style="color:Orange;">点击下载 \
     <a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {name} </a>
     '''
+
+  def download_link(file_name, file_url):
+    return f'''<a style ='text-decoration:underline;color:cornflowerblue;', target="_blank", href='{file_url}'> {file_name} </a>'''
 
   def note_for_save_mode():
     return "Core模式仅支持文生图和图生图的基本参数+ControlNet参数。All模式则会尽可能多的支持页面上的参数，但是缺点是有概率导致UI卡住，无限转圈。"

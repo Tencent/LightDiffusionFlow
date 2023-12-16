@@ -8,6 +8,10 @@ state.utils = {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
     // button.click();    
+    value = "新建文件夹\\anything-v5-PrtRE.safetensors"
+    value = value.replace("/","\\")
+    parts = value.split("\\")
+    console.log(parts[parts.length - 1])
   },
 
   target_is_newer_version: function(cur_version, target_version){
@@ -198,6 +202,27 @@ state.utils = {
         this.triggerEvent(element, event);
     }
   },
+  onFrameContentChange: function onFrameContentChange(targetNode, func) {
+    if(targetNode) {
+      const observer = new MutationObserver((mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+          if (mutation.type === 'childList' || 
+            (mutation.type === 'attributes' && mutation.attributeName == 'src') // 图片被更改
+          ) {
+            //console.log(`onFrameContentChange ${mutation.type} `)
+            func(targetNode);
+          }
+        }
+      });
+      observer.observe(targetNode, {
+        //attributes: true,
+        childList: true,
+        //characterData: true,
+        subtree: true
+      });
+    }
+  },
+
   onContentChange: function onContentChange(targetNode, func) {
     if(targetNode) {
       const observer = new MutationObserver((mutationsList, observer) => {
@@ -249,35 +274,37 @@ state.utils = {
     return seed
   },
 
-  handleImage: function handleImage(select, id, store) {
-    setTimeout(() => {
-      state.utils.onContentChange(select, function (el) {
-        
-        let data = {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            "id":id,
-            "img":""
-          })
-        }
-
-        try {
-          // new gradio version...
-          let img = el.querySelector('img');
-          if (img) {
-            data.body = JSON.stringify({
+  handleImage: function handleImage(select, id, store, addEvtLsner=true) {
+    if(addEvtLsner){
+      setTimeout(() => {
+        state.utils.onContentChange(select, function (el) {
+          
+          let data = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
               "id":id,
-              "img":img.src
+              "img":""
             })
           }
-        } catch (error) {
-          console.warn('[state]: Error:', error);
-        }
-        console.log(`image changed ${id}`)
-        fetch(`/lightdiffusionflow/local/imgs_callback`, data)
-      });
-    }, 150);
+          
+          try {
+            // new gradio version...
+            let img = el.querySelector('img');
+            if (img) {
+              data.body = JSON.stringify({
+                "id":id,
+                "img":img.src
+              })
+            }
+          } catch (error) {
+            console.warn('[state]: Error:', error);
+          }
+          //console.log(`image changed ${id}`)
+          fetch(`/lightdiffusionflow/local/imgs_callback`, data)
+        });
+      }, 150);
+    }
   },
 
   clearImage: function clearImage(select) {
@@ -349,7 +376,7 @@ state.utils = {
       }
     }
   },
-  handleAccordion: function handleAccordion(accordion, id, store){
+  handleAccordion: function handleAccordion(accordion, id, store, addEvtLsner=true){
     try{
       let value = store.get(id);
       let child = accordion.querySelector('div.cursor-pointer, .label-wrap');
@@ -363,26 +390,29 @@ state.utils = {
         //}
       }
 
-      setTimeout(() => {
-        state.utils.onAccordionChange(child, function (el) {
-          store.set(id, el.className.split(' ').pop() == "open");
-          //console.log(`accordion on change ${id}`)
-          //let span = el.querySelector('.transition, .icon');
-          //store.set(id, span.style.transform !== 'rotate(90deg)');
-        });
-      }, 150);
-
+      if(addEvtLsner){
+        setTimeout(() => {
+          state.utils.onAccordionChange(child, function (el) {
+            store.set(id, el.className.split(' ').pop() == "open");
+            //console.log(`accordion on change ${id}`)
+            //let span = el.querySelector('.transition, .icon');
+            //store.set(id, span.style.transform !== 'rotate(90deg)');
+          });
+        }, 150);
+      }
     } catch (error) {
       console.warn(`accordion:${accordion}, id:${id}`)
       console.warn('[state]: Error:', error);
     }
-
   },
-  handleSelect: function handleSelect(select, id, store, force=false) {
+  handleSelect: function handleSelect(select, id, store, force=false, addEvtLsner=true) {
     try {
 
       let value = store.get(id);
       if ( value ) { //&& value != 'None'
+        value = value.replace("/","\\")
+        let parts = value.split("\\")
+        value = parts[parts.length - 1]
 
         selectingQueue += 1;
         setTimeout(() => {
@@ -395,7 +425,11 @@ state.utils = {
             let successed = false
             for (li of items){
               // li.lastChild.wholeText.trim() === value
-              if (localized_value.replace(/^\s+|\s+$/g,"") === li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")) {
+              let option = li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")
+              option = option.replace("/","\\")
+              let parts = option.split("\\")
+              option = parts[parts.length - 1]
+              if (localized_value.replace(/^\s+|\s+$/g,"") === option) {
                 state.utils.triggerMouseEvent(li, 'mousedown');
                 successed = true
                 break
@@ -408,6 +442,10 @@ state.utils = {
                 
                 // 去掉Hash比较
                 let text = li.lastChild.wholeText.trim()
+                text = text.replace("/","\\")
+                let parts = text.split("\\")
+                text = parts[parts.length - 1]
+                
                 let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{8,10}\]/,"").replace(/^\s+|\s+$/g,"")
                 let text_no_hash = text.replace(/\[[0-9A-Fa-f]{8,10}\]/, "").replace(/^\s+|\s+$/g,"")
                 
@@ -472,43 +510,46 @@ state.utils = {
         }, selectingQueue * 200)
       }
 
-      setTimeout(() => {
-        state.utils.onContentChange(select, function (el) {
-          let selected = el.querySelector('span.single-select');
-          if(force){
-            let localized_id = state.utils.getTranslation(id)
-            let id_translations = state.utils.reverseTranslation(localized_id)
-            //宁可错存一千，也不漏存一个
-            for (trans_id of id_translations){
+      if(addEvtLsner)
+      {
+        setTimeout(() => {
+          state.utils.onContentChange(select, function (el) {
+            let selected = el.querySelector('span.single-select');
+            if(force){
+              let localized_id = state.utils.getTranslation(id)
+              let id_translations = state.utils.reverseTranslation(localized_id)
+              //宁可错存一千，也不漏存一个
+              for (trans_id of id_translations){
+                if (selected) {
+                  store.set(trans_id, selected.textContent);
+                } else {
+                  // new gradio version...
+                  let input = el.querySelector('input');
+                  if (input) {
+                    store.set(trans_id, input.value);
+                  }
+                }
+              }
+            }
+            else{
               if (selected) {
-                store.set(trans_id, selected.textContent);
+                store.set(id, selected.textContent);
               } else {
                 // new gradio version...
                 let input = el.querySelector('input');
                 if (input) {
-                  store.set(trans_id, input.value);
+                  store.set(id, input.value);
                 }
               }
             }
-          }
-          else{
-            if (selected) {
-              store.set(id, selected.textContent);
-            } else {
-              // new gradio version...
-              let input = el.querySelector('input');
-              if (input) {
-                store.set(id, input.value);
-              }
-            }
-          }
-        });
-      }, 150);
+          });
+        }, 150);
+    }
     } catch (error) {
       console.warn('[state]: Error:', error);
     }
   },
-  handleMultipleSelect: function handleMultipleSelect(select, id, store) {
+  handleMultipleSelect: function handleMultipleSelect(select, id, store, addEvtLsner=true) {
     try {
       let value = store.get(id);
 
@@ -550,10 +591,13 @@ state.utils = {
           selectOption();
         }
       }
-      state.utils.onContentChange(select, function (el) {
-        const selected = Array.from(el.querySelectorAll('.token > span')).map(item => item.textContent);
-        store.set(id, selected);
-      });
+
+      if(addEvtLsner){
+        state.utils.onContentChange(select, function (el) {
+          const selected = Array.from(el.querySelectorAll('.token > span')).map(item => item.textContent);
+          store.set(id, selected);
+        });
+      }
     } catch (error) {
       console.warn('[state]: Error:', error);
     }
