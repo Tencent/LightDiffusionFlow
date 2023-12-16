@@ -8,6 +8,10 @@ state.utils = {
     //console.log(state.extensions)
     // const button = gradioApp().getElementById("lightdiffusionflow_set_elements");
     // button.click();    
+    value = "新建文件夹\\anything-v5-PrtRE.safetensors"
+    value = value.replace("/","\\")
+    parts = value.split("\\")
+    console.log(parts[parts.length - 1])
   },
 
   target_is_newer_version: function(cur_version, target_version){
@@ -406,6 +410,9 @@ state.utils = {
 
       let value = store.get(id);
       if ( value ) { //&& value != 'None'
+        value = value.replace("/","\\")
+        let parts = value.split("\\")
+        value = parts[parts.length - 1]
 
         selectingQueue += 1;
         setTimeout(() => {
@@ -418,7 +425,11 @@ state.utils = {
             let successed = false
             for (li of items){
               // li.lastChild.wholeText.trim() === value
-              if (localized_value.replace(/^\s+|\s+$/g,"") === li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")) {
+              let option = li.lastChild.wholeText.trim().replace(/^\s+|\s+$/g,"")
+              option = option.replace("/","\\")
+              let parts = option.split("\\")
+              option = parts[parts.length - 1]
+              if (localized_value.replace(/^\s+|\s+$/g,"") === option) {
                 state.utils.triggerMouseEvent(li, 'mousedown');
                 successed = true
                 break
@@ -431,6 +442,10 @@ state.utils = {
                 
                 // 去掉Hash比较
                 let text = li.lastChild.wholeText.trim()
+                text = text.replace("/","\\")
+                let parts = text.split("\\")
+                text = parts[parts.length - 1]
+                
                 let localized_value_no_hash = localized_value.replace(/\[[0-9A-Fa-f]{8,10}\]/,"").replace(/^\s+|\s+$/g,"")
                 let text_no_hash = text.replace(/\[[0-9A-Fa-f]{8,10}\]/, "").replace(/^\s+|\s+$/g,"")
                 

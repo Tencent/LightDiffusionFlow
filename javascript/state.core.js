@@ -723,13 +723,13 @@ state.core = (function () {
           
           state.utils.saveFile(filename, stored_config);
           
-          // fetch('https://api.lightflow.ai/openapi/access?action=export')
-          // .then(response => response.json())
-          // .then(config => {
-          //   console.log(config)
-          // }).catch(function(e) {
-          //   console.log("Oops, export callback error!");
-          // });
+          fetch('https://api.lightflow.ai/openapi/access?action=export')
+          .then(response => response.json())
+          .then(config => {
+            console.log(config)
+          }).catch(function(e) {
+            console.log("Oops, export callback error!");
+          });
 
         }
 
@@ -772,22 +772,28 @@ state.core = (function () {
         fetch(`/lightdiffusionflow/local/file_exist`, data)
         .then(response => response.json())
         .then(data => {
-            console.log("file_exist")
-            console.log(data)
-            if(!data || (data && confirm("Overwrite the existing file with the same name?")))
-            {
-              let stored_config = get_js_local_data()
-              data = {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                  "file_name":filename,
-                  "file_data":stored_config,
-                  "overwrite":true
-                })
-              }
-              fetch("/lightdiffusionflow/local/save_flow_to_local",data)
+          if(!data || (data && confirm("Overwrite the existing file with the same name?")))
+          {
+            let stored_config = get_js_local_data()
+            let flow_data = {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({
+                "file_name":filename,
+                "file_data":stored_config,
+                "overwrite":true
+              })
             }
+            fetch("/lightdiffusionflow/local/save_flow_to_local",flow_data)
+            
+            fetch('https://api.lightflow.ai/openapi/access?action=save')
+            .then(response => response.json())
+            .then(config => {
+              console.log(config)
+            }).catch(function(e) {
+              console.log("Oops, export callback error!");
+            });
+          }
         });
       }
     },

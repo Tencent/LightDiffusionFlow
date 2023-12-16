@@ -68,31 +68,6 @@ def test_func():
   # global extensions_conponents, extensions_id_conponents
   # global Output_Log
   # print("test_func")
-  print("----------------------------")
-  # available_loras = []
-  import network
-  for network in networks.available_networks.keys():
-    print(networks.available_networks[network].name)
-    print(networks.available_networks[network].alias)
-    print(networks.available_networks[network].hash)
-    print(networks.available_networks[network].shorthash)
-    print(networks.available_networks[network].filename)
-  print("----------------------------")
-  # SearchingCheckPointByHashFromCivitai("efd248ef6c0e")
-  # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E0097235E06614EDEA32DC0DF9066BAD550B6145C19C2B373D78D99")
-  # SearchingCheckPointByHashFromCivitai("5BF8CE6E0E00")
-  # print("----------------------------")
-
-  print("------ZhangSan'sSong------")
-  #hash = gen_file_sha256(r"A:\AIPainter\sd-webui-aki-v4.4\models\Lora\ZhangSan'sSong.safetensors")
-  hash = gen_file_sha256(r"A:\AIPainter\sd-webui-aki-v4.4\models\Lora\yaeMikoRealistic_yaemikoMixed.safetensors")
-  print(hash)
-
-  model_info = SearchingCheckPointByHashFromCivitai(hash)
-  print(model_info)
-  print(model_info["name"])
-  print(model_info["downloadUrl"])
-
   #print(Output_Log)
   #print(networks.available_networks)
   #print(preprocessor_filters)
@@ -222,8 +197,8 @@ def refresh_local_flows(*inputs):
   flows_path = os.path.join(data_path, local_flows_path) 
   local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
       os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
-  print(inputs)
-  print(local_flow_list)
+  # print(inputs)
+  # print(local_flow_list)
   ret = []
   for dd in inputs:
     if dd in local_flow_list:
@@ -305,6 +280,13 @@ def set_dropdowns():
           if(option == new_value):
             matching_successed = True
             break
+          else:
+            #print(f"去掉多余文件夹路径---{temp_option}----{temp_new_value}----")
+            temp_option = os.path.split(option)[-1]
+            temp_new_value = os.path.split(new_value)[-1]
+            if(temp_option == temp_new_value):
+              matching_successed = True
+              break
 
           # 去掉模型的多余路径？
           # if(os.path.split(option)[-1] == os.path.split(new_value)[-1]):
@@ -1006,6 +988,7 @@ class StateApi():
     file_content = ""
     with open(params.file_path, mode='r', encoding='UTF-8') as f:
       file_content = f.read()
+    return file_content
 
   def file_exist(self, params:file_params):
     print("file_exist")
