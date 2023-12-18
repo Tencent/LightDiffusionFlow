@@ -24,8 +24,13 @@ from modules.paths_internal import data_path
 import launch
 
 from scripts import lightdiffusionflow_version, lightdiffusionflow_config
-from scripts.lightdiffusionflow_config import OutputPrompt, Flow_Save_mode, Auto_Fix_Params, LoRAs_In_Use
 import scripts.lightdiffusionflow_config as lf_config
+# from scripts.lightdiffusionflow_config import OutputPrompt, Flow_Save_mode, Auto_Fix_Params, LoRAs_In_Use # 
+
+Flow_Save_mode = lf_config.Flow_Save_mode
+Auto_Fix_Params = lf_config.Auto_Fix_Params
+LoRAs_In_Use = lf_config.LoRAs_In_Use
+OutputPrompt = lf_config.OutputPrompt
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # sys.path.append(os.path.join(current_path,"lib"))
@@ -46,10 +51,23 @@ txt2img_script_container = None
 img2img_script_container = None
 
 local_flows_path = "models/LightDiffusionFlow"
-flows_path = os.path.join(data_path, local_flows_path) 
-flows_path = flows_path.replace("/","\\")
-if(not os.path.isdir(flows_path)):
-  os.mkdir(flows_path)
+if True:
+  flows_path = os.path.join(data_path, local_flows_path) 
+  flows_path = flows_path.replace("\\","/") # linux下反斜杠有问题
+  print(flows_path)
+  try:
+    if(not os.path.exists(flows_path)):
+      os.makedirs(flows_path)
+      if(os.path.exists(flows_path)):
+        print(f"本地文件夹'{flows_path}'创建成功！")
+      else:
+        print(f"本地文件夹'{flows_path}'创建失败！")
+  except BaseException as e:
+    pass
+
+  if(not os.path.exists(flows_path)):
+    print(f"The creation of the folder '{local_flows_path}' has failed! Please create this folder manually to ensure the proper functioning of the extension.")
+    print(f"创建文件夹'{local_flows_path}'失败！请手动创建该文件夹，以保证插件功能正常运行。")
 
 local_flow_list = []
 Need_Preload = False
@@ -194,9 +212,12 @@ def SearchingCheckPointByHashFromCivitai(hash:str):
 def refresh_local_flows(*inputs):
   print("refresh_local_flows")
   global local_flow_list,local_flows_path
-  flows_path = os.path.join(data_path, local_flows_path) 
-  local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
-      os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+  try:
+    flows_path = os.path.join(data_path, local_flows_path) 
+    local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
+        os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+  except:
+    local_flow_list = []
   # print(inputs)
   # print(local_flow_list)
   ret = []
@@ -1333,9 +1354,12 @@ class Script(scripts.Script):
       save_mode = " (only ControlNet)"
 
     global local_flow_list,local_flows_path
-    flows_path = os.path.join(data_path, local_flows_path) 
-    local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
-        os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+    try:
+      flows_path = os.path.join(data_path, local_flows_path) 
+      local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
+          os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+    except:
+      local_flow_list = []
 
     with gr.Accordion('LightDiffusionFlow '+lightdiffusionflow_version.lightdiffusionflow_version + save_mode, open=True, visible=True, elem_id=cur_mode+'_lightdiffusionflow'):
 
