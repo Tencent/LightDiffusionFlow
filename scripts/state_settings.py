@@ -1,7 +1,9 @@
 import gradio as gr
 import modules.shared as shared
 from modules import scripts
-from scripts.lightdiffusionflow_config import OutputPrompt
+from scripts import lightdiffusionflow_config
+#from scripts.lightdiffusionflow_config import OutputPrompt
+OutputPrompt = lightdiffusionflow_config.OutputPrompt
 
 def on_ui_settings():
 
