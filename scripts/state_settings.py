@@ -14,7 +14,7 @@ def on_ui_settings():
   shared.opts.add_option("lightdiffusionflow-language",
     shared.OptionInfo(
       "default",
-      "显示语言/language", 
+      "显示语言/Language", 
       gr.Dropdown, 
       lambda: {
         "choices": ["default","中文","english"]
@@ -24,11 +24,19 @@ def on_ui_settings():
   shared.opts.add_option("lightdiffusionflow-mode",
     shared.OptionInfo(
       "All",
-      f"模式/mode: ({OutputPrompt.note_for_save_mode()})",
+      f"模式/Mode: ({OutputPrompt.note_for_save_mode()})",
       gr.Dropdown, 
       lambda: {
         "choices": ["Core","All"]
       }, section=section)
+  )
+
+  shared.opts.add_option("lightdiffusionflow-local-flows-path",
+    shared.OptionInfo(
+      default="models/LightDiffusionFlow",
+      label=f"本地保存的flow文件路径/Local path to save flow files",
+      #component=gr.TextBox,
+      section=section)
   )
 
   shared.opts.add_option("lightdiffusionflow-auto-fix-params",
@@ -39,5 +47,6 @@ def on_ui_settings():
       {"interactive": True}, 
       section=section)
   )
+
 
 scripts.script_callbacks.on_ui_settings(on_ui_settings)

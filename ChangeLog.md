@@ -4,6 +4,7 @@
  * 增加本地保存Flow配置功能，可直接下拉列表选择已保存的Flow文件。（导入或使用新flow之前，建议先刷新页面，目前插件暂时没有重置参数的功能）
  * 增加记录额外LoRA模型数据，以便导入时从Civitai搜索缺失的lora模型。
  * 模型模糊匹配优化，增加匹配子文件夹下的模型。
+ * 设置页面增加保存flow的默认路径选项，以及相同作用的命令行选项"--local-flows-path"。
 
 ### Bug Fixes:
  * 修复了部分已知的参数设置失败的问题，如ControlNet在Canny模式下的"Canny Low/Hight Threshold"等参数。

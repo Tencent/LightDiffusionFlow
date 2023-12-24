@@ -31,6 +31,7 @@ Flow_Save_mode = lf_config.Flow_Save_mode
 Auto_Fix_Params = lf_config.Auto_Fix_Params
 LoRAs_In_Use = lf_config.LoRAs_In_Use
 OutputPrompt = lf_config.OutputPrompt
+Local_Flows_Path = lf_config.Local_Flows_Path #"models/LightDiffusionFlow"
 
 # current_path = os.path.abspath(os.path.dirname(__file__))
 # sys.path.append(os.path.join(current_path,"lib"))
@@ -49,25 +50,6 @@ extensions_id_conponents = {}
 extensions_id_conponents_value = {}
 txt2img_script_container = None
 img2img_script_container = None
-
-local_flows_path = "models/LightDiffusionFlow"
-if True:
-  flows_path = os.path.join(data_path, local_flows_path) 
-  flows_path = flows_path.replace("\\","/") # linux下反斜杠有问题
-  print(flows_path)
-  try:
-    if(not os.path.exists(flows_path)):
-      os.makedirs(flows_path)
-      if(os.path.exists(flows_path)):
-        print(f"本地文件夹'{flows_path}'创建成功！")
-      else:
-        print(f"本地文件夹'{flows_path}'创建失败！")
-  except BaseException as e:
-    pass
-
-  if(not os.path.exists(flows_path)):
-    print(f"The creation of the folder '{local_flows_path}' has failed! Please create this folder manually to ensure the proper functioning of the extension.")
-    print(f"创建文件夹'{local_flows_path}'失败！请手动创建该文件夹，以保证插件功能正常运行。")
 
 local_flow_list = []
 Need_Preload = False
@@ -211,11 +193,11 @@ def SearchingCheckPointByHashFromCivitai(hash:str):
 
 def refresh_local_flows(*inputs):
   print("refresh_local_flows")
-  global local_flow_list,local_flows_path
+  global local_flow_list,Local_Flows_Path
   try:
-    flows_path = os.path.join(data_path, local_flows_path) 
-    local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
-        os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+    #flows_path = os.path.join(data_path, Local_Flows_Path) 
+    local_flow_list = [f for f in os.listdir(Local_Flows_Path) if os.path.isfile(
+        os.path.join(Local_Flows_Path, f)) and os.path.splitext(f)[-1] == '.flow']
   except:
     local_flow_list = []
   # print(inputs)
@@ -231,11 +213,11 @@ def refresh_local_flows(*inputs):
   return ret
 
 def apply_local_flow(selected):
-  global local_flow_list,local_flows_path
+  global local_flow_list,Local_Flows_Path
   global Need_Preload,Preload_File
 
   if(selected != "" and selected != None):
-    flow_path = os.path.join(data_path, local_flows_path, selected) 
+    flow_path = os.path.join(Local_Flows_Path, selected) 
     if(os.path.exists(flow_path)):
       print("OK,Local File!")
       print(flow_path)
@@ -244,9 +226,9 @@ def apply_local_flow(selected):
       gr.Info(clear_markup(OutputPrompt.startimport()))
 
 def delete_local_flow(selected):
-  global local_flow_list,local_flows_path
+  global local_flow_list,Local_Flows_Path
   if(selected != "" and selected != None):
-    flow_path = os.path.join(data_path, local_flows_path, selected) 
+    flow_path = os.path.join(Local_Flows_Path, selected) 
     if(os.path.exists(flow_path)):
       os.remove(flow_path)
       print("Local File Deleted!")
@@ -1014,7 +996,7 @@ class StateApi():
   def file_exist(self, params:file_params):
     print("file_exist")
     if(not os.path.exists(params.file_path)):
-      flow_path = os.path.join(data_path, local_flows_path, params.file_path) 
+      flow_path = os.path.join(Local_Flows_Path, params.file_path) 
       if(os.path.exists(flow_path)):
         return True
       else:
@@ -1084,7 +1066,7 @@ class StateApi():
     return ""
 
   def saveFlowToLocal(self, data_to_save:savefile_params):
-    global local_flows_path
+    global Local_Flows_Path
     global add_output_log
 
     overall_data = {}
@@ -1107,7 +1089,7 @@ class StateApi():
     # 过滤掉一些没用的默认值的信息
     overall_data = config_filter(overall_data)
 
-    flow_path = os.path.join(data_path, local_flows_path, data_to_save.file_name) 
+    flow_path = os.path.join(Local_Flows_Path, data_to_save.file_name) 
     print(flow_path)
     if(not os.path.exists(flow_path) or (data_to_save.overwrite)):
       with open(flow_path,"w") as f:
@@ -1353,11 +1335,11 @@ class Script(scripts.Script):
     if(Flow_Save_mode == "Core"):
       save_mode = " (only ControlNet)"
 
-    global local_flow_list,local_flows_path
+    global local_flow_list,Local_Flows_Path
     try:
-      flows_path = os.path.join(data_path, local_flows_path) 
-      local_flow_list = [f for f in os.listdir(flows_path) if os.path.isfile(
-          os.path.join(flows_path, f)) and os.path.splitext(f)[-1] == '.flow']
+      #flows_path = os.path.join(data_path, Local_Flows_Path) 
+      local_flow_list = [f for f in os.listdir(Local_Flows_Path) if os.path.isfile(
+          os.path.join(Local_Flows_Path, f)) and os.path.splitext(f)[-1] == '.flow']
     except:
       local_flow_list = []
 

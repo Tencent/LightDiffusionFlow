@@ -1,4 +1,5 @@
-import json
+import json,os
+from modules.paths_internal import data_path
 
 PNGINFO_2_LIGHTDIFFUSIONFLOW = {}
 PNGINFO_CN_2_LIGHTDIFFUSIONFLOW = {}
@@ -6,6 +7,7 @@ Image_Components_Key = {}
 LoRAs_In_Use = "loras_in_use"
 Flow_Save_mode = "All"
 Auto_Fix_Params = True
+Local_Flows_Path = "models/LightDiffusionFlow"
 
 class OutputPrompt_English:
 
@@ -145,10 +147,35 @@ class OutputPrompt_Chinese:
 
 OutputPrompt = OutputPrompt_English
 
+def create_local_flow_path():
+  global Local_Flows_Path
+  
+  if os.path.isabs(Local_Flows_Path):
+    flows_path = Local_Flows_Path
+  else:
+    flows_path = os.path.join(data_path, Local_Flows_Path) 
+  flows_path = flows_path.replace("\\","/") # linux下反斜杠有问题
+  #print(flows_path)
+  try:
+    if(not os.path.exists(flows_path)):
+      os.makedirs(flows_path)
+      if(os.path.exists(flows_path)):
+        print(f"本地文件夹'{flows_path}'创建成功！")
+      else:
+        print(f"本地文件夹'{flows_path}'创建失败！")
+  except BaseException as e:
+    pass
+  if(not os.path.exists(flows_path)):
+    print(f"The creation of the folder '{Local_Flows_Path}' has failed! Please create this folder manually to ensure the proper functioning of the extension.")
+    print(f"创建文件夹'{Local_Flows_Path}'失败！请手动创建该文件夹，以保证插件功能正常运行。")
+
+  Local_Flows_Path = flows_path
+
+
 # 改成函数调用，修改配置之后能及时刷新
 def init():
   global PNGINFO_2_LIGHTDIFFUSIONFLOW,PNGINFO_CN_2_LIGHTDIFFUSIONFLOW
-  global OutputPrompt,Flow_Save_mode,Auto_Fix_Params,Image_Components_Key
+  global OutputPrompt,Flow_Save_mode,Auto_Fix_Params,Local_Flows_Path,Image_Components_Key
   # PNG Info的功能除了主要的选项以外其他的都靠第三方插件的主动支持，后续再考虑能否有优化的办法
   #print(parameters_copypaste.paste_fields) 
   PNGINFO_2_LIGHTDIFFUSIONFLOW = {
@@ -205,6 +232,16 @@ def init():
         Auto_Fix_Params = webui_settings["lightdiffusionflow-auto-fix-params"]
       except:
         pass
+
+      # 本地flow保存位置，先读本地设置，再读命令行设置
+      try:
+        Local_Flows_Path = webui_settings["lightdiffusionflow-local-flows-path"]
+      except:
+        pass
+      if shared.cmd_opts.local_flows_path:
+        Local_Flows_Path = shared.cmd_opts.local_flows_path
+      create_local_flow_path()
+
 
       language_successed = False
       auto_language = False
